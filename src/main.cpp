@@ -1,5 +1,7 @@
 #include <Arduino.h>
 
+//initial commit put line to confirm that the project is working: |
+
 // put function declarations here:
 int myFunction(int, int);
 
