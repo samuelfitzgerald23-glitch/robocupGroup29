@@ -35,3 +35,7 @@ void setMotorSpeed(int speed1, int speed2) {
     Motor1.writeMicroseconds(pulseWidth1);
     Motor2.writeMicroseconds(pulseWidth2);
 }
+
+void motorTask() {
+    //TBD
+}

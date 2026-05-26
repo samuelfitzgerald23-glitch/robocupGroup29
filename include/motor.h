@@ -7,5 +7,6 @@
 
 void initMotors();
 void setMotorSpeed(int speed1, int speed2);
+void motorTask();
 
 #endif // MOTOR_H

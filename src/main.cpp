@@ -1,34 +1,40 @@
 #include <Arduino.h>
 #include "motor.h"
-#include <TimerThree.h> // grants access to timer 3 on the board
 
-#define BOARDFREQUENCY 600000000 //600MHz for teensy 4.0
+
+#define MAXFREQUENCY 10000 //10KHZ for teensy 4.0
 
 #define MOTORFREQUENCY 50 // 50Hz
 
-#define MOTORPERIOD (BOARDFREQUENCY / MOTORFREQUENCY) // Calculate the period for the motor control signal
+#define MOTORPERIOD (MAXFREQUENCY / MOTORFREQUENCY) // Calculate the period for the motor control signal
 
-bool motorFlag = 0;
+IntervalTimer tickTimer;
 
+volatile uint32_t tickMain = 0;
 
-//initial commit put line to confirm that the project is working: |
+static uint32_t motorNextRun = MOTORPERIOD;
+
+//initial commit
 
 void setup() {
   // put your setup code here, to run once:
-  Timer3.initialize(MOTORPERIOD);
-  Timer3.attachInterrupt(raiseMotor_flag);
   initMotors();
 
-  Timer3.start();
+  tickMain = 0;
+  tickTimer.priority(0);
+  tickTimer.begin(intervalTick, 1000000/MAXFREQUENCY); //  1/10000 S * 1000000 microsecs per sec,  gives period in microseconds
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  
-
+  if(tickMain > motorNextRun) {
+    motorNextRun += MOTORPERIOD;
+    motorTask();
+  }
 
 }
 
-void raiseMotor_flag(void) {
-  motorFlag = 1;
+void intervalTick() {
+  //increment tick based on timer interrupt
+  tickMain ++;
 }
