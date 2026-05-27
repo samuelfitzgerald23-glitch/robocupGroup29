@@ -1,8 +1,8 @@
 #include <Servo.h>
 #include "motor.h"
 
-#define MOTOR1_PIN 0
-#define MOTOR2_PIN 1
+#define MOTOR1_PIN 0    //left
+#define MOTOR2_PIN 1    //right
 
 #define FULLREVERSE 1050
 #define STOP 1500
@@ -23,7 +23,7 @@ void initMotors() {
 }
 
 void setMotorSpeed(int speed1, int speed2) {
-    int pulseWidth1 = STOP + speed1;
+    int pulseWidth1 = STOP - speed1;
     int pulseWidth2 = STOP + speed2;
 
     if (pulseWidth1 > FULLFORWARD) pulseWidth1 = FULLFORWARD;
@@ -37,5 +37,5 @@ void setMotorSpeed(int speed1, int speed2) {
 }
 
 void motorTask() {
-    //TBD
+    setMotorSpeed(450, 450);
 }
