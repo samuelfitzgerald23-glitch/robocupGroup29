@@ -38,11 +38,16 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  if(tickMain > motorNextRun) {
+  noInterrupts();
+  uint32_t tickCopy = tickMain;
+  interrupts();
+
+
+  if(tickCopy > motorNextRun) {
     motorNextRun += MOTORPERIOD;
     motorTask();
   }
-  if(tickMain > sensorNextRun) {
+  if(tickCopy > sensorNextRun) {
     sensorNextRun += SENSORPERIOD;
     sensorTask();
   }

@@ -18,7 +18,7 @@ const byte SX1509_ADDRESS = 0x3F;
 
 
 // The number of sensors in your system.
-const uint8_t sensorCount = 1;
+const uint8_t sensorCount = 2;
 
 // The Arduino pin connected to the XSHUT pin of each sensor.
 const uint8_t xshutPins[8] = {0,1,2,3,4,5,6,7};
@@ -27,62 +27,10 @@ SX1509 io; // Create an SX1509 object to be used throughout
 VL53L0X sensors[sensorCount];
 
 /*
-*   Functions for ultrasound sensors
-*/
-
-void ultraSound_init() {
-    pinMode(AtrigPin, OUTPUT);            //Setup ultrasound pins
-    pinMode(AechoPin, INPUT);
-
-    pinMode(BtrigPin, OUTPUT);            //Setup ultrasound pins
-    pinMode(BechoPin, INPUT);
-
-    Serial.printf("Ultrasound on");
-}
-
-void ultrasound()
-{
-  long durationA,durationB, Acm,Bcm;
- 
-  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
-  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
-  digitalWrite(AtrigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(AtrigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(AtrigPin, LOW);
- 
-  // Read the signal from the sensor: a HIGH pulse whose
-  // duration is the time (in microseconds) from the sending
-  // of the ping to the reception of its echo off of an object.
-  durationA = pulseIn(AechoPin, HIGH);
-
-  digitalWrite(BtrigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(BtrigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(BtrigPin, LOW);
-  durationB = pulseIn(BechoPin, HIGH);
-  
- 
-  // convert the time into a distance
-  Acm = microsecondsToCentimeters(durationA);
-  Bcm = microsecondsToCentimeters(durationB);
-  Serial.print(Acm);
-  Serial.print(" ");
-  Serial.print(Bcm);
-  Serial.println();
-  delay(1000);
-}
-
-long microsecondsToCentimeters(long microseconds)
-{
-  return (microseconds / 29) / 2;
-} 
-
-/*
 *   TOF sensor functions
 */
+
+static uint16_t TOF_reading[2];
 
 void TOFinit() {
   while (!Serial) {}
@@ -133,9 +81,18 @@ void TOFinit() {
 void TOF() {
   for (uint8_t i = 0; i < sensorCount; i++)
   {
-    Serial.print(sensors[i].readRangeContinuousMillimeters());
-    if (sensors[i].timeoutOccurred()) { Serial.print(" TIMEOUT"); }
-    Serial.print('\t');
+    TOF_reading[i] = sensors[i].readRangeContinuousMillimeters();
+
+    Serial.print("Sensor ");
+    Serial.print(i);
+    Serial.print(": ");
+    Serial.print(TOF_reading[i]);
+    Serial.print(" ");
+
+    if (sensors[i].timeoutOccurred()) { 
+      Serial.print(" TIMEOUT"); 
+      Serial.print('\t');
+    }
   }
   Serial.println();
 }
@@ -145,5 +102,5 @@ void TOF() {
 */
 
 void sensorTask() {
-    TOF();
+  TOF();
 }
