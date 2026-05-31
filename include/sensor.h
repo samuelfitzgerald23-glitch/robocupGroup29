@@ -5,11 +5,15 @@
 #ifndef SENSOR_H
 #define SENSOR_H
 
-void sensorInit();
+void ultrasound_init();
 
 void ultrasound();
 
 long microsecondsToCentimeters(long microseconds);
+
+void TOFinit();
+
+void TOF();
 
 void sensorTask();
 

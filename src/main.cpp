@@ -3,10 +3,10 @@
 #include "sensor.h"
 
 
-#define MAXFREQUENCY 10000 //10KHZ for teensy 4.0
+#define MAXFREQUENCY 1000 //10KHZ for teensy 4.0
 
 #define MOTORFREQUENCY 50 // 50Hz
-#define SENSORFREQUENCY 2000 //2000Hz
+#define SENSORFREQUENCY 200 //2000Hz
 
 #define MOTORPERIOD (MAXFREQUENCY / MOTORFREQUENCY) // Calculate the period for the motor control signal
 #define SENSORPERIOD (MAXFREQUENCY / SENSORFREQUENCY)
@@ -27,9 +27,9 @@ static uint32_t sensorNextRun = SENSORPERIOD;
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);
+  Serial.begin(115200);
   initMotors();
-  sensorInit();
+  TOFinit();
 
   tickMain = 0;
   tickTimer.priority(0);
