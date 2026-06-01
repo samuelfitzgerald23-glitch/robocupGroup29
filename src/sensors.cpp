@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "sensor.h"
+#include "circBuf.h"
 
 #include <Wire.h>
 #include <VL53L0X.h>
@@ -25,6 +26,10 @@ const uint8_t xshutPins[8] = {0,1,2,3,4,5,6,7};
 
 SX1509 io; // Create an SX1509 object to be used throughout
 VL53L0X sensors[sensorCount];
+
+//create a circular buffer for each TOF sensor
+static circBuf_t sensor1Buffer;
+static circBuf_t sensor2Buffer;
 
 /*
 *   TOF sensor functions
@@ -76,6 +81,10 @@ void TOFinit() {
 
     sensors[i].startContinuous(50);
   }
+
+  //initialise the circular buffers
+  bufferInit(10, &sensor1Buffer);
+  bufferInit(10, &sensor2Buffer);
 }
 
 void TOF() {
@@ -95,6 +104,8 @@ void TOF() {
     }
   }
   Serial.println();
+  writeCircBuf(&sensor1Buffer, TOF_reading[0]);
+  writeCircBuf(&sensor2Buffer, TOF_reading[1]);
 }
 
 
@@ -104,4 +115,7 @@ void TOF() {
 
 void sensorTask() {
   TOF();
+  Serial.print(signalAverage(&sensor1Buffer));
+  Serial.print(":");
+  Serial.print(signalAverage(&sensor2Buffer));
 }

@@ -3,16 +3,43 @@
 #include <vector>
 #include "circBuf.h"
 
-struct circBuf_t {
-    uint16_t size;
-    uint16_t windex;
-    uint16_t rindex;
-    uint16_t* data;
-};
+/*
+circBuf_t buffer;
+bufferInit(x, buffer);
+*/
 
-uint16_t *bufferInit(uint16_t size, circBuf_t Buffer) {
-    Buffer.size = size;
-    Buffer.data = new uint16_t[Buffer.size]();
-    Buffer.rindex = 0;
-    Buffer.windex = 0;
+void bufferInit(uint16_t size, circBuf_t *Buffer) {
+    Buffer->size = size;
+    Buffer->data = new uint16_t[size]();
+    Buffer->rindex = 0;
+    Buffer->windex = 0;
+}
+
+void writeCircBuf(circBuf_t *buffer, uint16_t entry) {
+    buffer->data[buffer->windex] = entry;
+    buffer->windex++;
+    if (buffer->windex >= buffer->size) buffer->windex = 0;
+}
+
+uint16_t readCircBuf(circBuf_t *buffer) {
+    uint16_t val = buffer->data[buffer->rindex];
+    buffer->rindex++;
+    if (buffer->rindex >= buffer->size) buffer->rindex = 0;
+    return val;
+}
+
+void freeCircBuf(circBuf_t *buffer) {
+    delete[] buffer->data;
+    buffer->size = 0;
+    buffer->rindex=0;
+    buffer->windex=0;
+    buffer = nullptr;
+}
+
+uint16_t signalAverage(circBuf_t *buffer) {
+    uint16_t sum = 0;
+    for (uint8_t i = 0; i < buffer->size; i++) {
+        sum += readCircBuf(buffer);
+    }
+    return sum/(buffer->size);
 }
