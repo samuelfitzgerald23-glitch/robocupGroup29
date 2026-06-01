@@ -25,6 +25,6 @@ uint16_t readCircBuf(circBuf_t *buffer);
 void freeCircBuf(circBuf_t *buffer);
 
 //average the value inside the buffer
-uint16_t signalAverage(circBuf_t *buffer);
+float signalAverage(circBuf_t *buffer);
 
 #endif // CIRCBUF_H

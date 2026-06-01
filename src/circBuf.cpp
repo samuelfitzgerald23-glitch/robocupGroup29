@@ -30,14 +30,14 @@ uint16_t readCircBuf(circBuf_t *buffer) {
 
 void freeCircBuf(circBuf_t *buffer) {
     delete[] buffer->data;
+    buffer->data = nullptr;
     buffer->size = 0;
     buffer->rindex=0;
     buffer->windex=0;
-    buffer = nullptr;
 }
 
-uint16_t signalAverage(circBuf_t *buffer) {
-    uint16_t sum = 0;
+float signalAverage(circBuf_t *buffer) {
+    float sum = 0;
     for (uint8_t i = 0; i < buffer->size; i++) {
         sum += readCircBuf(buffer);
     }

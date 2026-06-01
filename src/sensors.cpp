@@ -117,5 +117,5 @@ void sensorTask() {
   TOF();
   Serial.print(signalAverage(&sensor1Buffer));
   Serial.print(":");
-  Serial.print(signalAverage(&sensor2Buffer));
+  Serial.println(signalAverage(&sensor2Buffer));
 }
