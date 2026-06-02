@@ -11,8 +11,8 @@ bufferInit(x, buffer);
 static circBuf_t buffersArray[BUFFERCOUNT];
 
 void bufArrayInit(void) {
-    bufferInit(10, &buffersArray[TOF1]);
-    bufferInit(10, &buffersArray[TOF2]);
+    bufferInit(BUFSIZE, &buffersArray[TOF1]);
+    bufferInit(BUFSIZE, &buffersArray[TOF2]);
 }
 
 void bufferInit(uint16_t size, circBuf_t *Buffer) {
@@ -47,12 +47,4 @@ circBuf_t *getBuf(BufID ID) {
     if(ID>=BUFFERCOUNT) return nullptr;
     
     return &buffersArray[ID];
-}
-
-float signalAverage(circBuf_t *buffer) {
-    float sum = 0;
-    for (uint8_t i = 0; i < buffer->size; i++) {
-        sum += readCircBuf(buffer);
-    }
-    return sum/(buffer->size);
 }

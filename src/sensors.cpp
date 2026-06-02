@@ -107,9 +107,4 @@ void TOF() {
 
 void sensorTask() {
   TOF();
-  uint16_t filterOutput1 = (uint16_t)signalAverage(getBuf(TOF1));
-  uint16_t filterOutput2 = (uint16_t)signalAverage(getBuf(TOF2));
-  Serial.print(filterOutput1);
-  Serial.print(":");
-  Serial.println(filterOutput2);
 }

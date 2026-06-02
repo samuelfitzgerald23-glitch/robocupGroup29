@@ -1,11 +1,12 @@
 #include <Arduino.h>
 #include "motor.h"
 #include "sensor.h"
+#include "filtering.h"
 
 
 #define MAXFREQUENCY 1000 //10KHZ for teensy 4.0
 
-#define MOTORFREQUENCY 20 // 20Hz
+#define MOTORFREQUENCY 37 // 37Hz
 #define SENSORFREQUENCY 50 //50Hz
 #define FILTERFREQUENCY 500 //500Hz
 
@@ -24,14 +25,14 @@ void intervalTick() {
 
 static uint32_t motorNextRun = MOTORPERIOD;
 static uint32_t sensorNextRun = SENSORPERIOD;
-
-static uint16_t sensorArray[2];
+static uint32_t filterNextRun = FILTERPERIOD;
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
   initMotors();
   TOFinit();
+  filteringInit();
 
   tickMain = 0;
   tickTimer.priority(0);
@@ -52,6 +53,13 @@ void loop() {
   if(tickCopy > sensorNextRun) {
     sensorNextRun += SENSORPERIOD;
     sensorTask();
+  }
+  if(tickCopy > filterNextRun) {
+    uint16_t TOF1Output = filterTask(TOF1);
+    uint16_t TOF2Output = filterTask(TOF2);
+    Serial.print(TOF1Output);
+    Serial.print(" : ");
+    Serial.print(TOF2Output);
   }
 
 }

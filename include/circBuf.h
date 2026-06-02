@@ -6,6 +6,7 @@
 #define CIRCBUF_H
 
 #define BUFFERCOUNT 2
+#define BUFSIZE 5
 
 enum BufID {
     TOF1,
@@ -35,8 +36,5 @@ uint16_t readCircBuf(circBuf_t *buffer);
 void freeCircBuf(circBuf_t *buffer);
 
 circBuf_t *getBuf(BufID ID);
-
-//average the value inside the buffer
-float signalAverage(circBuf_t *buffer);
 
 #endif // CIRCBUF_H
