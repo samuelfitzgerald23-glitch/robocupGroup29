@@ -5,6 +5,13 @@
 #ifndef CIRCBUF_H
 #define CIRCBUF_H
 
+#define BUFFERCOUNT 2
+
+enum BufID {
+    TOF1,
+    TOF2
+};
+
 struct circBuf_t {
     uint16_t size;
     uint16_t windex;
@@ -15,6 +22,9 @@ struct circBuf_t {
 //given a pointer to a circular buffer, initialise it
 void bufferInit(uint16_t size, circBuf_t *Buffer);
 
+//initalise all buffers in the array
+void bufArrayInit(void);
+
 //write to the circular buffer
 void writeCircBuf(circBuf_t *buffer, uint16_t entry);
 
@@ -23,6 +33,8 @@ uint16_t readCircBuf(circBuf_t *buffer);
 
 //free the memory alocated to the circular buffer
 void freeCircBuf(circBuf_t *buffer);
+
+circBuf_t *getBuf(BufID ID);
 
 //average the value inside the buffer
 float signalAverage(circBuf_t *buffer);

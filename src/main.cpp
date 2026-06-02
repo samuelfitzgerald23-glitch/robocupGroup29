@@ -5,11 +5,13 @@
 
 #define MAXFREQUENCY 1000 //10KHZ for teensy 4.0
 
-#define MOTORFREQUENCY 50 // 50Hz
-#define SENSORFREQUENCY 200 //2000Hz
+#define MOTORFREQUENCY 20 // 20Hz
+#define SENSORFREQUENCY 50 //50Hz
+#define FILTERFREQUENCY 500 //500Hz
 
 #define MOTORPERIOD (MAXFREQUENCY / MOTORFREQUENCY) // Calculate the period for the motor control signal
 #define SENSORPERIOD (MAXFREQUENCY / SENSORFREQUENCY)
+#define FILTERPERIOD (MAXFREQUENCY /  FILTERFREQUENCY)
 
 IntervalTimer tickTimer;
 
@@ -23,7 +25,7 @@ void intervalTick() {
 static uint32_t motorNextRun = MOTORPERIOD;
 static uint32_t sensorNextRun = SENSORPERIOD;
 
-//initial commit
+static uint16_t sensorArray[2];
 
 void setup() {
   // put your setup code here, to run once:
