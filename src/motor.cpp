@@ -6,10 +6,10 @@
 #define DRIVE2_PIN 1    //right
 
 //fan blade motors
-#define FAN1_PIN 2
-#define FAN2_PIN 3
+#define FAN1_PIN 7
+#define FAN2_PIN 8
 
-//motor speed limits (drive motors only)
+//motor speed limits
 #define FULLREVERSE 1050
 #define STOP 1500
 #define FULLFORWARD 1950
@@ -31,8 +31,8 @@ void initMotors() {
     Drive1.writeMicroseconds(STOP);
     Drive2.writeMicroseconds(STOP);
 
-    Fan1.writeMicroseconds(200);
-    Fan2.writeMicroseconds(200);
+    Fan1.writeMicroseconds(STOP);
+    Fan2.writeMicroseconds(STOP);
 }
 
 void setDriveSpeed(int speed1, int speed2) {
@@ -50,12 +50,13 @@ void setDriveSpeed(int speed1, int speed2) {
 }
 
 void setFanSpeed(int speed) {
-    if (speed < 0) speed = 0;
-    if (speed > 256) speed = 256;
-    Fan1.writeMicroseconds(speed);
-    Fan2.writeMicroseconds(speed);
+    int pulse1 = STOP - speed;
+    int pulse2 = STOP + speed;
+    Fan1.writeMicroseconds(pulse1);
+    Fan2.writeMicroseconds(pulse2);
 }
 
 void motorTask() {
     setDriveSpeed(0, 0);
+    setFanSpeed(200);
 }

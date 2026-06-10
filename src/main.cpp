@@ -59,7 +59,7 @@ void loop() {
     uint16_t TOF2Output = filterTask(TOF2);
     Serial.print(TOF1Output);
     Serial.print(" : ");
-    Serial.print(TOF2Output);
+    Serial.println(TOF2Output);
   }
 
 }
