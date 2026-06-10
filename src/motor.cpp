@@ -1,28 +1,41 @@
 #include <Servo.h>
 #include "motor.h"
 
-#define MOTOR1_PIN 0    //left
-#define MOTOR2_PIN 1    //right
+//driving motors
+#define DRIVE1_PIN 0    //left
+#define DRIVE2_PIN 1    //right
 
+//fan blade motors
+#define FAN1_PIN 2
+#define FAN2_PIN 3
+
+//motor speed limits (drive motors only)
 #define FULLREVERSE 1050
 #define STOP 1500
 #define FULLFORWARD 1950
 
 // create servo objects for motors
-static Servo Motor1;
-static Servo Motor2;
+static Servo Drive1;
+static Servo Drive2;
+static Servo Fan1;
+static Servo Fan2;
 
 void initMotors() {
     // Assign motor pins to servo objects
-    Motor1.attach(MOTOR1_PIN);
-    Motor2.attach(MOTOR2_PIN);
+    Drive1.attach(DRIVE1_PIN);
+    Drive2.attach(DRIVE2_PIN);
+    Fan1.attach(FAN1_PIN);
+    Fan2.attach(FAN2_PIN);
 
-    // Stop motors initially
-    Motor1.writeMicroseconds(STOP);
-    Motor2.writeMicroseconds(STOP);
+    // Stop drive motors initially
+    Drive1.writeMicroseconds(STOP);
+    Drive2.writeMicroseconds(STOP);
+
+    Fan1.writeMicroseconds(200);
+    Fan2.writeMicroseconds(200);
 }
 
-void setMotorSpeed(int speed1, int speed2) {
+void setDriveSpeed(int speed1, int speed2) {
     int pulseWidth1 = STOP - speed1;
     int pulseWidth2 = STOP + speed2;
 
@@ -32,10 +45,17 @@ void setMotorSpeed(int speed1, int speed2) {
     if (pulseWidth2 > FULLFORWARD) pulseWidth2 = FULLFORWARD;
     if (pulseWidth2 < FULLREVERSE) pulseWidth2 = FULLREVERSE;
 
-    Motor1.writeMicroseconds(pulseWidth1);
-    Motor2.writeMicroseconds(pulseWidth2);
+    Drive1.writeMicroseconds(pulseWidth1);
+    Drive2.writeMicroseconds(pulseWidth2);
+}
+
+void setFanSpeed(int speed) {
+    if (speed < 0) speed = 0;
+    if (speed > 256) speed = 256;
+    Fan1.writeMicroseconds(speed);
+    Fan2.writeMicroseconds(speed);
 }
 
 void motorTask() {
-    setMotorSpeed(450, 450);
+    setDriveSpeed(0, 0);
 }

@@ -4,7 +4,7 @@
 #include "filtering.h"
 
 
-#define MAXFREQUENCY 1000 //10KHZ for teensy 4.0
+#define MAXFREQUENCY 1000 //1KHZ for teensy 4.0
 
 #define MOTORFREQUENCY 37 // 37Hz
 #define SENSORFREQUENCY 50 //50Hz
@@ -36,7 +36,7 @@ void setup() {
 
   tickMain = 0;
   tickTimer.priority(0);
-  tickTimer.begin(intervalTick, 1000000/MAXFREQUENCY); //  1/10000 S * 1000000 microsecs per sec,  gives period in microseconds
+  tickTimer.begin(intervalTick, 1000000/MAXFREQUENCY); //  1/1000 S * 1000000 microsecs per sec,  gives period in microseconds
 }
 
 void loop() {
