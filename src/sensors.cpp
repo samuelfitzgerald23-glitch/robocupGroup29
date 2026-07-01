@@ -34,7 +34,7 @@ VL53L0X sensors[sensorCount];
 static uint16_t TOF_reading[2];
 
 void TOFinit() {
-  while (!Serial) {}
+  //while (!Serial) {}
 
   io.begin(SX1509_ADDRESS);
 
@@ -84,11 +84,11 @@ void TOF() {
   {
     TOF_reading[i] = sensors[i].readRangeContinuousMillimeters();
 
-    Serial.print("Sensor ");
-    Serial.print(i);
-    Serial.print(": ");
-    Serial.print(TOF_reading[i]);
-    Serial.print(" ");
+    // Serial.print("Sensor ");
+    // Serial.print(i);
+    // Serial.print(": ");
+    // Serial.print(TOF_reading[i]);
+    // Serial.print(" ");
 
     if (sensors[i].timeoutOccurred()) { 
       Serial.print(" TIMEOUT"); 

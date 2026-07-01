@@ -48,6 +48,7 @@ void loop() {
 
   if(tickCopy > motorNextRun) {
     motorNextRun += MOTORPERIOD;
+    Serial.print("doingmotorTask\n");
     motorTask();
   }
   if(tickCopy > sensorNextRun) {
@@ -57,9 +58,10 @@ void loop() {
   if(tickCopy > filterNextRun) {
     uint16_t TOF1Output = filterTask(TOF1);
     uint16_t TOF2Output = filterTask(TOF2);
-    Serial.print(TOF1Output);
-    Serial.print(" : ");
-    Serial.println(TOF2Output);
+    //Serial.print(TOF1Output);
+    //Serial.print(" : ");
+    //Serial.println(TOF2Output);
+    filterNextRun += FILTERPERIOD;
   }
 
 }
