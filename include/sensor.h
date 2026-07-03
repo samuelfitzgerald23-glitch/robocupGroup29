@@ -5,7 +5,7 @@
 #ifndef SENSOR_H
 #define SENSOR_H
 
-void TOFinit();
+void TOFinit(SX1509* io);
 
 void TOF();
 

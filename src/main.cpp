@@ -2,6 +2,9 @@
 #include "motor.h"
 #include "sensor.h"
 #include "filtering.h"
+#include <Wire.h>
+#include <VL53L0X.h>
+#include <SparkFunSX1509.h>
 
 
 #define MAXFREQUENCY 1000 //1KHZ for teensy 4.0
@@ -13,6 +16,9 @@
 #define MOTORPERIOD (MAXFREQUENCY / MOTORFREQUENCY) // Calculate the period for the motor control signal
 #define SENSORPERIOD (MAXFREQUENCY / SENSORFREQUENCY)
 #define FILTERPERIOD (MAXFREQUENCY /  FILTERFREQUENCY)
+
+const byte SX1509_ADDRESS = 0x3F;
+SX1509 io; // Create an SX1509 object to be used throughout
 
 IntervalTimer tickTimer;
 
@@ -30,8 +36,14 @@ static uint32_t filterNextRun = FILTERPERIOD;
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
+
+  io.begin(SX1509_ADDRESS);
+
+  Wire.begin();
+  Wire.setClock(400000); // use 400 kHz I2C
+
   initMotors();
-  TOFinit();
+  TOFinit(&io);
   filteringInit();
 
   tickMain = 0;
@@ -58,9 +70,9 @@ void loop() {
   if(tickCopy > filterNextRun) {
     uint16_t TOF1Output = filterTask(TOF1);
     uint16_t TOF2Output = filterTask(TOF2);
-    //Serial.print(TOF1Output);
-    //Serial.print(" : ");
-    //Serial.println(TOF2Output);
+    Serial.print(TOF1Output);
+    Serial.print(" : ");
+    Serial.println(TOF2Output);
     filterNextRun += FILTERPERIOD;
   }
 

@@ -3,8 +3,8 @@
 #include <Arduino.h>
 
 //driving motors
-#define DRIVE1_PIN 0    //left
-#define DRIVE2_PIN 1    //right
+#define DRIVE1_PIN 1    //left
+#define DRIVE2_PIN 0    //right
 
 //fan blade motors
 #define FAN1_PIN 7 //RHS
@@ -60,6 +60,6 @@ void setFanSpeed(int speed) {
 }
 
 void motorTask() {
-    setDriveSpeed(0, 0);
+    setDriveSpeed(450, 450);
     setFanSpeed(450);
 }
