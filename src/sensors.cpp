@@ -2,10 +2,6 @@
 #include "sensor.h"
 #include "circBuf.h"
 
-#include <Wire.h>
-#include <VL53L0X.h>
-#include <SparkFunSX1509.h>
-
 //pins for ultrasound
 const int AtrigPin = 3;
 const int AechoPin = 2;
