@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "motor.h"
-#include "sensor.h"
+#include "Sensors.h"
 #include "filtering.h"
 #include <Wire.h>
 #include <VL53L0X.h>
@@ -43,7 +43,7 @@ void setup() {
   Wire.setClock(400000); // use 400 kHz I2C
 
   initMotors();
-  TOFinit(&io);
+  sensorInit(&io);
   filteringInit();
 
   tickMain = 0;
@@ -60,9 +60,9 @@ void loop() {
 
   if(tickCopy > motorNextRun) {
     motorNextRun += MOTORPERIOD;
-    Serial.print("doingmotorTask\n");
     motorTask();
   }
+  
   if(tickCopy > sensorNextRun) {
     sensorNextRun += SENSORPERIOD;
     sensorTask();
@@ -75,5 +75,5 @@ void loop() {
     Serial.println(TOF2Output);
     filterNextRun += FILTERPERIOD;
   }
-
+  
 }

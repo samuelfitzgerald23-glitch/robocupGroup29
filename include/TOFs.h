@@ -2,8 +2,8 @@
 //Date: 27/5/2026
 //Description: This file contains the declarations for the sensor reading functions.
 
-#ifndef SENSOR_H
-#define SENSOR_H
+#ifndef TOFS_H
+#define TOFS_H
 
 #include <Wire.h>
 #include <VL53L0X.h>
@@ -11,8 +11,6 @@
 
 void TOFinit(SX1509* io);
 
-void TOF();
+void TOF_task();
 
-void sensorTask();
-
-#endif // SENSOR_H
+#endif // TOFS_H
