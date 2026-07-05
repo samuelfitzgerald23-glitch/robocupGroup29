@@ -75,5 +75,4 @@ void loop() {
     Serial.println(TOF2Output);
     filterNextRun += FILTERPERIOD;
   }
-  
 }

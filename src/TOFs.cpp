@@ -2,13 +2,6 @@
 #include "TOFs.h"
 #include "circBuf.h"
 
-//pins for ultrasound
-const int AtrigPin = 3;
-const int AechoPin = 2;
-
-const int BtrigPin = 5;
-const int BechoPin = 4;
-
 //TOF sensor stuff
 #define VL53L0X_ADDRESS_START 0x30
 
