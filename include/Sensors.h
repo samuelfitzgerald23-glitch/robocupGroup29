@@ -8,6 +8,8 @@
 #include "TOFs.h"
 #include "IRCamera.h"
 
+void I2C_scan();
+
 void sensorInit(SX1509* io);
 
 void sensorTask();

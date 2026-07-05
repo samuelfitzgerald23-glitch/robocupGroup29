@@ -1,9 +1,9 @@
 #include "IRCamera.h"
 
-int IRsensorAddress = 0xB0;
-//int IRsensorAddress = 0x58;
+//int IRsensorAddress = 0xB0; //8 bit address
+int IRsensorAddress = 0x58; //7 bit address fund from I2C scan
 
-int slaveAddress;
+int slaveAddress = IRsensorAddress;
 int ledPin = 13;
 boolean ledState = false;
 byte data_buf[16];
@@ -24,7 +24,7 @@ void IRCamera_init() {
     pinMode(49, OUTPUT);                 //Pin 49 is used to enable IO power
     digitalWrite(49, 1);                 //Enable IO power on main CPU board
   
-    slaveAddress = IRsensorAddress >> 1;   // This results in 0x21 as the address to pass to TWI
+    //slaveAddress = IRsensorAddress >> 1;   // This results in 0x21 as the address to pass to TWI, needed is useing IR add = 0xB0
     pinMode(ledPin, OUTPUT);      // Set the LED pin as output
     Wire.begin();
     // IR sensor initialize
