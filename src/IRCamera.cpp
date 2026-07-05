@@ -11,7 +11,7 @@ int i;
  
 int Ix[4];
 int Iy[4];
-int s;
+int s[4];
  
 void Write_2bytes(byte d1, byte d2)
 {
@@ -57,27 +57,27 @@ void IRCamera_task() {
     //Manulapate data received into useable format
     Ix[0] = data_buf[1];
     Iy[0] = data_buf[2];
-    s   = data_buf[3];
-    Ix[0] += (s & 0x30) <<4;
-    Iy[0] += (s & 0xC0) <<2;
+    s[0]   = data_buf[3];
+    Ix[0] += (s[0] & 0x30) <<4;
+    Iy[0] += (s[0] & 0xC0) <<2;
  
     Ix[1] = data_buf[4];
     Iy[1] = data_buf[5];
-    s   = data_buf[6];
-    Ix[1] += (s & 0x30) <<4;
-    Iy[1] += (s & 0xC0) <<2;
+    s[1]   = data_buf[6];
+    Ix[1] += (s[1] & 0x30) <<4;
+    Iy[1] += (s[1] & 0xC0) <<2;
  
     Ix[2] = data_buf[7];
     Iy[2] = data_buf[8];
-    s   = data_buf[9];
-    Ix[2] += (s & 0x30) <<4;
-    Iy[2] += (s & 0xC0) <<2;
+    s[2]   = data_buf[9];
+    Ix[2] += (s[2] & 0x30) <<4;
+    Iy[2] += (s[2] & 0xC0) <<2;
  
     Ix[3] = data_buf[10];
     Iy[3] = data_buf[11];
-    s   = data_buf[12];
-    Ix[3] += (s & 0x30) <<4;
-    Iy[3] += (s & 0xC0) <<2;
+    s[3]   = data_buf[12];
+    Ix[3] += (s[3] & 0x30) <<4;
+    Iy[3] += (s[3] & 0xC0) <<2;
  
    //Display data on the serial port
     for(i=0; i<4; i++)
@@ -97,6 +97,8 @@ void IRCamera_task() {
       if (Iy[i] < 10) 
         Serial.print("");
       Serial.print( int(Iy[i]) );
+      Serial.print(",");
+      Serial.print(s[i]);
       if (i<3)
         Serial.print(",");
     }
