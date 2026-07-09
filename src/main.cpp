@@ -104,7 +104,7 @@ void setup() {
   digitalWrite(IO_POWER, 1);                 //Enable IO power on main CPU board
 
   // put your setup code here, to run once:
-  Serial.begin(115200);
+  Serial.begin(BAUD_RATE);
 
   io.begin(SX1509_ADDRESS);
 
