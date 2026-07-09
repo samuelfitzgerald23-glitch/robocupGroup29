@@ -15,15 +15,21 @@
 // Task period Definitions
 // ALL OF THESE VALUES WILL NEED TO BE SET TO SOMETHING USEFUL !!!!!!!!!!!!!!!!!!!!
 #define TOF_READ_TASK_PERIOD                5
-#define IRCAM_READ_TASK_PERIOD              10
+#define IRCAM_READ_TASK_PERIOD              11
+#define IMU_READ_TASK_PERIOD                13
+
 #define SENSOR_AVERAGE_PERIOD               50
-#define SET_MOTOR_TASK_PERIOD               10
+
+#define SET_MOTOR_TASK_PERIOD               31
 
 // Task execution amount definitions
 // -1 means indefinitely
 #define TOF_READ_TASK_NUM_EXECUTE          -1
 #define IRCAM_READ_TASK_NUM_EXECUTE        -1
+#define IMU_READ_TASK_NUM_EXECUTE          -1
+
 #define SENSOR_AVERAGE_NUM_EXECUTE         -1
+
 #define SET_MOTOR_TASK_NUM_EXECUTE         -1
 
 // Pin deffinitions
@@ -45,6 +51,8 @@ SX1509 io; // Create an SX1509 object to be used throughout
 // Tasks for reading sensors 
 Task tRead_TOF(TOF_READ_TASK_PERIOD,              TOF_READ_TASK_NUM_EXECUTE,        &TOF_task);
 Task tRead_IRCamera(IRCAM_READ_TASK_PERIOD,       IRCAM_READ_TASK_NUM_EXECUTE,      &IRCamera_task);
+Task tRead_IMU(IMU_READ_TASK_PERIOD,              IMU_READ_TASK_NUM_EXECUTE,        &IMU_task);
+
 Task tSensor_average(SENSOR_AVERAGE_PERIOD,       SENSOR_AVERAGE_NUM_EXECUTE,       &filterTask);
 
 // Task to set the motor speeds and direction
@@ -67,6 +75,7 @@ void task_init() {
   /*Sensors*/
   taskManager.addTask(tRead_TOF);
   taskManager.addTask(tRead_IRCamera);
+  taskManager.addTask(tRead_IMU);
 
   /*Background tasks*/
   taskManager.addTask(tSensor_average);
@@ -77,6 +86,7 @@ void task_init() {
   //enable the tasks
   tRead_TOF.enable();
   tRead_IRCamera.enable();
+  tRead_IMU.enable();
   tSensor_average.enable();
   tSet_motor.enable();
   //tCheck_watchdog.enable();
