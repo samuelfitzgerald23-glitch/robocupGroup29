@@ -22,6 +22,8 @@
 
 #define SET_MOTOR_TASK_PERIOD               31
 
+#define CHECK_WATCHDOG_TASK_PERIOD          40
+
 // Task execution amount definitions
 // -1 means indefinitely
 #define TOF_READ_TASK_NUM_EXECUTE          -1
@@ -31,6 +33,8 @@
 #define SENSOR_AVERAGE_NUM_EXECUTE         -1
 
 #define SET_MOTOR_TASK_NUM_EXECUTE         -1
+
+#define CHECK_WATCHDOG_TASK_NUM_EXECUTE    -1
 
 // Pin deffinitions
 #define IO_POWER  49
