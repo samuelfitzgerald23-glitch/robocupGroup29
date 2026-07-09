@@ -33,6 +33,7 @@ void setup() {
   initMotors();
   TOFinit();
   filteringInit();
+  IMU_init();
 
   tickMain = 0;
   tickTimer.priority(0);

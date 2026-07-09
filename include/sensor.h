@@ -5,9 +5,15 @@
 #ifndef SENSOR_H
 #define SENSOR_H
 
+#include <Adafruit_BNO055.h>
+
 void TOFinit();
+void IMU_init();
+
+void printIMUEvent(sensors_event_t* event);
 
 void TOF();
+void IMU_task();
 
 void sensorTask();
 
