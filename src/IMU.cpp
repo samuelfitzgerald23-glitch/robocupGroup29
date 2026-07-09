@@ -1,5 +1,11 @@
 #include "IMU.h"
 
+/*
+*TODO:
+*     integrate IMU to get heading
+*     Filter IMU
+*/
+
 /* Set the delay between fresh samples */
 uint16_t BNO055_SAMPLERATE_DELAY_MS = 100;
 

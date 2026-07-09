@@ -1,5 +1,13 @@
 #include "Sensors.h"
 
+
+/*
+known I2C addresses:
+IMU: 0x28
+IO board: 0x30
+TOFs: 
+*/
+
 void sensorInit(SX1509* io) {
 
     //Do I2C scan if cannot find address of I2C device
