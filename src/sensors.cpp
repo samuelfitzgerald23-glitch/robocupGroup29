@@ -9,11 +9,6 @@ void sensorInit(SX1509* io) {
     IRCamera_init();
 }
 
-void sensorTask() {
-    TOF_task();
-    IRCamera_task();
-}
-
 void I2C_scan() {
     //output of address is in 7 bits (typical I2C addressing), Wire wants 8 bits?
     byte error, add;

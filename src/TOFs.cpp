@@ -77,8 +77,7 @@ void TOF_task() {
       Serial.print(" TIMEOUT"); 
       Serial.print('\t');
     }
+    writeCircBuf(getBuf((BufID)i), TOF_reading[i]);
   }
   Serial.println();
-  writeCircBuf(getBuf(TOF1), TOF_reading[0]);
-  writeCircBuf(getBuf(TOF2), TOF_reading[1]);
 }

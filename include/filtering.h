@@ -12,6 +12,6 @@ void filteringInit(void);
 
 float signalAverage(circBuf_t *buffer);
 
-uint16_t filterTask(BufID ID);
+void filterTask();
 
 #endif // FILTERING_H

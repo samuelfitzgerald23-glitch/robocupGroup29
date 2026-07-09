@@ -21,9 +21,6 @@ void Write_2bytes(byte d1, byte d2)
 }
 
 void IRCamera_init() {
-    pinMode(49, OUTPUT);                 //Pin 49 is used to enable IO power
-    digitalWrite(49, 1);                 //Enable IO power on main CPU board
-  
     //slaveAddress = IRsensorAddress >> 1;   // This results in 0x21 as the address to pass to TWI, needed is useing IR add = 0xB0
     pinMode(ledPin, OUTPUT);      // Set the LED pin as output
     Wire.begin();

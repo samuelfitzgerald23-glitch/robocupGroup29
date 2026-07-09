@@ -1,6 +1,13 @@
 #include <stdint.h>
+#include <Arduino.h>
 #include "stdlib.h"
 #include "circBuf.h"
+
+static int16_t filteredOutputs[BUFFERCOUNT];
+
+int16_t* getFilteredOutputs() {
+    return filteredOutputs;
+}
 
 void filteringInit(void) {
     bufArrayInit();
@@ -14,6 +21,11 @@ float signalAverage(circBuf_t *buffer) {
     return sum/(buffer->size);
 }
 
-uint16_t filterTask(BufID ID) {
-    return (uint16_t)signalAverage(getBuf(ID));
+void filterTask() {
+    for (int i = 0; i < BUFFERCOUNT; i++){
+        filteredOutputs[i] = (int16_t)roundf(signalAverage(getBuf((BufID)i)));
+        Serial.print(filteredOutputs[i]);
+        Serial.print(", ");
+    }
+    Serial.println();
 }
