@@ -5,7 +5,8 @@
 #ifndef MAP_H
 #define MAP_H
 
-#include <stdint.h>
+#include "filtering.h"
+#include "locate.h"
 
 //meters -> decimeters
 #define DELTA 10
@@ -14,11 +15,23 @@
 #define ARENA_LENGTH 4
 
 #define X_MAX 2 * (ARENA_WIDTH*DELTA) + 1
-#define Y_MAX (ARENA_LENGTH*DELTA)
+#define Y_MAX (ARENA_LENGTH*DELTA) + 1
 
 #define X_ZERO ARENA_WIDTH*DELTA
+#define Y_ZERO 1
 
-void update_map(int8_t x, int8_t y, int8_t def);
-int8_t getPointDef(int8_t x, int8_t y);
+struct location_sensor_t {
+    int16_t SensorOutput;
+    BufID ID;
+    int radialOffset;   //mm
+    int angularOffset;  //deg
+};
+
+void update_map(pos_t* pos, int8_t def);
+int16_t getPointDef(pos_t* pos);
+
+void findWalls();
+
+void locationTask();
 
 #endif //MAP_H

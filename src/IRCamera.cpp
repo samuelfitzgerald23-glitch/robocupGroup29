@@ -77,28 +77,28 @@ void IRCamera_task() {
     Iy[3] += (s[3] & 0xC0) <<2;
  
    //Display data on the serial port
-    for(i=0; i<4; i++)
-    {
-      if (Ix[i] < 1000)
-        Serial.print("");
-      if (Ix[i] < 100) 
-        Serial.print("");
-      if (Ix[i] < 10) 
-        Serial.print("");
-      Serial.print( int(Ix[i]) );
-      Serial.print(",");
-      if (Iy[i] < 1000)
-        Serial.print("");
-      if (Iy[i] < 100) 
-        Serial.print("");
-      if (Iy[i] < 10) 
-        Serial.print("");
-      Serial.print( int(Iy[i]) );
-      Serial.print(",");
-      Serial.print(s[i]);
-      if (i<3)
-        Serial.print(",");
-    }
-    Serial.println("");
+    // for(i=0; i<4; i++)
+    // {
+    //   if (Ix[i] < 1000)
+    //     Serial.print("");
+    //   if (Ix[i] < 100) 
+    //     Serial.print("");
+    //   if (Ix[i] < 10) 
+    //     Serial.print("");
+    //   Serial.print( int(Ix[i]) );
+    //   Serial.print(",");
+    //   if (Iy[i] < 1000)
+    //     Serial.print("");
+    //   if (Iy[i] < 100) 
+    //     Serial.print("");
+    //   if (Iy[i] < 10) 
+    //     Serial.print("");
+    //   Serial.print( int(Iy[i]) );
+    //   Serial.print(",");
+    //   Serial.print(s[i]);
+    //   if (i<3)
+    //     Serial.print(",");
+    // }
+    // Serial.println("");
     delay(15);
 }

@@ -8,6 +8,8 @@
 #define BUFFERCOUNT 2
 #define BUFSIZE 5
 
+#include <stdint.h>
+
 enum BufID {
     TOF1,
     TOF2

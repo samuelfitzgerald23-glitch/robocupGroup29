@@ -5,7 +5,7 @@
 #ifndef LOCATE_H
 #define LOCATE_H
 
-#include "filtering.h"
+#include <stdint.h>
 
 struct pos_t {
     int16_t x;

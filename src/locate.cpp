@@ -16,9 +16,9 @@ void determineAbsPos(pos_vector_t* pos) {
     int16_t x_abs = (int16_t)std::round(std::cos(theta) * r) + last_pos.x;
     int16_t y_abs = (int16_t)std::round(std::sin(theta) * r) + last_pos.y;
 
-    pos->abs_pos.x = x_abs;
+    pos->abs_pos.x = x_abs; //dm
 
-    pos->abs_pos.y = y_abs;
+    pos->abs_pos.y = y_abs; //dm
 
     if (pos == &current_pos) updateLastPos();
 }
@@ -37,11 +37,11 @@ void calcSensorOutputPos(pos_vector_t* pos, int radialOffset, int angularOffset,
     int16_t r = std::round(std::sqrt((radialOffset * radialOffset) + (SensorOutput * SensorOutput) + 2 * radialOffset * SensorOutput * std::cos(180-angularOffset)));
     int16_t theta = std::round(std::acos(((r*r) + (SensorOutput*SensorOutput) - (radialOffset*radialOffset))/(2*radialOffset*SensorOutput)));
 
-    pos->r = r;
-    pos->theta = theta;
+    pos->r = r;             //mm
+    pos->theta = theta;     //deg
 }
 
 void calcMyLocalPos(int dist, int angle) {
-    current_pos.r = dist;
-    current_pos.theta = angle;
+    current_pos.r = dist;       //mm
+    current_pos.theta = angle;  //mm
 }

@@ -98,30 +98,30 @@ void IMU_task() {
   bno.getEvent(&accelerometerData, Adafruit_BNO055::VECTOR_ACCELEROMETER);
   bno.getEvent(&gravityData, Adafruit_BNO055::VECTOR_GRAVITY);
 
-  printIMUEvent(&orientationData);
-  printIMUEvent(&angVelocityData);
-  printIMUEvent(&linearAccelData);
-  printIMUEvent(&magnetometerData);
-  printIMUEvent(&accelerometerData);
-  printIMUEvent(&gravityData);
+  // printIMUEvent(&orientationData);
+  // printIMUEvent(&angVelocityData);
+  // printIMUEvent(&linearAccelData);
+  // printIMUEvent(&magnetometerData);
+  // printIMUEvent(&accelerometerData);
+  // printIMUEvent(&gravityData);
 
-  int8_t boardTemp = bno.getTemp();
-  Serial.println();
-  Serial.print(F("temperature: "));
-  Serial.println(boardTemp);
+  // int8_t boardTemp = bno.getTemp();
+  // Serial.println();
+  // Serial.print(F("temperature: "));
+  // Serial.println(boardTemp);
 
-  uint8_t system, gyro, accel, mag = 0;
-  bno.getCalibration(&system, &gyro, &accel, &mag);
-  Serial.println();
-  Serial.print("Calibration: Sys=");
-  Serial.print(system);
-  Serial.print(" Gyro=");
-  Serial.print(gyro);
-  Serial.print(" Accel=");
-  Serial.print(accel);
-  Serial.print(" Mag=");
-  Serial.println(mag);
+  // uint8_t system, gyro, accel, mag = 0;
+  // bno.getCalibration(&system, &gyro, &accel, &mag);
+  // Serial.println();
+  // Serial.print("Calibration: Sys=");
+  // Serial.print(system);
+  // Serial.print(" Gyro=");
+  // Serial.print(gyro);
+  // Serial.print(" Accel=");
+  // Serial.print(accel);
+  // Serial.print(" Mag=");
+  // Serial.println(mag);
 
-  Serial.println("--");
+  // Serial.println("--");
   delay(BNO055_SAMPLERATE_DELAY_MS);
 }

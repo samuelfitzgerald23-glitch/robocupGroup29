@@ -6,12 +6,13 @@
 #define FILTERING_H
 
 #include "circBuf.h"
-#include <stdint.h>
 
 void filteringInit(void);
 
 float signalAverage(circBuf_t *buffer);
 
 void filterTask();
+
+int16_t getOutput(BufID ID);
 
 #endif // FILTERING_H
