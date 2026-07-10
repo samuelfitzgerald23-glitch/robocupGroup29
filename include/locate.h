@@ -18,7 +18,15 @@ struct pos_vector_t {
     pos_t abs_pos;
 };
 
-void determinePos(pos_vector_t* pos);
+//for all pos
+void determineAbsPos(pos_vector_t* pos);
+
+//distance sensors only
+void calcSensorOutputPos(pos_vector_t* pos, int radialOffset, int angularOffset, int SensorOutput);
+
+//for total robot only
 pos_vector_t* getCurrentPos();
+void updateLastPos();
+void calcMyLocalPos(int dist, int angle);
 
 #endif //LOCATE_H
