@@ -9,25 +9,26 @@
 #include <algorithm>
 
 struct pos_t {
-    int x;
-    int y;
+    float x;
+    float y;
 };
 
 struct pos_vector_t {
-    float r;
-    float theta;
-    pos_t abs_pos;
+    float theta;    //can be deg or rad
+    pos_t pos;
 };
 
-//for all pos
+//transform from robot coords to world coords
 void determineAbsPos(pos_vector_t* pos);
 
-//distance sensors only
-void calcSensorOutputPos(pos_vector_t* pos, int radialOffset, int angularOffset, int SensorOutput);
+//transform sensor coords to robot coords
+pos_t calcSensorOutputPos(pos_vector_t* sensorMountingOffset, int SensorOutput);
 
 //for total robot only
 pos_vector_t* getCurrentPos();
 void updateLastPos();
+
+
 void calcMyLocalPos(int dist, int angle);
 
 #endif //LOCATE_H

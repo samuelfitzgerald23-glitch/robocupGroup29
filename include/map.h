@@ -20,6 +20,14 @@
 #define X_ZERO ARENA_WIDTH*DELTA
 #define Y_ZERO 1
 
+enum cell_t {
+    INVALID_CELL = -1,
+    MY_POS,
+    VALID_POS,
+    UNDEFINED_CELL,
+    WEIGHT
+};
+
 struct location_sensor_t {
     int16_t SensorOutput;
     BufID ID;
