@@ -9,19 +9,19 @@ add location task to task manager
 
 */
 
-static uint8_t mapData[Y_MAX][X_MAX];
+static int mapData[Y_MAX][X_MAX];
 
 static location_sensor_t filtered_sensors[BUFFERCOUNT] = {
-    {0, TOF1, 1, 30},
-    {0, TOF2, 1, -30}
+    {0, TOF1, 157, 35},
+    {0, TOF2, 175, -45}
 };
 
 void update_map(pos_t* pos, int8_t def) {
-    mapData[pos->y + Y_ZERO][pos->x + X_ZERO] = def;
+    mapData[std::clamp(pos->y + Y_ZERO, 0, Y_MAX-1)][std::clamp(pos->x + X_ZERO, 0, X_MAX-1)] = def;
 }
 
 int16_t getPointDef(pos_t* pos) {
-    return mapData[pos->y][pos->x + X_ZERO];
+    return mapData[std::clamp(pos->y + Y_ZERO, 0, Y_MAX-1)][std::clamp(pos->x + X_ZERO, 0, X_MAX-1)];
 }
 
 void findWalls() {
@@ -31,6 +31,21 @@ void findWalls() {
 
         calcSensorOutputPos(&sensorPOS, filtered_sensors[i].radialOffset, filtered_sensors[i].angularOffset, filtered_sensors[i].SensorOutput);
         determineAbsPos(&sensorPOS);
+
+        Serial.print("Distance: ");
+        Serial.print(filtered_sensors[i].SensorOutput);
+
+        Serial.print("  r: ");
+        Serial.print(sensorPOS.r);
+
+        Serial.print("  theta: ");
+        Serial.print(sensorPOS.theta, 3);
+
+        Serial.print("  x: ");
+        Serial.print(sensorPOS.abs_pos.x);
+
+        Serial.print("  y: ");
+        Serial.println(sensorPOS.abs_pos.y);
 
         update_map(&(sensorPOS.abs_pos), -1);
     }
@@ -45,6 +60,8 @@ void locationTask() {
             Serial.print(mapData[i][j]);
             Serial.print("\t"); // Use a tab character to separate columns cleanly
         }
-        Serial.println(); // Move to the next line after completing a row
+        Serial.print("y = "); // Move to the next line after completing a row
+        Serial.print(i);
+        Serial.println();
     }
 }

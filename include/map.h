@@ -9,7 +9,7 @@
 #include "locate.h"
 
 //meters -> decimeters
-#define DELTA 10
+#define DELTA 1
 
 #define ARENA_WIDTH 2
 #define ARENA_LENGTH 4

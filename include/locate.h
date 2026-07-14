@@ -6,15 +6,16 @@
 #define LOCATE_H
 
 #include <stdint.h>
+#include <algorithm>
 
 struct pos_t {
-    int16_t x;
-    int16_t y;
+    int x;
+    int y;
 };
 
 struct pos_vector_t {
-    int16_t r;
-    int16_t theta;
+    float r;
+    float theta;
     pos_t abs_pos;
 };
 
