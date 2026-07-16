@@ -1,66 +1,55 @@
 #include "map.h"
 #include <Arduino.h>
 
-/*
-
-TODO: 
-constrain x and y?
-add location task to task manager
-
-*/
-
-static int mapData[Y_MAX][X_MAX];
+static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 
 static location_sensor_t filtered_sensors[BUFFERCOUNT] = {
-    {0, TOF1, 157, 35},
-    {0, TOF2, 175, 360-45}
+    {TOF1, {0, {-10, 10}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset))},
+    {TOF2, {0, {10, 10}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset))}
 };
 
-void update_map(pos_t* pos, int8_t def) {
-    mapData[std::clamp((int)pos->y + Y_ZERO, 0, Y_MAX-1)][std::clamp((int)pos->x + X_ZERO, 0, X_MAX-1)] = def;
+static pos_vector_t worldOrigin = {0.0f, {0.0f, 0.0f}};
+
+static PoseMatrix robot_worldFrame;
+
+bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y) {
+    //converts world coords to map indeces, then returns true is point is on the map
+    grid_x = (int)roundf(world_x / CELL_SIZE) + X_ZERO;
+    grid_y = (int)roundf(world_y / CELL_SIZE) + Y_ZERO;
+    return(grid_x >= 0 && grid_x < GRID_WIDTH && grid_y >= 0 && grid_y < GRID_HEIGHT);
 }
 
-int16_t getPointDef(pos_t* pos) {
-    return mapData[std::clamp((int)pos->y + Y_ZERO, 0, Y_MAX-1)][std::clamp((int)pos->x + X_ZERO, 0, X_MAX-1)];
+void writeToMap(float world_x, float world_y, int8_t value) {
+    int gx, gy;
+    if (worldToGrid(world_x, world_y, gx, gy)) mapData[gy][gx] = value;
 }
 
-void findWalls() {
+void updatePose(pos_vector_t* Pose) {
+    //get new POS
+    PoseMatrix delta = PoseMatrix::buildFrame(Pose);
+    robot_worldFrame = robot_worldFrame.transformFrame(delta);
+
+    //write current POS
+    writeToMap(robot_worldFrame.x(), robot_worldFrame.y(), static_cast<int8_t>(WHERE_IVE_BEEN));
+}
+
+void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, bool isWeight) {
+    //transform sensor frame into world coords
+    PoseMatrix sensor_worldFrame = robot_worldFrame.transformFrame(sensor_robotFrame);
+
+    pos_t worldCoord;
+    sensor_worldFrame.transformCoords(sensorVector, worldCoord);
+
+    writeToMap(worldCoord.x, worldCoord.y, isWeight? static_cast<int8_t>(WEIGHT) : static_cast<int8_t>(INVALID_CELL));
+}
+
+void navigateTask() {
+    pos_vector_t robot_displacement = {0, {0, 0.1}};
+    updatePose(&robot_displacement);
+
     for (int i = 0; i < BUFFERCOUNT; i++) {
-        pos_vector_t sensorPOS;
-        filtered_sensors[i].SensorOutput = getOutput(filtered_sensors[i].ID);
+        pos_t sensorVector = {0, getOutput(filtered_sensors[i].ID)};
 
-        calcSensorOutputPos(&sensorPOS, filtered_sensors[i].SensorOutput);
-        determineAbsPos(&sensorPOS);
-
-        Serial.print("Distance: ");
-        Serial.print(filtered_sensors[i].SensorOutput);
-
-        Serial.print("  theta: ");
-        Serial.print(sensorPOS.theta, 3);
-
-        Serial.print("  x: ");
-        Serial.print(sensorPOS.pos.x);
-
-        Serial.print("  y: ");
-        Serial.println(sensorPOS.pos.y);
-
-        update_map(&(sensorPOS.pos), static_cast<int>(INVALID_CELL));
-    }
-}
-
-void locationTask() {
-
-    //delete when testing actual navigation
-    memset(mapData, 0, sizeof(mapData));
-    findWalls();    
-
-    for (int i = 0; i < Y_MAX; i++) {
-        for (int j = 0; j < X_MAX; j++) {
-            Serial.print(mapData[i][j]);
-            Serial.print("\t"); // Use a tab character to separate columns cleanly
-        }
-        Serial.print("y = "); // Move to the next line after completing a row
-        Serial.print(i);
-        Serial.println();
+        projectSensorHit(filtered_sensors[i].sensor_robotFrame, &sensorVector, 0);
     }
 }

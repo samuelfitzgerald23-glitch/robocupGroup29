@@ -1,0 +1,66 @@
+//Author: Samuel Fitzgerald
+//Date: 10/7/2026
+//Description: functions for finding stuff in terms of the robot
+
+#ifndef LOCATE_H
+#define LOCATE_H
+
+#include <stdint.h>
+#include <algorithm>
+#include <cmath>
+
+#define DEG_TO_RAD 3.14/180.0f
+
+struct pos_t {
+    float x;        //mm
+    float y;
+};
+
+struct pos_vector_t {
+    float theta;    //can be deg
+    pos_t pos;
+};
+
+struct PoseMatrix {
+    float frame[3][3];
+
+    static PoseMatrix buildFrame(pos_vector_t* pose_data) {
+        //build a frame from theta, x, and y
+        PoseMatrix M{};
+
+        float theta = pose_data->theta * DEG_TO_RAD;
+        float c = std::cos(theta); float s = std::sin(theta);
+
+        M.frame[0][0] = c; M.frame[0][1] = -s; M.frame[0][2] = pose_data->pos.x;
+        M.frame[1][0] = s; M.frame[1][1] = c; M.frame[1][2] = pose_data->pos.y;
+        M.frame[2][0] = 0; M.frame[2][1] = 0; M.frame[2][2] = 1;
+        return M;
+    }
+
+    PoseMatrix transformFrame(const PoseMatrix& delta) const {
+        //matrix multiplacation
+        PoseMatrix M{};
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                float sum = 0;
+                for (int k = 0; k < 3; k++) sum += frame[i][k] * delta.frame[k][j];
+                M.frame[i][j] = sum;
+            }
+        }
+    }
+
+    void transformCoords(pos_t* childPoint, pos_t& parentPoint) const {
+        //transform a set of coordinates from a child frame into a parent frame
+        //e.g. from sensor coordinates to world coordinates
+
+        parentPoint.x = frame[0][0] * childPoint->x + frame[0][1] * childPoint->y + frame[0][2];
+        parentPoint.y = frame[1][0] * childPoint->x + frame[1][1] * childPoint->y + frame[1][2];
+    }
+
+    //recover the robots overall heading, and x/y coords
+    float theta() const {return std::atan2(frame[1][0], frame[0][0]);}
+    float x() const {return frame[0][2];}
+    float y() const {return frame[1][2];}
+};
+
+#endif //LOCATE_H
