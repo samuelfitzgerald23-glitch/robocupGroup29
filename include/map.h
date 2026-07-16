@@ -12,7 +12,7 @@
 #define GRID_WIDTH  40
 #define GRID_HEIGHT 80
 
-#define CELL_SIZE 0.1f      //metres per cell
+#define CELL_SIZE 100.0f      //mm per cell
 
 #define X_ZERO GRID_WIDTH/2
 #define Y_ZERO 1
@@ -31,5 +31,14 @@ struct location_sensor_t {
     PoseMatrix sensor_robotFrame;   //pose matrix used for transforms
 };
 
+bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y);
+
+void writeToMap(float world_x, float world_y, int8_t value);
+
+void updatePose(pos_vector_t* Pose);
+
+void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, bool isWeight);
+
+void navigateTask();
 
 #endif //MAP_H

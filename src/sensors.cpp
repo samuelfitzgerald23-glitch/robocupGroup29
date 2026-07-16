@@ -14,7 +14,6 @@ void sensorInit(SX1509* io) {
     //I2C_scan();
 
     TOFinit(io);
-    IRCamera_init();
     IMU_init();
 }
 

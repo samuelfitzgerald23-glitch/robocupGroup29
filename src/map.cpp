@@ -10,17 +10,29 @@ static location_sensor_t filtered_sensors[BUFFERCOUNT] = {
 
 static pos_vector_t worldOrigin = {0.0f, {0.0f, 0.0f}};
 
-static PoseMatrix robot_worldFrame;
+static PoseMatrix robot_worldFrame = PoseMatrix::buildFrame(&worldOrigin);
 
 bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y) {
     //converts world coords to map indeces, then returns true is point is on the map
     grid_x = (int)roundf(world_x / CELL_SIZE) + X_ZERO;
     grid_y = (int)roundf(world_y / CELL_SIZE) + Y_ZERO;
+
+    Serial.print(" x= ");
+    Serial.print(grid_x);
+
+    Serial.print(" y= ");
+    Serial.println(grid_y);
+
     return(grid_x >= 0 && grid_x < GRID_WIDTH && grid_y >= 0 && grid_y < GRID_HEIGHT);
 }
 
 void writeToMap(float world_x, float world_y, int8_t value) {
     int gx, gy;
+
+    Serial.print("point defined as: ");
+    Serial.print(value);
+    Serial.print(" at:");
+
     if (worldToGrid(world_x, world_y, gx, gy)) mapData[gy][gx] = value;
 }
 
@@ -44,11 +56,14 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
 }
 
 void navigateTask() {
-    pos_vector_t robot_displacement = {0, {0, 0.1}};
+    //get how far robot have moved since the last time we did this
+    //heading from IMU, dx and dy from encoders or IR camera or smth
+    pos_vector_t robot_displacement = {45, {0, 0}};     //put sensor values in here in order {theta (deg), {dx, dy} (mm)}
     updatePose(&robot_displacement);
 
+    //find objects with the TOFs
     for (int i = 0; i < BUFFERCOUNT; i++) {
-        pos_t sensorVector = {0, getOutput(filtered_sensors[i].ID)};
+        pos_t sensorVector = {0, (float)getOutput(filtered_sensors[i].ID)};
 
         projectSensorHit(filtered_sensors[i].sensor_robotFrame, &sensorVector, 0);
     }

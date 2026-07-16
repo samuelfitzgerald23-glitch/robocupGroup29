@@ -6,7 +6,6 @@
 #define SENSOR_H
 
 #include "TOFs.h"
-#include "IRCamera.h"
 #include "IMU.h"
 
 void I2C_scan();

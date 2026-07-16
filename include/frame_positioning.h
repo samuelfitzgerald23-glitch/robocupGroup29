@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <cmath>
 
-#define DEG_TO_RAD 3.14/180.0f
+#define DEG_TO_RAD (3.14/180.0f)
 
 struct pos_t {
     float x;        //mm
@@ -47,6 +47,7 @@ struct PoseMatrix {
                 M.frame[i][j] = sum;
             }
         }
+        return M;
     }
 
     void transformCoords(pos_t* childPoint, pos_t& parentPoint) const {
