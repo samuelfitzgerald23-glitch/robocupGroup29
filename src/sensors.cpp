@@ -15,6 +15,7 @@ void sensorInit(SX1509* io) {
 
     TOFinit(io);
     IMU_init();
+    init_optical_flow();
 }
 
 void I2C_scan() {

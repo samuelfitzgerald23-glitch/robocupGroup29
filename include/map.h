@@ -1,12 +1,13 @@
 //Author: Samuel Fitzgerald
 //Date: 10/7/2026
-//Description: functions for transforming robot coords to occupancy grid
+//Description: functions for transforming world coords to occupancy grid
 
 #ifndef MAP_H
 #define MAP_H
 
 #include "filtering.h"
 #include "frame_positioning.h"
+#include "xy_optical.h"
 
 //meters -> decimeters
 #define GRID_WIDTH  40

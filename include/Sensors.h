@@ -7,6 +7,7 @@
 
 #include "TOFs.h"
 #include "IMU.h"
+#include "xy_optical.h"
 
 void I2C_scan();
 

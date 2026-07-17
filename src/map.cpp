@@ -37,6 +37,9 @@ void writeToMap(float world_x, float world_y, int8_t value) {
 }
 
 void updatePose(pos_vector_t* Pose) {
+    //overwrite last pos
+    writeToMap(robot_worldFrame.x(), robot_worldFrame.y(), static_cast<int8_t>(VALID_POS));
+
     //get new POS
     PoseMatrix delta = PoseMatrix::buildFrame(Pose);
     robot_worldFrame = robot_worldFrame.transformFrame(delta);
@@ -58,7 +61,9 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
 void navigateTask() {
     //get how far robot have moved since the last time we did this
     //heading from IMU, dx and dy from encoders or IR camera or smth
-    pos_vector_t robot_displacement = {45, {0, 0}};     //put sensor values in here in order {theta (deg), {dx, dy} (mm)}
+    pos_vector_t robot_displacement = {0, {0, 0}};                          //initialise the robots pos with respect to its last pos
+    read_opticalFlow(robot_displacement.pos.x, robot_displacement.pos.y);   //get x and y from optical encoder
+
     updatePose(&robot_displacement);
 
     //find objects with the TOFs
