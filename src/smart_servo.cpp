@@ -36,30 +36,67 @@ uint16_t getServoPosition()
     return servo.getPosition();
 }
 
+// void servoTask()
+// {
+//     uint16_t currentPosition;
+    
+//     servoBus.update();
+
+//     setServoPosition(WANTED_WEIGHT);
+//     currentPosition = getServoPosition();
+//     Serial.print("Current position: ");
+//     Serial.println(currentPosition);
+
+//     delay(2000);
+
+//     setServoPosition(NEUTRAL);
+//     currentPosition = getServoPosition();
+//     Serial.print("Current position: ");
+//     Serial.println(currentPosition);
+
+//     delay(2000);
+
+//     setServoPosition(UNWANTED_WEIGHT);
+//     currentPosition = getServoPosition();
+//     Serial.print("Current position: ");
+//     Serial.println(currentPosition);
+
+//     //logic for moving to specific position depending on proximity sensor output
+// }
+
 void servoTask()
 {
-    uint16_t currentPosition;
-    
     servoBus.update();
 
-    setServoPosition(WANTED_WEIGHT);
-    currentPosition = getServoPosition();
-    Serial.print("Current position: ");
-    Serial.println(currentPosition);
+    static uint32_t lastChange = 0;
+    static uint8_t state = 0;
 
-    delay(2000);
+    if (millis() - lastChange > 2000)
+    {
+        switch(state)
+        {
+            case 0:
+                setServoPosition(WANTED_WEIGHT);
+                break;
 
-    setServoPosition(NEUTRAL);
-    currentPosition = getServoPosition();
-    Serial.print("Current position: ");
-    Serial.println(currentPosition);
+            case 1:
+                setServoPosition(NEUTRAL);
+                break;
 
-    delay(2000);
+            case 2:
+                setServoPosition(UNWANTED_WEIGHT);
+                break;
 
-    setServoPosition(UNWANTED_WEIGHT);
-    currentPosition = getServoPosition();
-    Serial.print("Current position: ");
-    Serial.println(currentPosition);
+            case 3:
+                setServoPosition(NEUTRAL);
+                break;
+        }
 
-    //logic for moving to specific position depending on proximity sensor output
+        state++;
+
+        if(state > 3)
+            state = 0;
+
+        lastChange = millis();
+    }
 }

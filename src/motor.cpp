@@ -12,6 +12,7 @@
 #define FAN2_PIN 8 //LHS
 #define FAN_OFFSET 180
 
+//some change to see if it pushes to correct branch
 
 
 //motor speed limits
@@ -25,7 +26,6 @@ static Servo Drive2;
 static Servo Fan1;
 static Servo Fan2;
 
-
 void initMotors() {
     // Assign motor pins to servo objects
     Drive1.attach(DRIVE1_PIN);
@@ -38,9 +38,7 @@ void initMotors() {
 
     Fan1.writeMicroseconds(STOP);
     Fan2.writeMicroseconds(STOP);
-
-    initSmartServo();
-}  
+}
 
 void setDriveSpeed(int speed1, int speed2) {
     int pulseWidth1 = STOP - speed1;
@@ -64,10 +62,7 @@ void setFanSpeed(int speed) {
     Fan2.writeMicroseconds(pulse2);
 }
 
-
 void motorTask() {
     setDriveSpeed(0, 0);
-    //setFanSpeed(450);
-    //servoTask();
-    Serial.print("doingmotortask");
+    setFanSpeed(450);
 }
