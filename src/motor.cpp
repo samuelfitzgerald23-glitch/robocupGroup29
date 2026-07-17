@@ -1,5 +1,6 @@
 #include <Servo.h>
 #include "motor.h"
+#include "smart_servo.h"
 #include <Arduino.h>
 
 //driving motors
@@ -11,7 +12,6 @@
 #define FAN2_PIN 8 //LHS
 #define FAN_OFFSET 180
 
-//some change to see if it pushes to correct branch
 
 
 //motor speed limits
@@ -25,20 +25,22 @@ static Servo Drive2;
 static Servo Fan1;
 static Servo Fan2;
 
+
 void initMotors() {
     // Assign motor pins to servo objects
     Drive1.attach(DRIVE1_PIN);
     Drive2.attach(DRIVE2_PIN);
     Fan1.attach(FAN1_PIN);
     Fan2.attach(FAN2_PIN);
-
     // Stop drive motors initially
     Drive1.writeMicroseconds(STOP);
     Drive2.writeMicroseconds(STOP);
 
     Fan1.writeMicroseconds(STOP);
     Fan2.writeMicroseconds(STOP);
-}
+
+    initSmartServo();
+}  
 
 void setDriveSpeed(int speed1, int speed2) {
     int pulseWidth1 = STOP - speed1;
@@ -62,7 +64,10 @@ void setFanSpeed(int speed) {
     Fan2.writeMicroseconds(pulse2);
 }
 
+
 void motorTask() {
     setDriveSpeed(0, 0);
-    setFanSpeed(450);
+    //setFanSpeed(450);
+    servoTask();
+    Serial.print("doingmotortask");
 }
