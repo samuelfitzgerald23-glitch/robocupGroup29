@@ -9,8 +9,6 @@
 #include <algorithm>
 #include <cmath>
 
-#define DEG_TO_RAD (3.14/180.0f)
-
 //just an x,y pos
 struct pos_t {
     float x;        //mm
@@ -35,7 +33,7 @@ struct PoseMatrix {
         //build a frame from theta, x, and y
         PoseMatrix M{};
 
-        float theta = pose_data->theta * DEG_TO_RAD;
+        float theta = pose_data->theta;
         float c = std::cos(theta); float s = std::sin(theta);
 
         M.frame[0][0] = c; M.frame[0][1] = -s; M.frame[0][2] = pose_data->pos.x;

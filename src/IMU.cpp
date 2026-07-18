@@ -12,6 +12,8 @@ uint16_t BNO055_SAMPLERATE_DELAY_MS = 100;
 //2 possible addresses A (0x28) and B (0x29)
 Adafruit_BNO055 bno = Adafruit_BNO055(55, BNO055_ADDRESS_A, &Wire1);
 
+sensors_event_t orientationData , angVelocityData , linearAccelData, magnetometerData, accelerometerData, gravityData;
+
 void IMU_init() {
   /* Initialise the sensor */
   if (!bno.begin())
@@ -90,11 +92,9 @@ void printIMUEvent(sensors_event_t* event) {
 
 void IMU_task() {
   //could add VECTOR_ACCELEROMETER, VECTOR_MAGNETOMETER,VECTOR_GRAVITY...
-  sensors_event_t orientationData , angVelocityData , linearAccelData, magnetometerData, accelerometerData, gravityData;
   bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
   bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
   bno.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
-  bno.getEvent(&magnetometerData, Adafruit_BNO055::VECTOR_MAGNETOMETER);
   bno.getEvent(&accelerometerData, Adafruit_BNO055::VECTOR_ACCELEROMETER);
   bno.getEvent(&gravityData, Adafruit_BNO055::VECTOR_GRAVITY);
 
@@ -125,3 +125,5 @@ void IMU_task() {
   // Serial.println("--");
   delay(BNO055_SAMPLERATE_DELAY_MS);
 }
+
+float getHeading() {return (float)orientationData->orientation.x;}

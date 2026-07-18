@@ -7,6 +7,6 @@
 
 void init_optical_flow();
 
-void read_opticalFlow(float& deltaX, float& deltaY);
+void read_opticalFlow(float& deltaX, float& deltaY, float theta);
 
 #endif //XY_OPTICAL_H

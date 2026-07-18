@@ -1,6 +1,10 @@
 #include "map.h"
 #include <Arduino.h>
 
+#define DEG_TO_RAD (3.14/180.0f)
+
+static float prev_heading = 0;
+
 static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 
 static location_sensor_t filtered_sensors[BUFFERCOUNT] = {
@@ -61,8 +65,14 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
 void navigateTask() {
     //get how far robot have moved since the last time we did this
     //heading from IMU, dx and dy from encoders or IR camera or smth
-    pos_vector_t robot_displacement = {0, {0, 0}};                          //initialise the robots pos with respect to its last pos
-    read_opticalFlow(robot_displacement.pos.x, robot_displacement.pos.y);   //get x and y from optical encoder
+    float heading = getHeading();
+    float differential_heading = prev_heading - heading;
+    prev_heading = heading;
+
+    pos_vector_t robot_displacement = {differential_heading, {0, 0}};
+    robot_displacement.theta *= DEG_TO_RAD;
+    read_opticalFlow(robot_displacement.pos.x, robot_displacement.pos.y, robot_displacement.theta);
+
 
     updatePose(&robot_displacement);
 

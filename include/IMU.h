@@ -16,4 +16,6 @@ void printIMUEvent(sensors_event_t* event);
 
 void IMU_task();
 
+float getHeading();
+
 #endif //IMU_H
