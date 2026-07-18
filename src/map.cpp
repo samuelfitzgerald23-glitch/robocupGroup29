@@ -1,15 +1,15 @@
 #include "map.h"
 #include <Arduino.h>
 
-#define DEG_TO_RAD (3.14/180.0f)
+#define DEG_TO_RAD 0.0174f
 
 static float prev_heading = 0;
 
 static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 
 static location_sensor_t filtered_sensors[BUFFERCOUNT] = {
-    {TOF1, {0, {-10, 10}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset))},
-    {TOF2, {0, {10, 10}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset))}
+    {TOF1, {0, {-100, 136}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset))},
+    {TOF2, {0, {100, 136}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset))}
 };
 
 static pos_vector_t worldOrigin = {0.0f, {0.0f, 0.0f}};
@@ -62,17 +62,23 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
     writeToMap(worldCoord.x, worldCoord.y, isWeight? static_cast<int8_t>(WEIGHT) : static_cast<int8_t>(INVALID_CELL));
 }
 
-void navigateTask() {
+void poseTask() {
     //get how far robot have moved since the last time we did this
     //heading from IMU, dx and dy from encoders or IR camera or smth
     float heading = getHeading();
-    float differential_heading = prev_heading - heading;
+    float differential_heading = DEG_TO_RAD * (prev_heading - heading);
     prev_heading = heading;
 
     pos_vector_t robot_displacement = {differential_heading, {0, 0}};
-    robot_displacement.theta *= DEG_TO_RAD;
-    read_opticalFlow(robot_displacement.pos.x, robot_displacement.pos.y, robot_displacement.theta);
+    read_opticalFlow(robot_displacement.pos.x, robot_displacement.pos.y, differential_heading);
 
+    Serial.println("Robot coords");
+    Serial.print("heading: ");
+    Serial.print(differential_heading);
+    Serial.print(", x: ");
+    Serial.print(robot_displacement.pos.x);
+    Serial.print(", y: ");
+    Serial.println(robot_displacement.pos.y);
 
     updatePose(&robot_displacement);
 
@@ -82,4 +88,12 @@ void navigateTask() {
 
         projectSensorHit(filtered_sensors[i].sensor_robotFrame, &sensorVector, 0);
     }
+
+    Serial.println("World coords");
+    Serial.print("heading: ");
+    Serial.print(robot_worldFrame.theta());
+    Serial.print(", x: ");
+    Serial.print(robot_worldFrame.x());
+    Serial.print(", y: ");
+    Serial.println(robot_worldFrame.y());
 }

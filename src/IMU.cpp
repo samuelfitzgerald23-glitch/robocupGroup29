@@ -126,4 +126,4 @@ void IMU_task() {
   delay(BNO055_SAMPLERATE_DELAY_MS);
 }
 
-float getHeading() {return (float)orientationData->orientation.x;}
+float getHeading() {return (float)orientationData.orientation.x;}

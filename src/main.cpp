@@ -58,7 +58,7 @@ Task tRead_TOF(TOF_READ_TASK_PERIOD,              TOF_READ_TASK_NUM_EXECUTE,    
 Task tRead_IMU(IMU_READ_TASK_PERIOD,              IMU_READ_TASK_NUM_EXECUTE,        &IMU_task);
 
 Task tSensor_average(SENSOR_AVERAGE_PERIOD,       SENSOR_AVERAGE_NUM_EXECUTE,       &filterTask);
-Task tLocate_task(LOCATION_TASK_PERIOD,           LOCATION_TASK_NUM_EXECUTE,        &navigateTask);
+Task tLocate_task(LOCATION_TASK_PERIOD,           LOCATION_TASK_NUM_EXECUTE,        &poseTask);
 
 // Task to set the motor speeds and direction
 Task tSet_motor(SET_MOTOR_TASK_PERIOD,            SET_MOTOR_TASK_NUM_EXECUTE,       &motorTask);

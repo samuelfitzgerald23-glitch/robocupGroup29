@@ -8,6 +8,7 @@
 #include "filtering.h"
 #include "frame_positioning.h"
 #include "xy_optical.h"
+#include "IMU.h"
 
 //meters -> decimeters
 #define GRID_WIDTH  40
@@ -40,6 +41,6 @@ void updatePose(pos_vector_t* Pose);
 
 void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, bool isWeight);
 
-void navigateTask();
+void poseTask();
 
 #endif //MAP_H
