@@ -11,6 +11,7 @@
 #include <stdint.h>
 
 enum BufID {
+    NON_FILTERED = -1,
     TOF1,
     TOF2
 };
