@@ -19,16 +19,20 @@ static pos_vector_t worldOrigin = {0.0f, {0.0f, 0.0f}};
 
 static PoseMatrix robot_worldFrame = PoseMatrix::buildFrame(&worldOrigin);
 
+static void logCell(int gx, int gy, int8_t value) {
+    Serial.print("C, "); Serial.print(gx); Serial.print(", "); Serial.print(gy);
+    Serial.print(", "); Serial.println(value);
+}
+
+static void logPose(float theta, float x, float y) {
+    Serial.print("P, "); Serial.print(theta, 4); Serial.print(", ");
+    Serial.print(x, 2); Serial.print(", "); Serial.print(y, 2);
+}
+
 bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y) {
     //converts world coords to map indeces, then returns true is point is on the map
     grid_x = (int)roundf(world_x / CELL_SIZE) + X_ZERO;
     grid_y = (int)roundf(world_y / CELL_SIZE) + Y_ZERO;
-
-    Serial.print(" x = ");
-    Serial.print(grid_x);
-
-    Serial.print(" y = ");
-    Serial.println(grid_y);
 
     return(grid_x >= 0 && grid_x < GRID_WIDTH && grid_y >= 0 && grid_y < GRID_HEIGHT);
 }
@@ -36,11 +40,10 @@ bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y) {
 void writeToMap(float world_x, float world_y, int8_t value) {
     int gx, gy;
 
-    Serial.print("point defined as: ");
-    Serial.print(value);
-    Serial.print(" at:");
-
-    if (worldToGrid(world_x, world_y, gx, gy)) mapData[gy][gx] = value;
+    if (worldToGrid(world_x, world_y, gx, gy)) {
+        mapData[gy][gx] = value;
+        logCell(gx, gy, value);
+    }
 }
 
 void updatePose(pos_vector_t* Pose) {
@@ -82,19 +85,9 @@ void poseTask() {
     //put x and y reading from optical flow sensor into a displacement vector
     pos_t displacement;
     read_opticalFlow(displacement.x, displacement.y);
-    Serial.println("raw (x, y)");
-    Serial.print(displacement.x);
-    Serial.println(displacement.y);
 
     pos_vector_t robot_displacement = {differential_heading, projectOpticalFlow(opticalFlow_sensor.sensor_robotFrame, &displacement)};
 
-    Serial.println("Robot coords");
-    Serial.print("heading: ");
-    Serial.print(differential_heading);
-    Serial.print(", x: ");
-    Serial.print(robot_displacement.pos.x);
-    Serial.print(", y: ");
-    Serial.println(robot_displacement.pos.y);
 
     updatePose(&robot_displacement);
 
@@ -105,11 +98,5 @@ void poseTask() {
         projectSensorHit(filtered_sensors[i].sensor_robotFrame, &sensorVector, 0);
     }
 
-    Serial.println("World coords");
-    Serial.print("heading: ");
-    Serial.print(robot_worldFrame.theta());
-    Serial.print(", x: ");
-    Serial.print(robot_worldFrame.x());
-    Serial.print(", y: ");
-    Serial.println(robot_worldFrame.y());
+    logPose(robot_worldFrame.theta(), robot_worldFrame.x(), robot_worldFrame.y());
 }
