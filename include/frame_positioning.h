@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <cmath>
 
+#define D_TO_R (3.14f/180.0f)
+
 //just an x,y pos
 struct pos_t {
     float x;        //mm
@@ -33,7 +35,7 @@ struct PoseMatrix {
         //build a frame from theta, x, and y
         PoseMatrix M{};
 
-        float theta = pose_data->theta;
+        float theta = pose_data->theta * D_TO_R;            //convert theta to rad
         float c = std::cos(theta); float s = std::sin(theta);
 
         M.frame[0][0] = c; M.frame[0][1] = -s; M.frame[0][2] = pose_data->pos.x;
@@ -64,6 +66,11 @@ struct PoseMatrix {
 
         parentPoint.x = frame[0][0] * childPoint->x + frame[0][1] * childPoint->y + frame[0][2];
         parentPoint.y = frame[1][0] * childPoint->x + frame[1][1] * childPoint->y + frame[1][2];
+    }
+
+    void rotateVector(pos_t* childVector, pos_t& parentVector) const {
+        parentVector.x = frame[0][0] * childVector->x + frame[0][1] * childVector->y;
+        parentVector.y = frame[1][0] * childVector->x + frame[1][1] * childVector->y;
     }
 
     //recover the robots overall heading, and x/y coords

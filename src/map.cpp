@@ -68,7 +68,7 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
 pos_t projectOpticalFlow(const PoseMatrix& optical_robotFrame, pos_t* sensorVector) {
     //project the reading from the optical flow sensor into robot coords
     pos_t robotCoord;
-    optical_robotFrame.transformCoords(sensorVector, robotCoord);
+    optical_robotFrame.rotateVector(sensorVector, robotCoord);
     return robotCoord;
 }
 
@@ -76,7 +76,7 @@ void poseTask() {
     //get how far robot have moved since the last time we did this
     //heading from IMU, dx and dy from encoders or IR camera or smth
     float heading = getHeading();
-    float differential_heading = DEG_TO_RAD * (prev_heading - heading);     //convert differential heading to rad
+    float differential_heading = prev_heading - heading;
     prev_heading = heading;
 
     //put x and y reading from optical flow sensor into a displacement vector
