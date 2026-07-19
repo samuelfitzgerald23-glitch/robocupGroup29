@@ -82,8 +82,9 @@ void poseTask() {
     //put x and y reading from optical flow sensor into a displacement vector
     pos_t displacement;
     read_opticalFlow(displacement.x, displacement.y);
+    Serial.println("raw (x, y)");
     Serial.print(displacement.x);
-    Serial.print(displacement.y);
+    Serial.println(displacement.y);
 
     pos_vector_t robot_displacement = {differential_heading, projectOpticalFlow(opticalFlow_sensor.sensor_robotFrame, &displacement)};
 
