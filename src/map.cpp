@@ -19,6 +19,10 @@ static pos_vector_t worldOrigin = {0.0f, {0.0f, 0.0f}};
 
 static PoseMatrix robot_worldFrame = PoseMatrix::buildFrame(&worldOrigin);
 
+/*******************************************************************************************************************************************************************************************
+ * converting to grid
+ */
+
 static void logCell(int gx, int gy, int8_t value) {
     Serial.print("C, "); Serial.print(gx); Serial.print(", "); Serial.print(gy);
     Serial.print(", "); Serial.println(value);
@@ -38,6 +42,7 @@ bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y) {
 }
 
 void writeToMap(float world_x, float world_y, int8_t value) {
+    //write a value to a cell on the map
     int gx, gy;
 
     if (worldToGrid(world_x, world_y, gx, gy)) {
@@ -45,6 +50,31 @@ void writeToMap(float world_x, float world_y, int8_t value) {
         logCell(gx, gy, value);
     }
 }
+
+static void rayTraceFree(int x0, int y0, int x1, int y1) {
+    int dx = abs(x1- x0), sx = x0 < x1 ? 1 : -1;
+    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int error = dx + dy;
+    int x = x0, y = y0;
+
+    while (!(x == x1 && y == y1)) {
+        int e2 = 2 * error;
+        if (e2 >= dy) {error += dy; x += sx;}
+        if (e2 <= dx) {error += dx; y += sy;}
+        if (x == x1 && y == y1) break;
+
+        if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
+            if (mapData[y][x] != static_cast<int8_t>(WEIGHT)) {
+                mapData[y][x] = static_cast<int8_t>(VALID_POS);
+                logCell(x, y, static_cast<int8_t>(VALID_POS));
+            }
+        }
+    }
+}
+
+/*****************************************************************************************************************************************************************************************
+ * projecting pose
+ */
 
 void updatePose(pos_vector_t* Pose) {
     //overwrite last pos
@@ -65,6 +95,13 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
     pos_t worldCoord;
     sensor_worldFrame.transformCoords(sensorVector, worldCoord);
 
+    if (!isWeight) {
+        int xr, yr, xw, yw;
+        worldToGrid(robot_worldFrame.x(), robot_worldFrame.y(), xr, yr);
+        worldToGrid(worldCoord.x, worldCoord.y, xw, yw);
+        rayTraceFree(xr, yr, xw, yw);
+    }
+
     writeToMap(worldCoord.x, worldCoord.y, isWeight? static_cast<int8_t>(WEIGHT) : static_cast<int8_t>(INVALID_CELL));
 }
 
@@ -74,6 +111,10 @@ pos_t projectOpticalFlow(const PoseMatrix& optical_robotFrame, pos_t* sensorVect
     optical_robotFrame.rotateVector(sensorVector, robotCoord);
     return robotCoord;
 }
+
+/*************************************************************************************************************************************************************************************************
+ * overall func
+ */
 
 void poseTask() {
     //get how far robot have moved since the last time we did this
