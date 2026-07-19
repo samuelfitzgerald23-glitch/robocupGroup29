@@ -9,9 +9,9 @@ HerkulexServoBus servoBus(Serial7);
 HerkulexServo servo(servoBus, 1);
 
 //resolution is 0-1023
-#define WANTED_WEIGHT 235 //-90 deg
-#define UNWANTED_WEIGHT 789 // 90 deg
-#define NEUTRAL 512 //0 deg (?)
+#define WANTED_WEIGHT 130 //-90 deg
+#define UNWANTED_WEIGHT 530 // 90 deg
+#define NEUTRAL 330 //0 deg (?)
 
 void initSmartServo()
 {
@@ -99,4 +99,7 @@ void servoTask()
 
         lastChange = millis();
     }
+
+    Serial.print("Current position: ");
+    Serial.println(getServoPosition());
 }
