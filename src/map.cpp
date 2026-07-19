@@ -55,7 +55,7 @@ void updatePose(pos_vector_t* Pose) {
     robot_worldFrame = robot_worldFrame.transformFrame(delta);
 
     //write current POS
-    writeToMap(robot_worldFrame.x(), robot_worldFrame.y(), static_cast<int8_t>(WHERE_IVE_BEEN));
+    writeToMap(robot_worldFrame.x(), robot_worldFrame.y(), static_cast<int8_t>(MY_POS));
 }
 
 void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, bool isWeight) {

@@ -21,9 +21,9 @@
 
 enum cell_t {
     INVALID_CELL = -1,
-    WHERE_IVE_BEEN,
-    VALID_POS,
     UNDEFINED_CELL,
+    MY_POS,
+    VALID_POS,
     WEIGHT
 };
 
