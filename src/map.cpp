@@ -84,7 +84,7 @@ void poseTask() {
 
     //put x and y reading from optical flow sensor into a displacement vector
     pos_t displacement;
-    read_opticalFlow(displacement.x, displacement.y);
+    read_opticalFlow(displacement.y, displacement.x);
 
     pos_vector_t robot_displacement = {differential_heading, projectOpticalFlow(opticalFlow_sensor.sensor_robotFrame, &displacement)};
 
