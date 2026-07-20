@@ -41,7 +41,7 @@ void updatePose(pos_vector_t* Pose);
 
 void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, bool isWeight);
 
-pos_t projectOpticalFlow(const PoseMatrix& optical_robotFrame, pos_t* sensorVector, float theta, pos_t* sensorOffset);
+pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sensorVector, float theta);
 
 void poseTask();
 
