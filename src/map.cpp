@@ -105,10 +105,20 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
     writeToMap(worldCoord.x, worldCoord.y, isWeight? static_cast<int8_t>(WEIGHT) : static_cast<int8_t>(INVALID_CELL));
 }
 
-pos_t projectOpticalFlow(const PoseMatrix& optical_robotFrame, pos_t* sensorVector) {
+pos_t projectOpticalFlow(const PoseMatrix& optical_robotFrame, pos_t* sensorVector, float theta, pos_t* sensorOffset) {
     //project the reading from the optical flow sensor into robot coords
     pos_t robotCoord;
     optical_robotFrame.rotateVector(sensorVector, robotCoord);
+
+    //correct for arc rotation caused by sensor offset
+    theta = theta * D_TO_R;
+    float c = std::cos(theta), s = std::sin(theta);
+    float corr_x = (c - 1.0f) * sensorOffset->x - s * sensorOffset->y;
+    float corr_y = s * sensorOffset->x + (c - 1.0f) * sensorOffset->y;
+
+    robotCoord.x -= corr_x;
+    robotCoord.y -= corr_y;
+
     return robotCoord;
 }
 
@@ -127,8 +137,10 @@ void poseTask() {
     pos_t displacement;
     read_opticalFlow(displacement.y, displacement.x);
 
-    pos_vector_t robot_displacement = {differential_heading, projectOpticalFlow(opticalFlow_sensor.sensor_robotFrame, &displacement)};
-
+    pos_vector_t robot_displacement = {
+        differential_heading,
+        projectOpticalFlow(opticalFlow_sensor.sensor_robotFrame, &displacement, differential_heading, &opticalFlow_sensor.offset.pos)
+    };
 
     updatePose(&robot_displacement);
 

@@ -69,6 +69,8 @@ struct PoseMatrix {
     }
 
     void rotateVector(pos_t* childVector, pos_t& parentVector) const {
+        //take a vector and rotate it from 1 frame to another
+        //e.g. rotate the vector from the optical flow sensor into the robots frame of ref
         parentVector.x = frame[0][0] * childVector->x + frame[0][1] * childVector->y;
         parentVector.y = frame[1][0] * childVector->x + frame[1][1] * childVector->y;
     }
