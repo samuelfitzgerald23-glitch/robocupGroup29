@@ -102,3 +102,8 @@ void IMU_task() {
 }
 
 float getHeading() {return (float)orientationData.orientation.x;}
+
+float intergrateIMU(float timestep) {
+  float omega = (float)angVelocityData.gyro.z;
+  return omega * timestep;
+}
