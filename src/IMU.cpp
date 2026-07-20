@@ -14,6 +14,18 @@ Adafruit_BNO055 bno = Adafruit_BNO055(55, BNO055_ADDRESS_A, &Wire1);
 
 sensors_event_t orientationData , angVelocityData , linearAccelData, magnetometerData, accelerometerData, gravityData;
 
+static float gyroBias = 0;
+
+void calibrate_gyroBias(int num_samples) {
+  float sum = 0;
+  for (int i = 0; i < num_samples; i++) {
+    bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
+    sum += (float)angVelocityData.gyro.z;
+    delay(5);
+  }
+  gyroBias = sum/num_samples;
+}
+
 void IMU_init() {
   /* Initialise the sensor */
   if (!bno.begin())
@@ -22,6 +34,8 @@ void IMU_init() {
     Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
     while (1);
   }
+
+  calibrate_gyroBias(10);
 
   delay(1000);
 }
@@ -104,6 +118,6 @@ void IMU_task() {
 float getHeading() {return (float)orientationData.orientation.x;}
 
 float intergrateIMU(float timestep) {
-  float omega = (float)angVelocityData.gyro.z;
+  float omega = (float)angVelocityData.gyro.z - gyroBias;
   return omega * timestep;
 }

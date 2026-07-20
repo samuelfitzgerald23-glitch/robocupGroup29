@@ -10,6 +10,8 @@
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
 
+void calibrate_gyroBias(int num_samples);
+
 void IMU_init();
 
 void printIMUEvent(sensors_event_t* event);
