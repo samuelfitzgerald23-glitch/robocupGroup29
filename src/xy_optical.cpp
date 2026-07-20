@@ -1,5 +1,10 @@
 #include "xy_optical.h"
-#include <cmath>
+
+//if height of sensor is changed this value will need to be re-calibrated manually
+//to calibrate record the number of counts over a known distence (e.g 300mm) and find counts/dist
+
+//at ~12cm off the ground this is 1259 counts / 300 mm
+#define COUNTS_PER_MM 4.2f
 
 Bitcraze_PMW3901 flow(XY_CS);
 
@@ -18,6 +23,6 @@ void read_opticalFlow(float& deltaX, float& deltaY) {
     int16_t x, y;
     flow.readMotionCount(&x, &y);
 
-    deltaX = static_cast<float>(x);
-    deltaY = static_cast<float>(y);
+    deltaX = static_cast<float>(x)/COUNTS_PER_MM;
+    deltaY = static_cast<float>(y)/COUNTS_PER_MM;
 }
