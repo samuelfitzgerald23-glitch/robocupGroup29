@@ -21,9 +21,9 @@
 
 enum cell_t {
     INVALID_CELL = -1,
-    UNDEFINED_CELL,
     MY_POS,
     VALID_POS,
+    UNDEFINED_CELL,
     WEIGHT
 };
 
@@ -43,6 +43,10 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
 
 pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sensorVector, float theta);
 
+void map_init();
+
 void poseTask();
+
+pos_vector_t getMyPOS();
 
 #endif //MAP_H

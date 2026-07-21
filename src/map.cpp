@@ -1,5 +1,6 @@
 #include "map.h"
 #include <Arduino.h>
+#include <cstring>
 
 static float prev_heading = 0;
 
@@ -128,6 +129,10 @@ pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sen
  * overall func
  */
 
+void map_init() {
+    std::memset(mapData, static_cast<int8_t>(UNDEFINED_CELL), sizeof(mapData));
+}
+
 void poseTask() {
     //get how far robot have moved since the last time we did this
     //heading from IMU, dx and dy from encoders or IR camera or smth
@@ -157,4 +162,12 @@ void poseTask() {
     }
 
     logPose(robot_worldFrame.theta(), robot_worldFrame.x(), robot_worldFrame.y());
+}
+
+/*******************************************************************************************************************************************************************************
+ * getters
+ */
+
+pos_vector_t getMyPOS() {
+    return {robot_worldFrame.theta(), {robot_worldFrame.x(), robot_worldFrame.y()}};
 }

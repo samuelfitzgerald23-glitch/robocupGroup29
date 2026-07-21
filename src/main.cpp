@@ -114,6 +114,8 @@ void setup() {
 
   task_init();
 
+  map_init();
+
   initMotors();
   sensorInit(&io);
   filteringInit();
