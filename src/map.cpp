@@ -150,7 +150,10 @@ void poseTask() {
     for (int i = 0; i < BUFFERCOUNT; i++) {
         pos_t sensorVector = {0, (float)getOutput(filtered_sensors[i].ID)};
 
-        projectSensorHit(filtered_sensors[i].sensor_robotFrame, &sensorVector, 0);
+        bool seenWeight = 0;
+        if (filtered_sensors[i].ID == (TOF1 || TOF2)) seenWeight = determineWeight(filtered_sensors[i].ID);
+
+        projectSensorHit(filtered_sensors[i].sensor_robotFrame, &sensorVector, seenWeight);
     }
 
     logPose(robot_worldFrame.theta(), robot_worldFrame.x(), robot_worldFrame.y());
