@@ -35,14 +35,3 @@ int16_t getOutput(BufID ID) {
     
     return filteredOutputs[ID];
 }
-
-bool determineWeight(BufID ID) {
-    //check we wont over index the array
-    if ((ID + 2) >= BUFFERCOUNT) return 0;
-
-    int16_t main = filteredOutputs[ID];             //main TOF (on the top of robot)
-    int16_t secondary = filteredOutputs[ID + 2];    //differential TOF (middle of robot)
-
-    if (secondary < (main - 100)) return 1;
-    return 0;
-}

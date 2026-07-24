@@ -4,9 +4,9 @@
 #include "Bitcraze_PMW3901.h"
 
 //must be changed if sensor is moved
-#define FLOW_THETA_OFFSET -90 //deg
-#define FLOW_Y_OFFSET 140 //mm
-#define FLOW_X_OFFSET -145
+#define FLOW_THETA_OFFSET 0 //deg
+#define FLOW_Y_OFFSET -195 //mm
+#define FLOW_X_OFFSET 0
 
 #define XY_CS 10
 

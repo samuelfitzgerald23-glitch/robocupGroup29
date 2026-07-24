@@ -9,7 +9,7 @@ static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 //filtered sensors with offsets
 static location_sensor_t filtered_sensors[BUFFERCOUNT] = {
     {TOF1, {0, {-100, 136}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset))},
-    {TOF2, {0, {100, 136}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset))}
+    {TOF2, {-5, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset))}
 };
 
 //non filtered sensors with offset
@@ -155,8 +155,18 @@ void poseTask() {
     for (int i = 0; i < BUFFERCOUNT; i++) {
         pos_t sensorVector = {0, (float)getOutput(filtered_sensors[i].ID)};
 
+        //check to see if seen object is a weight
         bool seenWeight = 0;
-        if (filtered_sensors[i].ID == (TOF1 || TOF2)) seenWeight = determineWeight(filtered_sensors[i].ID);
+        switch (filtered_sensors[i].ID) {
+            case DIFFTOF1:
+                if (getOutput(DIFFTOF1) < (getOutput(TOF1) - 100)) seenWeight = 1;
+                break;
+            case DIFFTOF2:
+                if (getOutput(DIFFTOF2) < (getOutput(TOF2) - 100)) seenWeight = 1;
+                break;
+            default:
+                break;
+        }
 
         projectSensorHit(filtered_sensors[i].sensor_robotFrame, &sensorVector, seenWeight);
     }

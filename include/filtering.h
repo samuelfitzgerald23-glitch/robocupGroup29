@@ -15,6 +15,4 @@ void filterTask();
 
 int16_t getOutput(BufID ID);
 
-bool determineWeight(BufID ID);
-
 #endif // FILTERING_H

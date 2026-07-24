@@ -8,6 +8,7 @@
 #include "Sensors.h"
 #include "filtering.h"
 #include "map.h"
+#include "moving.h"
 
 //**********************************************************************************
 // Local Definitions
@@ -19,8 +20,9 @@
 #define IMU_READ_TASK_PERIOD                13
 
 #define SENSOR_AVERAGE_PERIOD               50
-#define LOCATION_TASK_PERIOD                2
+#define LOCATION_TASK_PERIOD                4
 
+#define MOVEMENT_TASK_PERIOD                2
 #define SET_MOTOR_TASK_PERIOD               31
 
 #define CHECK_WATCHDOG_TASK_PERIOD          40
@@ -33,6 +35,7 @@
 #define SENSOR_AVERAGE_NUM_EXECUTE         -1
 #define LOCATION_TASK_NUM_EXECUTE          -1
 
+#define MOVEMENT_TASK_NUM_EXECUTE          -1
 #define SET_MOTOR_TASK_NUM_EXECUTE         -1
 
 #define CHECK_WATCHDOG_TASK_NUM_EXECUTE    -1
@@ -61,6 +64,7 @@ Task tSensor_average(SENSOR_AVERAGE_PERIOD,       SENSOR_AVERAGE_NUM_EXECUTE,   
 Task tLocate_task(LOCATION_TASK_PERIOD,           LOCATION_TASK_NUM_EXECUTE,        &poseTask);
 
 // Task to set the motor speeds and direction
+Task tMove_task(MOVEMENT_TASK_PERIOD,             MOVEMENT_TASK_NUM_EXECUTE,        &movementTask);
 Task tSet_motor(SET_MOTOR_TASK_PERIOD,            SET_MOTOR_TASK_NUM_EXECUTE,       &motorTask);
 
 // Tasks to scan for weights and collection upon detection
@@ -86,6 +90,7 @@ void task_init() {
   taskManager.addTask(tLocate_task);
 
   /*actuators*/
+  taskManager.addTask(tMove_task);
   taskManager.addTask(tSet_motor);
 
   //enable the tasks
@@ -93,10 +98,12 @@ void task_init() {
   tRead_IMU.enable();
   tSensor_average.enable();
   tLocate_task.enable();
+  tMove_task.enable();
   tSet_motor.enable();
   //tCheck_watchdog.enable();
 
   Serial.println("Tasks have been initialised \n");
+  delay(1000);
 }
 
 void setup() {

@@ -35,6 +35,10 @@ void initMotors() {
 
     Fan1.writeMicroseconds(STOP);
     Fan2.writeMicroseconds(STOP);
+    delay(10);
+
+    //start fans
+    setFanSpeed(0);
 }
 
 void setDriveSpeed(int speed1, int speed2) {
@@ -60,6 +64,5 @@ void setFanSpeed(int speed) {
 }
 
 void motorTask() {
-    setDriveSpeed(450, 450);
-    setFanSpeed(450);
+    
 }
