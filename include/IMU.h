@@ -20,6 +20,6 @@ void IMU_task();
 
 float getHeading();
 
-float intergrateIMU(float timestep);
+float intergrateIMU();
 
 #endif //IMU_H

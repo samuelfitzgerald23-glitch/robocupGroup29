@@ -3,11 +3,8 @@
 
 /*
 TODO:
-- get my pose
-- get target pose
 - determine dist between my pose and target
 - PID controller
-- write to motors
 
 Later:
 - auto determine target pose
@@ -21,8 +18,8 @@ static int lastTime = 0;
 
 static moveingState State = IDLE;
 
-static PID_t rotate(1000, 0, 0, 450, 1);
-static PID_t translate(1000, 0, 0, 450, 1);
+static PID_t rotate(10, 0, 0, 350, 5);
+static PID_t translate(10, 0, 0, 350, 2);
 
 static pos_t target = {0,0};
 
@@ -33,35 +30,34 @@ static void setTarget(int x, int y) {
 
 void findTarget() {
     //WILL CHANGE LATER
-    setTarget(5, 5);
+    setTarget(200, 400);
 }
 
 float findAngle(pos_t* myPose) {
-    //find out error between our current Pose and our target Pose
-    float myX = myPose->x;
-    float myY = myPose->y;
-
-    float dx = target.x - myX;
-    float dy = target.y - myY;
-
-    return std::atan2f(dx,dy)/D_TO_R;
+    float dx = target.x - myPose->x;
+    float dy = target.y - myPose->y;
+    return std::atan2f(dx, dy) / D_TO_R;
 }
 
-bool rotatePID(pos_vector_t* myPose, float dt, PID_t rotate) {
-    float error = findAngle(&(myPose->pos)) - myPose->theta;
+bool rotatePID(pos_vector_t* myPose, float dt, PID_t& rotate) {
+    float error = findAngle(&(myPose->pos)) - (myPose->theta)/D_TO_R;
+
+    while (error > 180.0f)  error -= 360.0f;
+    while (error <= -180.0f) error += 360.0f;
+
     //check if we are done
-    if (rotate.tolerance >= error) return 1;
+    if (rotate.tolerance >= fabs(error)) return 1;
 
     int motorSpeed = (int)rotate.update(error, dt);
-    setDriveSpeed(motorSpeed, -motorSpeed);
+    setDriveSpeed(-motorSpeed, motorSpeed);
     return 0;
 }
 
-bool translatePID(pos_t* currentXY, float dt, PID_t translate) {
+bool translatePID(pos_t* currentXY, float dt, PID_t& translate) {
     float dx = target.x - currentXY->x;
     float dy = target.y - currentXY->y;
-
     float error = std::sqrt(dx*dx + dy*dy);
+
     //check if we are done
     if (translate.tolerance >= error) return 1;
 
@@ -72,21 +68,34 @@ bool translatePID(pos_t* currentXY, float dt, PID_t translate) {
 
 void movementTask() {
     int now = micros();
-    float dt = float(now - lastTime);
+    float dt = float(now - lastTime)/MICRO_TO_SEC;
+    lastTime = now;
 
     pos_vector_t myPOS = getMyPOS();
 
     switch (State) {
         case IDLE:
-            State = TURNING;
+            {
+            rotate.reset();
+            translate.reset();
+
+            //if we are too close to target choose a new one
+            float dx = target.x - myPOS.pos.x;
+            float dy = target.y - myPOS.pos.y;
+            float dist = std::sqrt(dx*dx + dy*dy);
+
+            State = (dist <= translate.tolerance) ? DONE : TURNING;
             break;
+        }
         case TURNING:
             if (rotatePID(&myPOS, dt, rotate)) {setDriveSpeed(0,0); State = MOVEING;}
             break;
         case MOVEING:
             if (translatePID(&(myPOS.pos), dt, translate)) {setDriveSpeed(0,0); State = DONE;}
+            break;
         case DONE:
             findTarget();
             State = IDLE;
+            break;
     }
 }

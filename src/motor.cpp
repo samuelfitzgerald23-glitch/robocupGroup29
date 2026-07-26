@@ -38,7 +38,7 @@ void initMotors() {
     delay(10);
 
     //start fans
-    setFanSpeed(0);
+    setFanSpeed(450);
 }
 
 void setDriveSpeed(int speed1, int speed2) {

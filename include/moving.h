@@ -27,11 +27,13 @@ class PID_t {
 
         float update(float error, float dt) {
             integral += error * dt;
-            integral = constrain(integral, 0, intMax);
+            integral = constrain(integral, -intMax, intMax);
 
-            float de = (dt > 0.0f) ? (error - prevError) : 0.0f;
+            float de = (dt > 0.0f) ? (error - prevError)/dt : 0.0f;
+            prevError = error;
 
-            return constrain(kp * error + ki * integral + kd * de, 350, 450);
+            //speed is clamped when writing to the motors
+            return kp * error + ki * integral + kd * de;
         }
 };
 
@@ -40,8 +42,8 @@ void findTarget();
 float findAngle(pos_t* myPose);
 
 
-bool rotatePID(pos_vector_t* myPose, float dt, PID_t rotate);
-bool translatePID(pos_t* currentXY, float dt, PID_t translate);
+bool rotatePID(pos_vector_t* myPose, float dt, PID_t& rotate);
+bool translatePID(pos_t* currentXY, float dt, PID_t& translate);
 
 void movementTask();
 

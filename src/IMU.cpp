@@ -10,6 +10,8 @@ sensors_event_t orientationData , angVelocityData , linearAccelData, magnetomete
 
 static float gyroBias = 0;
 
+static int prevRead = 0;
+
 void calibrate_gyroBias(int num_samples) {
   float sum = 0;
   for (int i = 0; i < num_samples; i++) {
@@ -111,7 +113,12 @@ void IMU_task() {
 
 float getHeading() {return (float)orientationData.orientation.x;}
 
-float intergrateIMU(float timestep) {
+
+//does not work
+float intergrateIMU() {
+  int now = micros();
+  float dt = float(now - prevRead)/1000000;
+  prevRead = now;
   float omega = (float)angVelocityData.gyro.z - gyroBias;
-  return omega * timestep;
+  return omega * dt;
 }
