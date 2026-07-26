@@ -34,6 +34,7 @@ void setup() {
   TOFinit();
   filteringInit();
   IMU_init();
+  proximity_init();
 
   tickMain = 0;
   tickTimer.priority(0);
@@ -53,7 +54,7 @@ void loop() {
   }
   if(tickCopy > sensorNextRun) {
     sensorNextRun += SENSORPERIOD;
-    //sensorTask();
+    sensorTask();
   }
   if(tickCopy > filterNextRun) {
     uint16_t TOF1Output = filterTask(TOF1);

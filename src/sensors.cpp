@@ -27,6 +27,13 @@ const uint8_t xshutPins[8] = {0,1,2,3,4,5,6,7};
 SX1509 io; // Create an SX1509 object to be used throughout
 VL53L0X sensors[sensorCount];
 
+
+
+//proximity output
+#define SMALL_PROX_OUTPUT 14
+#define LARGE_PROX_OUTPUT 20
+
+
 /*
 *   TOF sensor functions
 */
@@ -221,7 +228,30 @@ void IMU_task() {
 *   main task for sensors
 */
 
+/*
+Proximity sensor init/task functions
+*/
+
+void proximity_init()
+{
+    pinMode(SMALL_PROX_OUTPUT, INPUT);
+    pinMode(LARGE_PROX_OUTPUT, INPUT);
+}
+
+void proximity_task()
+{
+    int smallproxState = digitalRead(SMALL_PROX_OUTPUT);
+    int largeproxState = digitalRead(LARGE_PROX_OUTPUT);
+
+    Serial.print("Small proximity output: ");
+    Serial.println(smallproxState);
+    Serial.print("Large proximity output: ");
+    Serial.println(largeproxState);
+}
+
+
 void sensorTask() {
   TOF();
-  IMU_task();
+  //IMU_task();
+  proximity_task();
 }

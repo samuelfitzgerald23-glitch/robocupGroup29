@@ -12,8 +12,6 @@
 #define FAN2_PIN 8 //LHS
 #define FAN_OFFSET 180
 
-//some change to see if it pushes to correct branch
-
 
 //motor speed limits
 #define FULLREVERSE 1050
@@ -44,8 +42,8 @@ void initMotors() {
 }
 
 void setDriveSpeed(int speed1, int speed2) {
-    int pulseWidth1 = STOP - speed1;
-    int pulseWidth2 = STOP + speed2;
+    int pulseWidth1 = STOP + speed1;
+    int pulseWidth2 = STOP - speed2;
 
     if (pulseWidth1 > FULLFORWARD) pulseWidth1 = FULLFORWARD;
     if (pulseWidth1 < FULLREVERSE) pulseWidth1 = FULLREVERSE;
@@ -66,9 +64,9 @@ void setFanSpeed(int speed) {
 }
 
 void motorTask() {
-    setDriveSpeed(0, 0);
+    setDriveSpeed(275, 275);
     setFanSpeed(450);
 
-    servoTask();
+    //servoTask();
 
 }

@@ -15,6 +15,9 @@ void printIMUEvent(sensors_event_t* event);
 void TOF();
 void IMU_task();
 
+void proximity_init();
+void proximity_task();
+
 void sensorTask();
 
 #endif // SENSOR_H
