@@ -18,8 +18,8 @@ static int lastTime = 0;
 
 static moveingState State = IDLE;
 
-static PID_t rotate(10, 0, 0, 350, 5);
-static PID_t translate(10, 0, 0, 350, 2);
+static PID_t rotate(100, 0, 0, 350, 5);        //tolerance in degrees
+static PID_t translate(10, 0, 0, 350, 25);      //tolerance in mm
 
 static pos_t target = {0,0};
 
@@ -30,20 +30,21 @@ static void setTarget(int x, int y) {
 
 void findTarget() {
     //WILL CHANGE LATER
-    setTarget(200, 400);
+    setTarget(100, 100);
+    writeToMap(100,100, 3);
 }
 
 float findAngle(pos_t* myPose) {
     float dx = target.x - myPose->x;
     float dy = target.y - myPose->y;
-    return std::atan2f(dx, dy) / D_TO_R;
+    return -1*std::atan2f(dx, dy)/D_TO_R;
 }
 
 bool rotatePID(pos_vector_t* myPose, float dt, PID_t& rotate) {
     float error = findAngle(&(myPose->pos)) - (myPose->theta)/D_TO_R;
 
-    while (error > 180.0f)  error -= 360.0f;
-    while (error <= -180.0f) error += 360.0f;
+    //while (error > 180.0f)  error -= 360.0f;
+    //while (error <= -180.0f) error += 360.0f;
 
     //check if we are done
     if (rotate.tolerance >= fabs(error)) return 1;
