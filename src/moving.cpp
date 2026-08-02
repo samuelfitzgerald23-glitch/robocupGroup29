@@ -4,11 +4,6 @@
 /*
 TODO:
 - Tune PID controller
-
-Later:
-- auto determine target pose
-- convulution map?
-- priority of cells
 */
 
 #define MICRO_TO_SEC 1000000
@@ -29,18 +24,19 @@ bool pathfinished = 0;
 static pos_t currentTarget = {0,0};
 
 static void setTarget() {
-    //WILL CHANGE LATER
+    //set target to next in path
     currentTarget = targetlist[targetIndex];
 }
 
 void findTarget() {
-    //WILL CHANGE LATER
-    if(targetIndex < 4) targetIndex++;
-    else {  
+    //get the next target
+    if((targetIndex < 4) && !pathfinished) {
+        targetIndex++;
+        setTarget();
+    } else {  
         targetIndex = 0;
         pathfinished = 1;
     }
-    if(!pathfinished) setTarget();
 }
 
 float findAngle(pos_t* myPose) {
@@ -81,6 +77,8 @@ void movementTask() {
     float dt = float(now - lastTime)/MICRO_TO_SEC;
     lastTime = now;
 
+    //if(getRobotState == move) {}
+
     pos_vector_t myPOS = getMyPOS();
 
     switch (State) {
@@ -101,7 +99,7 @@ void movementTask() {
             if (rotatePID(&myPOS, dt, rotate)) {
                 setDriveSpeed(0,0); 
                 State = MOVEING;
-                movementTimeLimit.begin(movementTimerCallback, 2 * MICRO_TO_SEC);
+                movementTimeLimit.begin(movementTimerCallback, (int)(2 * MICRO_TO_SEC));
             }
             break;
         case MOVEING:
@@ -123,4 +121,8 @@ static void movementTimerCallback() {
     setDriveSpeed(0,0);
     State = TURNING;
     movementTimeLimit.end();
+}
+
+bool getPathStatus() {
+    return pathfinished;
 }

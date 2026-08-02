@@ -47,4 +47,6 @@ bool translatePID(pos_t* currentXY, float dt, PID_t& translate);
 
 void movementTask();
 
+bool getPathStatus();
+
 #endif //MOVING_H

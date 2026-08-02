@@ -1,4 +1,5 @@
 #include "xy_optical.h"
+#include "FastLED.h"
 
 //if height of sensor is changed this value will need to be re-calibrated manually
 //to calibrate record the number of counts over a known distence (e.g 300mm) and find counts/dist
@@ -6,10 +7,23 @@
 //at ~12cm off the ground this is 1259 counts / 300 mm
 #define COUNTS_PER_MM 3.0f
 
+#define NUM_LEDS 16
+#define DATA_PIN 2
+
+CRGB leds[NUM_LEDS];
+
 Bitcraze_PMW3901 flow(XY_CS);
 
 void init_optical_flow()
 {
+    FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+    FastLED.setBrightness(255);
+
+    for(int i = 0; i < NUM_LEDS; i++) {
+        leds[1] = CRGB(255,255,255);
+    }
+    FastLED.show();
+
     if (!flow.begin()) {
         Serial.println("Initialization of the flow sensor failed");
         while(1) { }
