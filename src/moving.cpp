@@ -3,8 +3,7 @@
 
 /*
 TODO:
-- determine dist between my pose and target
-- PID controller
+- Tune PID controller
 
 Later:
 - auto determine target pose
@@ -13,6 +12,8 @@ Later:
 */
 
 #define MICRO_TO_SEC 1000000
+
+IntervalTimer movementTimeLimit;
 
 static int lastTime = 0;
 
@@ -88,14 +89,29 @@ void movementTask() {
             break;
         }
         case TURNING:
-            if (rotatePID(&myPOS, dt, rotate)) {setDriveSpeed(0,0); State = MOVEING;}
+            if (rotatePID(&myPOS, dt, rotate)) {
+                setDriveSpeed(0,0); 
+                State = MOVEING;
+                movementTimeLimit.begin(movementTimerCallback, 2 * MICRO_TO_SEC);
+            }
             break;
         case MOVEING:
-            if (translatePID(&(myPOS.pos), dt, translate)) {setDriveSpeed(0,0); State = DONE;}
+            if (translatePID(&(myPOS.pos), dt, translate)) {
+                setDriveSpeed(0,0); 
+                State = DONE;
+                movementTimeLimit.end();
+            }
             break;
         case DONE:
             findTarget();
             State = IDLE;
             break;
     }
+}
+
+static void movementTimerCallback() {
+    //if timer finishes before we are at the point reset the state and turn back
+    setDriveSpeed(0,0);
+    State = TURNING;
+    movementTimeLimit.end();
 }
