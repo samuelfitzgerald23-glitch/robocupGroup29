@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <Arduino.h>
 #include "stdlib.h"
-#include "circBuf.h"
+#include "filtering.h"
 
 static int16_t filteredOutputs[BUFFERCOUNT];
 
