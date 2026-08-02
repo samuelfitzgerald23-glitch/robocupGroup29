@@ -1,5 +1,6 @@
 #include "moving.h"
 #include "motor.h"
+#include <string>
 
 /*
 TODO:
@@ -7,6 +8,7 @@ TODO:
 */
 
 #define MICRO_TO_SEC 1000000
+#define TIME_LIMIT 2*MICRO_TO_SEC
 
 IntervalTimer movementTimeLimit;
 
@@ -14,14 +16,23 @@ static int lastTime = 0;
 
 static moveingState State = IDLE;
 
-static PID_t rotate(10, 0, 0, 350, 5);
-static PID_t translate(10, 0, 0, 350, 2);
+static PID_t rotate(100, 0, 0, 350, 5);
+static PID_t translate(100, 0, 0, 350, 50);
 
-static pos_t targetlist[5] = {{0,0}, {0, 100}, {100, 100}, {100, 0}, {0, 0}};
-static int targetIndex = 0;
+static pos_t targetlist[5] = {{0,0}, {0, 200}, {200, 200}, {200, 0}, {0, 0}};                                
+static int targetIndex = -1;
 bool pathfinished = 0;
 
 static pos_t currentTarget = {0,0};
+
+static pos_t completedTargetList[5];
+
+static void movementTimerCallback() {
+    //if timer finishes before we are at the point reset the state and turn back
+    setDriveSpeed(0,0);
+    State = TURNING;
+    movementTimeLimit.end();
+}
 
 static void setTarget() {
     //set target to next in path
@@ -36,20 +47,23 @@ void findTarget() {
     } else {  
         targetIndex = 0;
         pathfinished = 1;
+        for(int i = 0; i <= 4; i++) {
+            Serial.println("pos" + String(i) + ":" + String(completedTargetList[i].x) + ", " + String(completedTargetList[i].y));
+        }
     }
 }
 
 float findAngle(pos_t* myPose) {
     float dx = currentTarget.x - myPose->x;
     float dy = currentTarget.y - myPose->y;
-    return std::atan2f(dx, dy) / D_TO_R;
+    return -1*std::atan2f(dx, dy) / D_TO_R;
 }
 
 bool rotatePID(pos_vector_t* myPose, float dt, PID_t& rotate) {
     float error = findAngle(&(myPose->pos)) - (myPose->theta)/D_TO_R;
 
-    //while (error > 180.0f)  error -= 360.0f;
-    //while (error <= -180.0f) error += 360.0f;
+    while (error > 180.0f)  error -= 360.0f;
+    while (error <= -180.0f) error += 360.0f;
 
     //check if we are done
     if (rotate.tolerance >= fabs(error)) return 1;
@@ -99,7 +113,7 @@ void movementTask() {
             if (rotatePID(&myPOS, dt, rotate)) {
                 setDriveSpeed(0,0); 
                 State = MOVEING;
-                movementTimeLimit.begin(movementTimerCallback, (int)(2 * MICRO_TO_SEC));
+                movementTimeLimit.begin(movementTimerCallback, (int)(TIME_LIMIT));
             }
             break;
         case MOVEING:
@@ -111,16 +125,11 @@ void movementTask() {
             break;
         case DONE:
             findTarget();
+            completedTargetList[targetIndex] = myPOS.pos;
             State = IDLE;
+            delay(10000);
             break;
     }
-}
-
-static void movementTimerCallback() {
-    //if timer finishes before we are at the point reset the state and turn back
-    setDriveSpeed(0,0);
-    State = TURNING;
-    movementTimeLimit.end();
 }
 
 bool getPathStatus() {

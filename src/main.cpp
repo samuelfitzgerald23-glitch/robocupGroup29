@@ -20,9 +20,9 @@
 #define IMU_READ_TASK_PERIOD                13
 
 #define SENSOR_AVERAGE_PERIOD               50
-#define LOCATION_TASK_PERIOD                10
+#define LOCATION_TASK_PERIOD                5
 
-#define MOVEMENT_TASK_PERIOD                5
+#define MOVEMENT_TASK_PERIOD                2
 #define SET_MOTOR_TASK_PERIOD               31
 
 #define CHECK_WATCHDOG_TASK_PERIOD          40

@@ -46,7 +46,7 @@ void writeToMap(float world_x, float world_y, int8_t value) {
     //write a value to a cell on the map
     int gx, gy;
 
-    if (worldToGrid(world_x, world_y, gx, gy)) {
+    if (worldToGrid(world_x, world_y, gx, gy) && mapData[gy][gx] != static_cast<int>(WEIGHT)) {
         mapData[gy][gx] = value;
         logCell(gx, gy, value);
     }

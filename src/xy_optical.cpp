@@ -17,10 +17,10 @@ Bitcraze_PMW3901 flow(XY_CS);
 void init_optical_flow()
 {
     FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
-    FastLED.setBrightness(255);
+    FastLED.setBrightness(130);
 
     for(int i = 0; i < NUM_LEDS; i++) {
-        leds[1] = CRGB(255,255,255);
+        leds[i] = CRGB(255,255,255);
     }
     FastLED.show();
 
