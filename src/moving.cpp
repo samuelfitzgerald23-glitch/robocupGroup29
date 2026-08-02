@@ -22,21 +22,30 @@ static moveingState State = IDLE;
 static PID_t rotate(10, 0, 0, 350, 5);
 static PID_t translate(10, 0, 0, 350, 2);
 
-static pos_t target = {0,0};
+static pos_t targetlist[5] = {{0,0}, {0, 100}, {100, 100}, {100, 0}, {0, 0}};
+static int targetIndex = 0;
+bool pathfinished = 0;
 
-static void setTarget(int x, int y) {
-    target.x = (float)x;
-    target.y = (float)y;
+static pos_t currentTarget = {0,0};
+
+static void setTarget() {
+    //WILL CHANGE LATER
+    currentTarget = targetlist[targetIndex];
 }
 
 void findTarget() {
     //WILL CHANGE LATER
-    setTarget(200, 400);
+    if(targetIndex < 4) targetIndex++;
+    else {  
+        targetIndex = 0;
+        pathfinished = 1;
+    }
+    if(!pathfinished) setTarget();
 }
 
 float findAngle(pos_t* myPose) {
-    float dx = target.x - myPose->x;
-    float dy = target.y - myPose->y;
+    float dx = currentTarget.x - myPose->x;
+    float dy = currentTarget.y - myPose->y;
     return std::atan2f(dx, dy) / D_TO_R;
 }
 
@@ -55,8 +64,8 @@ bool rotatePID(pos_vector_t* myPose, float dt, PID_t& rotate) {
 }
 
 bool translatePID(pos_t* currentXY, float dt, PID_t& translate) {
-    float dx = target.x - currentXY->x;
-    float dy = target.y - currentXY->y;
+    float dx = currentTarget.x - currentXY->x;
+    float dy = currentTarget.y - currentXY->y;
     float error = std::sqrt(dx*dx + dy*dy);
 
     //check if we are done
@@ -81,8 +90,8 @@ void movementTask() {
             translate.reset();
 
             //if we are too close to target choose a new one
-            float dx = target.x - myPOS.pos.x;
-            float dy = target.y - myPOS.pos.y;
+            float dx = currentTarget.x - myPOS.pos.x;
+            float dy = currentTarget.y - myPOS.pos.y;
             float dist = std::sqrt(dx*dx + dy*dy);
 
             State = (dist <= translate.tolerance) ? DONE : TURNING;
