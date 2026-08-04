@@ -3,6 +3,8 @@
 
 #include "map.h"
 
+#define MICRO_TO_SEC 1000000
+
 enum moveingState {
     IDLE,
     TURNING,
@@ -45,8 +47,10 @@ float findAngle(pos_t* myPose);
 bool rotatePID(pos_vector_t* myPose, float dt, PID_t& rotate);
 bool translatePID(pos_t* currentXY, float dt, PID_t& translate);
 
-void movementTask();
+void movementTask(float dt);
 
 bool getPathStatus();
+
+void setPath(const pos_t* path);
 
 #endif //MOVING_H

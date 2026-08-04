@@ -7,12 +7,9 @@ TODO:
 - Tune PID controller
 */
 
-#define MICRO_TO_SEC 1000000
 #define TIME_LIMIT 2*MICRO_TO_SEC
 
 IntervalTimer movementTimeLimit;
-
-static int lastTime = 0;
 
 static moveingState State = IDLE;
 
@@ -86,11 +83,7 @@ bool translatePID(pos_t* currentXY, float dt, PID_t& translate) {
     return 0;
 }
 
-void movementTask() {
-    int now = micros();
-    float dt = float(now - lastTime)/MICRO_TO_SEC;
-    lastTime = now;
-
+void movementTask(float dt) {
     //if(getRobotState == move) {}
 
     pos_vector_t myPOS = getMyPOS();
@@ -134,4 +127,9 @@ void movementTask() {
 
 bool getPathStatus() {
     return pathfinished;
+}
+
+void setPath(const pos_t* path) {
+    std::memcpy(targetlist, path, sizeof(targetlist));
+    pathfinished = 0;
 }
