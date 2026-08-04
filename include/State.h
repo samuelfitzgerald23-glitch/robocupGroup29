@@ -4,7 +4,7 @@
 #include "moving.h"
 
 enum robotState {
-    IDLE,   
+    CHECK,   
     FIND_TARGET,
     PATHFIND,
     MOVE,

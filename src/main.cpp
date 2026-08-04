@@ -22,7 +22,7 @@
 #define SENSOR_AVERAGE_PERIOD               50
 #define LOCATION_TASK_PERIOD                5
 
-#define STATE_TASK_PERIOD                2
+#define STATE_TASK_PERIOD                   2
 #define SET_MOTOR_TASK_PERIOD               31
 
 #define CHECK_WATCHDOG_TASK_PERIOD          40
@@ -64,7 +64,7 @@ Task tSensor_average(SENSOR_AVERAGE_PERIOD,       SENSOR_AVERAGE_NUM_EXECUTE,   
 Task tLocate_task(LOCATION_TASK_PERIOD,           LOCATION_TASK_NUM_EXECUTE,        &poseTask);
 
 // Task to set the motor speeds and direction
-Task tState_task(STATE_TASK_PERIOD,             STATE_TASK_NUM_EXECUTE,        &StateMachineTask);
+Task tState_task(STATE_TASK_PERIOD,               STATE_TASK_NUM_EXECUTE,           &StateMachineTask);
 Task tSet_motor(SET_MOTOR_TASK_PERIOD,            SET_MOTOR_TASK_NUM_EXECUTE,       &motorTask);
 
 // Tasks to scan for weights and collection upon detection

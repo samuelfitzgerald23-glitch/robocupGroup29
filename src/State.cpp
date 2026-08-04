@@ -9,13 +9,19 @@ static robotState CurrentState = MOVE;
 static int8_t target_type;
 static pos_t target_pos;
 
+static void state_timeout() {
+    //if a timeout occurs switch state to idle to start sequence again
+    TimeoutCheck.end();
+    CurrentState = CHECK;
+}
+
 void StateMachineTask() {
     int now = micros();
     float dt = float(now - lastTime)/MICRO_TO_SEC;
     lastTime = now;
 
     switch (CurrentState) {
-        case IDLE:
+        case CHECK:
             CurrentState = FIND_TARGET;
             break;
         case FIND_TARGET:
@@ -36,7 +42,7 @@ void StateMachineTask() {
                 //start a timer to drop the weights off
                 TimeoutCheck.begin(state_timeout, 2*MICRO_TO_SEC);
             } else {
-                CurrentState = IDLE;
+                CurrentState = CHECK;
             }
             break;
         }
@@ -47,13 +53,7 @@ void StateMachineTask() {
         case DROP_PAYLOAD:
             break;
         default:
-            CurrentState = IDLE;
+            CurrentState = CHECK;
             break;
     }
-}
-
-static void state_timeout() {
-    //if a timeout occurs switch state to idle to start sequence again
-    TimeoutCheck.end();
-    CurrentState = IDLE;
 }
