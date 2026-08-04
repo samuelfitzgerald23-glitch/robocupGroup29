@@ -1,6 +1,5 @@
 #include "map.h"
 #include <Arduino.h>
-#include <cstring>
 
 static float prev_heading = 0;
 

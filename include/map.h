@@ -5,6 +5,8 @@
 #ifndef MAP_H
 #define MAP_H
 
+#include <cstring>
+
 #include "filtering.h"
 #include "frame_positioning.h"
 #include "xy_optical.h"
