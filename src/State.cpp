@@ -22,6 +22,7 @@ void StateMachineTask() {
 
     switch (CurrentState) {
         case CHECK:
+            //check fornumber of weights and stuff idk
             CurrentState = FIND_TARGET;
             break;
         case FIND_TARGET:
@@ -47,8 +48,6 @@ void StateMachineTask() {
             break;
         }
         case PICKUP_SEQUENCE:
-            break;
-        case KEEP_REJECT:
             break;
         case DROP_PAYLOAD:
             break;

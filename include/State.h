@@ -10,7 +10,6 @@ enum robotState {
     MOVE,
     DETERMINE_ACTION,
     PICKUP_SEQUENCE,
-    KEEP_REJECT,
     DROP_PAYLOAD
 };
 
