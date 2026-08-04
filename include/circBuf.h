@@ -5,12 +5,17 @@
 #ifndef CIRCBUF_H
 #define CIRCBUF_H
 
-#define BUFFERCOUNT 2
+#define BUFFERCOUNT 4
 #define BUFSIZE 5
 
+#include <stdint.h>
+
 enum BufID {
+    NON_FILTERED = -1,
     TOF1,
-    TOF2
+    TOF2,
+    DIFFTOF1,
+    DIFFTOF2
 };
 
 struct circBuf_t {

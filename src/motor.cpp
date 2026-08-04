@@ -3,8 +3,8 @@
 #include <Arduino.h>
 
 //driving motors
-#define DRIVE1_PIN 0    //left
-#define DRIVE2_PIN 1    //right
+#define DRIVE1_PIN 1    //left
+#define DRIVE2_PIN 0    //right
 
 //fan blade motors
 #define FAN1_PIN 7 //RHS
@@ -12,9 +12,9 @@
 #define FAN_OFFSET 180
 
 //motor speed limits
-#define FULLREVERSE 1050
+#define FULLREVERSE 1225
 #define STOP 1500
-#define FULLFORWARD 1950
+#define FULLFORWARD 1775
 
 // create servo objects for motors
 static Servo Drive1;
@@ -35,6 +35,10 @@ void initMotors() {
 
     Fan1.writeMicroseconds(STOP);
     Fan2.writeMicroseconds(STOP);
+    delay(10);
+
+    //start fans
+    setFanSpeed(450);
 }
 
 void setDriveSpeed(int speed1, int speed2) {
@@ -53,13 +57,12 @@ void setDriveSpeed(int speed1, int speed2) {
 }
 
 void setFanSpeed(int speed) {
-    int pulse1 = STOP - speed; //RHS fan
+    int pulse1 = STOP + speed; //RHS fan
     int pulse2 = STOP - speed; //+ FAN_OFFSET; LHS fan
     Fan1.writeMicroseconds(pulse1);
     Fan2.writeMicroseconds(pulse2);
 }
 
 void motorTask() {
-    setDriveSpeed(0, 0);
-    setFanSpeed(450);
+    
 }
