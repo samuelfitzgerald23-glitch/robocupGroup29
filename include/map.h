@@ -37,6 +37,8 @@ struct location_sensor_t {
 
 bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y);
 
+void gridToWorld(int gx, int gy, float& world_x, float& world_y);
+
 void writeToMap(float world_x, float world_y, int8_t value);
 
 void updatePose(pos_vector_t* Pose);
@@ -50,5 +52,7 @@ void map_init();
 void poseTask();
 
 pos_vector_t getMyPOS();
+
+int8_t getMapValue(int x, int y);
 
 #endif //MAP_H

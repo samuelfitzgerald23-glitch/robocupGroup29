@@ -41,6 +41,12 @@ bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y) {
     return(grid_x >= 0 && grid_x < GRID_WIDTH && grid_y >= 0 && grid_y < GRID_HEIGHT);
 }
 
+void gridToWorld(int gx, int gy, float& world_x, float& world_y) {
+    // inverse of worldToGrid
+    world_x = (gx - X_ZERO) * CELL_SIZE;
+    world_y = (gy - Y_ZERO) * CELL_SIZE;
+}
+
 void writeToMap(float world_x, float world_y, int8_t value) {
     //write a value to a cell on the map
     int gx, gy;
@@ -180,4 +186,8 @@ void poseTask() {
 
 pos_vector_t getMyPOS() {
     return {robot_worldFrame.theta(), {robot_worldFrame.x(), robot_worldFrame.y()}};
+}
+
+int8_t getMapValue(int x, int y) {
+    return mapData[y][x];
 }
