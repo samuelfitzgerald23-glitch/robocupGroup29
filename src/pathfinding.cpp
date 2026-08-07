@@ -2,6 +2,8 @@
 
 static Node nodes[GRID_HEIGHT][GRID_WIDTH];
 
+static GridPos fullPath[MAX_PATH_LEN];
+
 //movible directions
 static const int8_t dx8[8] = {1, -1, 0, 0, 1, 1, -1, -1};
 static const int8_t dy8[8] = {0, 0, 1, -1, 1, -1, 1, -1};
@@ -89,4 +91,22 @@ int findPath(GridPos start, GridPos goal, GridPos* path, int maxPathLen) {
     }
     //if all paths are exhausted
     return 0;
+}
+
+// fills waypoints[5] with world-mm points along the A* path, evenly spaced
+// through the path's cell indices. waypoints[4] is always the true goal.
+// returns false (waypoints untouched) if no path exists.
+bool findPathWaypoints(GridPos start, GridPos goal, pos_t (&waypoints)[WAYPOINT_COUNT]) {
+    int pathLen = findPath(start, goal, fullPath, MAX_PATH_LEN);
+    if (pathLen == 0) return false;
+
+    for (int i = 0; i < WAYPOINT_COUNT; i++) {
+        int srcIndex = (int)roundf((float)i * (pathLen - 1) / (WAYPOINT_COUNT - 1));
+        if (srcIndex >= pathLen) srcIndex = pathLen - 1;
+
+        float wx, wy;
+        gridToWorld(fullPath[srcIndex].x, fullPath[srcIndex].y, wx, wy);
+        waypoints[i] = {wx, wy};
+    }
+    return true;
 }

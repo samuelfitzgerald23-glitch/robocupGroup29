@@ -16,7 +16,7 @@ static moveingState State = IDLE;
 static PID_t rotate(50, 1.5, 1, 350, 5);
 static PID_t translate(10, 0, 0, 350, 25);
 
-static pos_t targetlist[5] = {{0,0}, {0, 1000}, {500, 1000}, {500, 500}, {0, 0}};                                
+static pos_t targetlist[WAYPOINT_COUNT] = {{0,0}, {0, 1000}, {500, 1000}, {500, 500}, {0, 0}};                                
 static int targetIndex = -1;
 bool pathfinished = 0;
 
@@ -129,6 +129,6 @@ bool getPathStatus() {
 }
 
 void setPath(const pos_t* path) {
-    std::memcpy(targetlist, path, sizeof(targetlist));
+    std::memcpy(targetlist, path, WAYPOINT_COUNT);
     pathfinished = 0;
 }

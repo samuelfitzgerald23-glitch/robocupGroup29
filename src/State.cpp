@@ -4,10 +4,12 @@ IntervalTimer TimeoutCheck;
 
 static int lastTime = 0;
 
-static robotState CurrentState = MOVE;
+static robotState CurrentState = CHECK;
 
-static int8_t target_type = 0;
-static pos_t target_pos = {0,0};
+static int8_t goal_type = 0;
+static pos_t goal_pos = {0,0};
+
+static pos_t microSteps[WAYPOINT_COUNT];
 
 static void state_timeout() {
     //if a timeout occurs switch state to idle to start sequence again
@@ -26,19 +28,31 @@ void StateMachineTask() {
             CurrentState = FIND_TARGET;
             break;
         case FIND_TARGET:
+            CurrentState = PATHFIND;
             break;
-        case PATHFIND:
+        case PATHFIND:  {
+            int start_x, start_y, goal_x, goal_y;
+            pos_t currentPos = getMyPOS().pos;
+
+            worldToGrid(currentPos.x, currentPos.y, start_x, start_y);
+            worldToGrid(goal_pos.x, goal_pos.y, goal_x, goal_y);
+
+            if (findPathWaypoints({(int16_t)start_x, (int16_t)start_y}, {(int16_t)goal_x, (int16_t)goal_y}, microSteps)) {
+                setPath(&microSteps[0]);
+                CurrentState = MOVE;
+            }
             break;
+        }
         case MOVE:
             movementTask(dt);
             if(getPathStatus()) CurrentState = DETERMINE_ACTION;
             break;
         case DETERMINE_ACTION: {
-            if(target_type == static_cast<int8_t>(WEIGHT)) {
+            if(goal_type == static_cast<int8_t>(WEIGHT)) {
                 CurrentState = PICKUP_SEQUENCE;
                 //start a ten seccond timer to pick up the weight
                 TimeoutCheck.begin(state_timeout, 10*MICRO_TO_SEC);
-            } else if (target_pos.x == 0 && target_pos.y == 0) {
+            } else if (goal_pos.x == 0 && goal_pos.y == 0) {
                 CurrentState = DROP_PAYLOAD;
                 //start a timer to drop the weights off
                 TimeoutCheck.begin(state_timeout, 2*MICRO_TO_SEC);

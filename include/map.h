@@ -12,6 +12,8 @@
 #include "xy_optical.h"
 #include "IMU.h"
 
+#define WAYPOINT_COUNT 5
+
 //meters -> decimeters
 #define GRID_WIDTH  40
 #define GRID_HEIGHT 80
