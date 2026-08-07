@@ -16,7 +16,7 @@ static moveingState State = IDLE;
 static PID_t rotate(50, 1.5, 1, 350, 5);
 static PID_t translate(10, 0, 0, 350, 25);
 
-static pos_t targetlist[WAYPOINT_COUNT] = {{0,0}, {0, 1000}, {500, 1000}, {500, 500}, {0, 0}};                                
+static pos_t targetlist[WAYPOINT_COUNT];                                
 static int targetIndex = -1;
 bool pathfinished = 0;
 
@@ -59,8 +59,8 @@ float findAngle(pos_t* myPose) {
 bool rotatePID(pos_vector_t* myPose, float dt, PID_t& rotate) {
     float error = findAngle(&(myPose->pos)) - (myPose->theta)/D_TO_R;
 
-    while (error > 180.0f)  error -= 360.0f;
-    while (error <= -180.0f) error += 360.0f;
+    //while (error > 180.0f)  error -= 360.0f;
+    //while (error <= -180.0f) error += 360.0f;
 
     //check if we are done
     if (rotate.tolerance >= fabs(error)) return 1;
@@ -122,6 +122,7 @@ void movementTask(float dt) {
             State = IDLE;
             break;
     }
+    delay(1000);
 }
 
 bool getPathStatus() {

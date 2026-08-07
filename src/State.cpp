@@ -4,10 +4,10 @@ IntervalTimer TimeoutCheck;
 
 static int lastTime = 0;
 
-static robotState CurrentState = CHECK;
+static robotState CurrentState = PATHFIND;
 
-static int8_t goal_type = 0;
-static pos_t goal_pos = {0,0};
+static int8_t goal_type = 3;
+static pos_t goal_pos = {1000,1000};
 
 static pos_t microSteps[WAYPOINT_COUNT];
 
@@ -25,10 +25,8 @@ void StateMachineTask() {
     switch (CurrentState) {
         case CHECK:
             //check fornumber of weights and stuff idk
-            CurrentState = FIND_TARGET;
             break;
         case FIND_TARGET:
-            CurrentState = PATHFIND;
             break;
         case PATHFIND:  {
             int start_x, start_y, goal_x, goal_y;
