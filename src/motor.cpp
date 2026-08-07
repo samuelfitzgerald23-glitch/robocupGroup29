@@ -12,9 +12,9 @@
 #define FAN_OFFSET 180
 
 //motor speed limits
-#define FULLREVERSE 1225
+#define FULLREVERSE 1200
 #define STOP 1500
-#define FULLFORWARD 1775
+#define FULLFORWARD 1800
 
 // create servo objects for motors
 static Servo Drive1;

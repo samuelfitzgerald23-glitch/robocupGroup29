@@ -13,10 +13,10 @@ IntervalTimer movementTimeLimit;
 
 static moveingState State = IDLE;
 
-static PID_t rotate(100, 0, 0, 350, 5);
-static PID_t translate(100, 0, 0, 350, 50);
+static PID_t rotate(50, 1.5, 1, 350, 5);
+static PID_t translate(10, 0, 0, 350, 25);
 
-static pos_t targetlist[5] = {{0,0}, {0, 200}, {200, 200}, {200, 0}, {0, 0}};                                
+static pos_t targetlist[5] = {{0,0}, {0, 1000}, {500, 1000}, {500, 500}, {0, 0}};                                
 static int targetIndex = -1;
 bool pathfinished = 0;
 
@@ -27,7 +27,7 @@ static pos_t completedTargetList[5];
 static void movementTimerCallback() {
     //if timer finishes before we are at the point reset the state and turn back
     setDriveSpeed(0,0);
-    State = TURNING;
+    State = IDLE;
     movementTimeLimit.end();
 }
 
@@ -120,7 +120,6 @@ void movementTask(float dt) {
             findTarget();
             completedTargetList[targetIndex] = myPOS.pos;
             State = IDLE;
-            delay(10000);
             break;
     }
 }

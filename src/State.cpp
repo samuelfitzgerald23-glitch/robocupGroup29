@@ -6,8 +6,8 @@ static int lastTime = 0;
 
 static robotState CurrentState = MOVE;
 
-static int8_t target_type;
-static pos_t target_pos;
+static int8_t target_type = 0;
+static pos_t target_pos = {0,0};
 
 static void state_timeout() {
     //if a timeout occurs switch state to idle to start sequence again

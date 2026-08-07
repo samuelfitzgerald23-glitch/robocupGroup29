@@ -16,13 +16,13 @@ Bitcraze_PMW3901 flow(XY_CS);
 
 void init_optical_flow()
 {
-    FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
-    FastLED.setBrightness(130);
+    // FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+    // FastLED.setBrightness(130);
 
-    for(int i = 0; i < NUM_LEDS; i++) {
-        leds[i] = CRGB(255,255,255);
-    }
-    FastLED.show();
+    // for(int i = 0; i < NUM_LEDS; i++) {
+    //     leds[i] = CRGB(255,255,255);
+    // }
+    // FastLED.show();
 
     if (!flow.begin()) {
         Serial.println("Initialization of the flow sensor failed");
