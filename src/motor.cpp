@@ -64,5 +64,5 @@ void setFanSpeed(int speed) {
 
 void motorTask() {
     setDriveSpeed(0, 0);
-    setFanSpeed(0);
+    setFanSpeed(450);
 }

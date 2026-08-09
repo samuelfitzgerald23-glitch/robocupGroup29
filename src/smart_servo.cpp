@@ -2,11 +2,18 @@
 #include "smart_servo.h"
 #include <HerkulexServo.h>
 
+#define SERVO_SECOND 1000000
+
 // Use the Teensy's Serial7 (pins D28/D29)
 HerkulexServoBus servoBus(Serial7);
 
 // Create a servo with ID 1
 HerkulexServo servo(servoBus, 1);
+
+//setup an interval timer for servo sorting task
+IntervalTimer ServoTimeout;
+volatile bool servoTimeout = false;
+
 
 //resolution is 0-1023
 #define WANTED_WEIGHT 50 //-90 deg
@@ -20,8 +27,8 @@ HerkulexServo servo(servoBus, 1);
 volatile bool servoSequenceActive = false;
 
 uint8_t servoState = 0;
-uint32_t servoTimer = 0;
 
+uint8_t num_weights = 0; //keep track of metal weights onboard
 
 void initSmartServo()
 {
@@ -36,14 +43,23 @@ void initSmartServo()
     Serial.print("Inisitialised smart servo ");
 }
 
+
 void setServoPosition(uint16_t position)
 {
     servo.setPosition(position, SERVO_SPEED, HerkulexLed::Ignore);
 }
 
+
 uint16_t getServoPosition()
 {
     return servo.getPosition();
+}
+
+
+void servo_timeout()
+{
+    ServoTimeout.end();
+    servoTimeout = true;
 }
 
 
@@ -59,16 +75,23 @@ void servoTask()
     switch(servoState)
     {
         case 0:
-            if (millis() - servoTimer >= 2000) {
+            if (servoTimeout) {
+
+                servoTimeout = false;
+
                 setServoPosition(WANTED_WEIGHT);
                 Serial.println("Moved to wanted weight position");
 
-                servoTimer = millis();
                 servoState = 1;
+
+                ServoTimeout.begin(servo_timeout, 5*SERVO_SECOND);
             }
             break;
         case 1:
-            if (millis() - servoTimer >= 5000) {
+            if (servoTimeout) {
+                //add logic to not reset to neutral if theres 3 weights onboard to keep (since space may not allow)
+                servoTimeout = false;
+                
                 setServoPosition(NEUTRAL);
                 Serial.println("Returned to neutral");
 
@@ -83,11 +106,18 @@ void servoTask()
     Serial.print("Current position: ");
     Serial.println(getServoPosition());
 
+    Serial.print("Number of weights onboard: ");
+    Serial.println(num_weights);
+
 }
 
 void startServoSequence() 
 {
     servoSequenceActive = true;
     servoState = 0; //start at the first state in sorting sequence (waiting for 2 seconds)
-    servoTimer = millis();
+
+    num_weights += 1;
+    servoTimeout = false;
+
+    ServoTimeout.begin(servo_timeout, 1*SERVO_SECOND); //starts 2 second timer
 }
