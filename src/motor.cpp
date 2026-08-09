@@ -10,7 +10,6 @@
 //fan blade motors
 #define FAN1_PIN 7 //RHS
 #define FAN2_PIN 8 //LHS
-#define FAN_OFFSET 180
 
 
 //motor speed limits
@@ -36,13 +35,13 @@ void initMotors() {
 
     Fan1.writeMicroseconds(STOP);
     Fan2.writeMicroseconds(STOP);
-
+     
     //initialise the servo motor
     initSmartServo();
 }
 
 void setDriveSpeed(int speed1, int speed2) {
-    int pulseWidth1 = STOP + speed1;
+    int pulseWidth1 = STOP - speed1;
     int pulseWidth2 = STOP - speed2;
 
     if (pulseWidth1 > FULLFORWARD) pulseWidth1 = FULLFORWARD;
@@ -57,16 +56,13 @@ void setDriveSpeed(int speed1, int speed2) {
 }
 
 void setFanSpeed(int speed) {
-    int pulse1 = STOP - speed; //RHS fan
-    int pulse2 = STOP - speed; //+ FAN_OFFSET; LHS fan
+    int pulse1 = STOP + speed; //RHS fan
+    int pulse2 = STOP - speed; //LHS fan
     Fan1.writeMicroseconds(pulse1);
     Fan2.writeMicroseconds(pulse2);
 }
 
 void motorTask() {
-    setDriveSpeed(275, 275);
-    setFanSpeed(450);
-
-    //servoTask();
-
+    setDriveSpeed(0, 0);
+    setFanSpeed(0);
 }

@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "motor.h"
 #include "sensor.h"
+#include "smart_servo.h"
 #include "filtering.h"
 
 
@@ -9,10 +10,12 @@
 #define MOTORFREQUENCY 37 // 37Hz
 #define SENSORFREQUENCY 50 //50Hz
 #define FILTERFREQUENCY 500 //500Hz
+#define SERVOFREQUENCY 50 //50HZ
 
 #define MOTORPERIOD (MAXFREQUENCY / MOTORFREQUENCY) // Calculate the period for the motor control signal
 #define SENSORPERIOD (MAXFREQUENCY / SENSORFREQUENCY)
 #define FILTERPERIOD (MAXFREQUENCY /  FILTERFREQUENCY)
+#define SERVOPERIOD (MAXFREQUENCY /  SERVOFREQUENCY)
 
 IntervalTimer tickTimer;
 
@@ -26,6 +29,7 @@ void intervalTick() {
 static uint32_t motorNextRun = MOTORPERIOD;
 static uint32_t sensorNextRun = SENSORPERIOD;
 static uint32_t filterNextRun = FILTERPERIOD;
+static uint32_t servoNextRun = SERVOPERIOD;
 
 void setup() {
   // put your setup code here, to run once:
@@ -59,10 +63,14 @@ void loop() {
   if(tickCopy > filterNextRun) {
     uint16_t TOF1Output = filterTask(TOF1);
     uint16_t TOF2Output = filterTask(TOF2);
-    //Serial.print(TOF1Output);
-    //Serial.print(" : ");
-    //Serial.println(TOF2Output);
+    // Serial.print(TOF1Output);
+    // Serial.print(" : ");
+    // Serial.println(TOF2Output);
     filterNextRun += FILTERPERIOD;
+  }
+  if(tickCopy > servoNextRun) {
+    servoNextRun += SERVOPERIOD;
+    servoTask();
   }
 
 }

@@ -9,9 +9,19 @@ HerkulexServoBus servoBus(Serial7);
 HerkulexServo servo(servoBus, 1);
 
 //resolution is 0-1023
-#define WANTED_WEIGHT 130 //-90 deg
-#define UNWANTED_WEIGHT 530 // 90 deg
-#define NEUTRAL 330 //0 deg (?)
+#define WANTED_WEIGHT 50 //-90 deg
+#define UNWANTED_WEIGHT 300 // 90 deg
+#define NEUTRAL 140 //0 deg (?)
+
+//range 0 (fastest) to 254 (slowest)
+#define SERVO_SPEED 50
+
+//variables for sorting servo sequence (state machine)
+volatile bool servoSequenceActive = false;
+
+uint8_t servoState = 0;
+uint32_t servoTimer = 0;
+
 
 void initSmartServo()
 {
@@ -28,7 +38,7 @@ void initSmartServo()
 
 void setServoPosition(uint16_t position)
 {
-    servo.setPosition(position, 0, HerkulexLed::Ignore);
+    servo.setPosition(position, SERVO_SPEED, HerkulexLed::Ignore);
 }
 
 uint16_t getServoPosition()
@@ -36,70 +46,48 @@ uint16_t getServoPosition()
     return servo.getPosition();
 }
 
-// void servoTask()
-// {
-//     uint16_t currentPosition;
-    
-//     servoBus.update();
-
-//     setServoPosition(WANTED_WEIGHT);
-//     currentPosition = getServoPosition();
-//     Serial.print("Current position: ");
-//     Serial.println(currentPosition);
-
-//     delay(2000);
-
-//     setServoPosition(NEUTRAL);
-//     currentPosition = getServoPosition();
-//     Serial.print("Current position: ");
-//     Serial.println(currentPosition);
-
-//     delay(2000);
-
-//     setServoPosition(UNWANTED_WEIGHT);
-//     currentPosition = getServoPosition();
-//     Serial.print("Current position: ");
-//     Serial.println(currentPosition);
-
-//     //logic for moving to specific position depending on proximity sensor output
-// }
 
 void servoTask()
 {
     servoBus.update();
 
-    static uint32_t lastChange = 0;
-    static uint8_t state = 0;
+    //logic for turning one way for 2s then turning the other for 2 seconds
+    if (!servoSequenceActive) {
+        return;
+    }
 
-    if (millis() - lastChange > 2000)
+    switch(servoState)
     {
-        switch(state)
-        {
-            case 0:
+        case 0:
+            if (millis() - servoTimer >= 2000) {
                 setServoPosition(WANTED_WEIGHT);
-                break;
+                Serial.println("Moved to wanted weight position");
 
-            case 1:
+                servoTimer = millis();
+                servoState = 1;
+            }
+            break;
+        case 1:
+            if (millis() - servoTimer >= 5000) {
                 setServoPosition(NEUTRAL);
-                break;
+                Serial.println("Returned to neutral");
 
-            case 2:
-                setServoPosition(UNWANTED_WEIGHT);
-                break;
-
-            case 3:
-                setServoPosition(NEUTRAL);
-                break;
-        }
-
-        state++;
-
-        if(state > 3)
-            state = 0;
-
-        lastChange = millis();
+                servoSequenceActive = false;
+                servoState = 2;
+            }
+            break;
+        case 2: //finished (could add in rejection of plastic weights here once have colour sensor)
+            break;            
     }
 
     Serial.print("Current position: ");
     Serial.println(getServoPosition());
+
+}
+
+void startServoSequence() 
+{
+    servoSequenceActive = true;
+    servoState = 0; //start at the first state in sorting sequence (waiting for 2 seconds)
+    servoTimer = millis();
 }

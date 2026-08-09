@@ -18,6 +18,7 @@ void IMU_task();
 void proximity_init();
 void proximity_task();
 
+void largeProxISR();
 void sensorTask();
 
 #endif // SENSOR_H

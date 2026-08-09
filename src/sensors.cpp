@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "sensor.h"
+#include "smart_servo.h"
 #include "circBuf.h"
 
 #include <Wire.h>
@@ -19,7 +20,7 @@ const byte SX1509_ADDRESS = 0x3F;
 
 
 // The number of sensors in your system.
-const uint8_t sensorCount = 2;
+const uint8_t sensorCount = 3;
 
 // The Arduino pin connected to the XSHUT pin of each sensor.
 const uint8_t xshutPins[8] = {0,1,2,3,4,5,6,7};
@@ -30,9 +31,9 @@ VL53L0X sensors[sensorCount];
 
 
 //proximity output
-#define SMALL_PROX_OUTPUT 14
 #define LARGE_PROX_OUTPUT 20
 
+volatile bool largeProxTriggered = false;
 
 /*
 *   TOF sensor functions
@@ -75,7 +76,7 @@ void TOFinit() {
     } else {
       Serial.print("Failed to detect and initialize sensor ");
       Serial.println(i);
-      while (1);
+      //while (1);
     }
 
     // Each sensor must have its address changed to a unique value other than
@@ -231,24 +232,35 @@ void IMU_task() {
 /*
 Proximity sensor init/task functions
 */
+void largeProxISR()
+{
+    largeProxTriggered = true;
+}
+
 
 void proximity_init()
 {
-    pinMode(SMALL_PROX_OUTPUT, INPUT);
     pinMode(LARGE_PROX_OUTPUT, INPUT);
+
+    //make proximity sensor generate an interrupt if weight detected
+    attachInterrupt(
+      digitalPinToInterrupt(LARGE_PROX_OUTPUT),
+      largeProxISR,
+      FALLING
+    );
+
 }
+
 
 void proximity_task()
 {
-    int smallproxState = digitalRead(SMALL_PROX_OUTPUT);
-    int largeproxState = digitalRead(LARGE_PROX_OUTPUT);
-
-    Serial.print("Small proximity output: ");
-    Serial.println(smallproxState);
-    Serial.print("Large proximity output: ");
-    Serial.println(largeproxState);
+    if (largeProxTriggered) {
+      largeProxTriggered = false;
+      Serial.println("Large proximity triggered!");
+      
+      startServoSequence();
+    }
 }
-
 
 void sensorTask() {
   TOF();

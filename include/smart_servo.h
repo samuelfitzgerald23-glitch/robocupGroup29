@@ -11,6 +11,7 @@ void initSmartServo(void);
 void setServoPosition(uint16_t position);
 uint16_t getServoPosition(uint16_t &position);
 void servoTask();
+void startServoSequence(); 
 
 #endif // SMART_SERVO_H
 
