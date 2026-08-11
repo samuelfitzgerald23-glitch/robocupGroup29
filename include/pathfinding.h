@@ -8,14 +8,18 @@
 #define MAX_PATH_LEN GRID_HEIGHT * GRID_WIDTH
 
 struct GridPos {
-    uint16_t x, y;
+    uint8_t x, y;
     bool operator==(const GridPos& o) const {return x==o.x && y==o.y;};
 };
 
 struct Node {
     GridPos myCord;
     GridPos parentCord;
-    bool isWalkible;
+    bool visited;
 };
+
+int findPath(Node start, Node goal);
+
+bool findPathWaypoints(Node start, Node goal, pos_t (&waypoints)[WAYPOINT_COUNT]);
 
 #endif //PATHFINDING_H

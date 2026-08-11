@@ -7,8 +7,8 @@ static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 
 //filtered sensors with offsets
 static location_sensor_t filtered_sensors[BUFFERCOUNT] = {
-    {TOF1, {0, {-100, 136}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset))},
-    {TOF2, {-5, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset))}
+    {TOF1, {-5, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF1].offset))},
+    {TOF2, {5, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF2].offset))}
 };
 
 //non filtered sensors with offset
@@ -30,7 +30,7 @@ static void logCell(int gx, int gy, int8_t value) {
 
 static void logPose(float theta, float x, float y) {
     Serial.print("P, "); Serial.print(theta, 4); Serial.print(", ");
-    Serial.print(x, 2); Serial.print(", "); Serial.print(y, 2);
+    Serial.print(x, 2); Serial.print(", "); Serial.println(y, 2);
 }
 
 bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y) {
@@ -51,7 +51,7 @@ void writeToMap(float world_x, float world_y, int8_t value) {
     //write a value to a cell on the map
     int gx, gy;
 
-    if (worldToGrid(world_x, world_y, gx, gy) && mapData[gy][gx] != static_cast<int>(WEIGHT)) {
+    if (worldToGrid(world_x, world_y, gx, gy) && (mapData[gy][gx] != static_cast<int>(WEIGHT))) {
         mapData[gy][gx] = value;
         logCell(gx, gy, value);
     }
@@ -160,21 +160,30 @@ void poseTask() {
     //find objects with the TOFs
     for (int i = 0; i < BUFFERCOUNT; i++) {
         pos_t sensorVector = {0, (float)getOutput(filtered_sensors[i].ID)};
+        projectSensorHit(filtered_sensors[i].sensor_robotFrame, &sensorVector, 0);
 
         //check to see if seen object is a weight
-        bool seenWeight = 0;
         switch (filtered_sensors[i].ID) {
-            case DIFFTOF1:
-                if (getOutput(DIFFTOF1) < (getOutput(TOF1) - 100)) seenWeight = 1;
+            case TOF1:  {
+                int16_t out1 = getOutput(DIFFTOF1);
+                if (out1 < (sensorVector.y - 100)) {
+                    pos_t diff1 = {0, (float)out1};
+                    //diff tofs have the same pose matrix as their parent sensor
+                    projectSensorHit(filtered_sensors[i].sensor_robotFrame, &diff1, 1);
+                }
                 break;
-            case DIFFTOF2:
-                if (getOutput(DIFFTOF2) < (getOutput(TOF2) - 100)) seenWeight = 1;
+            }
+            case TOF2:  {
+                int16_t out2 = getOutput(DIFFTOF2);
+                if (out2 < (sensorVector.y - 100)) {
+                    pos_t diff2 = {0, (float)out2};
+                    projectSensorHit(filtered_sensors[i].sensor_robotFrame, &diff2, 1);
+                }
                 break;
+            }
             default:
                 break;
         }
-
-        projectSensorHit(filtered_sensors[i].sensor_robotFrame, &sensorVector, seenWeight);
     }
 
     logPose(robot_worldFrame.theta(), robot_worldFrame.x(), robot_worldFrame.y());

@@ -7,7 +7,7 @@
 
 
 // The number of sensors in your system.
-const uint8_t sensorCount = 2;
+const uint8_t sensorCount = 3;
 
 // The Arduino pin connected to the XSHUT pin of each sensor.
 const uint8_t xshutPins[8] = {0,1,2,3,4,5,6,7};
@@ -19,7 +19,7 @@ VL53L0X sensors[sensorCount];
 *   TOF sensor functions
 */
 
-static uint16_t TOF_reading[2];
+static uint16_t TOF_reading[3];
 
 void TOFinit(SX1509* io) {
   //while (!Serial) {}

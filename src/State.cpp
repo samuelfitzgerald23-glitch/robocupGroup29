@@ -11,6 +11,10 @@ static pos_t goal_pos = {1000,1000};
 
 static pos_t microSteps[WAYPOINT_COUNT];
 
+static void logState() {
+    Serial.print("S, "); Serial.println(CurrentState);
+}
+
 static void state_timeout() {
     //if a timeout occurs switch state to idle to start sequence again
     TimeoutCheck.end();
@@ -21,6 +25,7 @@ void StateMachineTask() {
     int now = micros();
     float dt = float(now - lastTime)/MICRO_TO_SEC;
     lastTime = now;
+    logState();
 
     switch (CurrentState) {
         case CHECK:
@@ -35,7 +40,7 @@ void StateMachineTask() {
             worldToGrid(currentPos.x, currentPos.y, start_x, start_y);
             worldToGrid(goal_pos.x, goal_pos.y, goal_x, goal_y);
 
-            if (findPathWaypoints({(int16_t)start_x, (int16_t)start_y}, {(int16_t)goal_x, (int16_t)goal_y}, microSteps)) {
+            if (findPathWaypoints({{(uint8_t)start_x, (uint8_t)start_y}}, {{(uint8_t)goal_x, (uint8_t)goal_y}}, microSteps)) {
                 setPath(&microSteps[0]);
                 CurrentState = MOVE;
             }

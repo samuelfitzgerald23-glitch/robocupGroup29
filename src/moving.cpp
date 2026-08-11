@@ -53,7 +53,7 @@ void findTarget() {
 float findAngle(pos_t* myPose) {
     float dx = currentTarget.x - myPose->x;
     float dy = currentTarget.y - myPose->y;
-    return -1*std::atan2f(dx, dy) / D_TO_R;
+    return -1*std::atan2(dx, dy) / D_TO_R;
 }
 
 bool rotatePID(pos_vector_t* myPose, float dt, PID_t& rotate) {
@@ -85,6 +85,11 @@ bool translatePID(pos_t* currentXY, float dt, PID_t& translate) {
 
 void movementTask(float dt) {
     //if(getRobotState == move) {}
+
+    for(int i = 0; i < WAYPOINT_COUNT; i++) {
+        float wx = targetlist[i].x; float wy = targetlist[i].y;
+        writeToMap(wx, wy, 2);
+    }
 
     pos_vector_t myPOS = getMyPOS();
 
@@ -120,9 +125,9 @@ void movementTask(float dt) {
             findTarget();
             completedTargetList[targetIndex] = myPOS.pos;
             State = IDLE;
+            delay(1000);
             break;
     }
-    delay(1000);
 }
 
 bool getPathStatus() {

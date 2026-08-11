@@ -20,7 +20,7 @@
 #define IMU_READ_TASK_PERIOD                13
 
 #define SENSOR_AVERAGE_PERIOD               50
-#define LOCATION_TASK_PERIOD                5
+#define LOCATION_TASK_PERIOD                3
 
 #define STATE_TASK_PERIOD                   2
 #define SET_MOTOR_TASK_PERIOD               31
@@ -44,7 +44,7 @@
 #define IO_POWER  49
 
 // Serial deffinitions
-#define BAUD_RATE 9600
+#define BAUD_RATE 115200
 
 const byte SX1509_ADDRESS = 0x3F;
 SX1509 io; // Create an SX1509 object to be used throughout
@@ -121,7 +121,7 @@ void setup() {
 
   task_init();
 
-  map_init();
+  //map_init();
 
   initMotors();
   sensorInit(&io);

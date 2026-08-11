@@ -13,6 +13,8 @@ static circBuf_t buffersArray[BUFFERCOUNT];
 void bufArrayInit(void) {
     bufferInit(BUFSIZE, &buffersArray[TOF1]);
     bufferInit(BUFSIZE, &buffersArray[TOF2]);
+    bufferInit(BUFSIZE, &buffersArray[DIFFTOF1]);
+    bufferInit(BUFSIZE, &buffersArray[DIFFTOF2]);
 }
 
 void bufferInit(uint16_t size, circBuf_t *Buffer) {
