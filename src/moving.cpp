@@ -135,6 +135,6 @@ bool getPathStatus() {
 }
 
 void setPath(const pos_t* path) {
-    std::memcpy(targetlist, path, WAYPOINT_COUNT);
+    std::copy(path, path + WAYPOINT_COUNT, targetlist);
     pathfinished = 0;
 }
