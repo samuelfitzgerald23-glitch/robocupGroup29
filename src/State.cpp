@@ -4,15 +4,15 @@ IntervalTimer TimeoutCheck;
 
 static int lastTime = 0;
 
-static robotState CurrentState = PATHFIND;
+static robotState CurrentState = MOVE;
 
 static int8_t goal_type = 3;
-static pos_t goal_pos = {1000,1000};
+static pos_t goal_pos = {700,700};
 
 static pos_t microSteps[WAYPOINT_COUNT];
 
 static void logState() {
-    Serial.print("S, "); Serial.println(CurrentState);
+    Serial.print("S, "); Serial1.println(CurrentState);
 }
 
 static void state_timeout() {
@@ -22,10 +22,10 @@ static void state_timeout() {
 }
 
 void StateMachineTask() {
+    logState();
     int now = micros();
     float dt = float(now - lastTime)/MICRO_TO_SEC;
     lastTime = now;
-    logState();
 
     switch (CurrentState) {
         case CHECK:
@@ -48,7 +48,7 @@ void StateMachineTask() {
         }
         case MOVE:
             movementTask(dt);
-            if(getPathStatus()) CurrentState = DETERMINE_ACTION;
+            if(getPathStatus()) CurrentState = PATHFIND;
             break;
         case DETERMINE_ACTION: {
             if(goal_type == static_cast<int8_t>(WEIGHT)) {

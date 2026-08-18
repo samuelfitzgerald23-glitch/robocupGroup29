@@ -10,7 +10,7 @@ TOFs:
 void sensorInit(SX1509* io) {
 
     //Do I2C scan if cannot find address of I2C device
-    //I2C_scan();
+    I2C_scan();
 
     TOFinit(io);
     IMU_init();

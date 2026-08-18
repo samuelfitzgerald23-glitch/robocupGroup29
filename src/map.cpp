@@ -24,13 +24,13 @@ static PoseMatrix robot_worldFrame = PoseMatrix::buildFrame(&worldOrigin);
  */
 
 static void logCell(int gx, int gy, int8_t value) {
-    Serial.print("C, "); Serial.print(gx); Serial.print(", "); Serial.print(gy);
-    Serial.print(", "); Serial.println(value);
+    Serial1.print("C, "); Serial1.print(gx); Serial1.print(", "); Serial1.print(gy);
+    Serial1.print(", "); Serial1.println(value);
 }
 
 static void logPose(float theta, float x, float y) {
-    Serial.print("P, "); Serial.print(theta, 4); Serial.print(", ");
-    Serial.print(x, 2); Serial.print(", "); Serial.println(y, 2);
+    Serial1.print("P, "); Serial1.print(theta, 4); Serial1.print(", ");
+    Serial1.print(x, 2); Serial1.print(", "); Serial1.println(y, 2);
 }
 
 bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y) {
@@ -139,6 +139,7 @@ void map_init() {
 }
 
 void poseTask() {
+    Serial.println("pose task");
     //get how far robot have moved since the last time we did this
     //heading from IMU, dx and dy from encoders or IR camera or smth
     float heading = getHeading();

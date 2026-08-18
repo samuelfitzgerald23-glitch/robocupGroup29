@@ -3,12 +3,12 @@
 #include <Arduino.h>
 
 //driving motors
-#define DRIVE1_PIN 1    //left
-#define DRIVE2_PIN 0    //right
+#define DRIVE1_PIN 2    //left
+#define DRIVE2_PIN 3    //right
 
 //fan blade motors
-#define FAN1_PIN 7 //RHS
-#define FAN2_PIN 8 //LHS
+#define FAN1_PIN 5 //RHS
+#define FAN2_PIN 4 //LHS
 #define FAN_OFFSET 180
 
 //motor speed limits
@@ -64,5 +64,5 @@ void setFanSpeed(int speed) {
 }
 
 void motorTask() {
-    
+    Serial.println("motor task");
 }

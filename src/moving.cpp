@@ -14,9 +14,9 @@ IntervalTimer movementTimeLimit;
 static moveingState State = IDLE;
 
 static PID_t rotate(50, 1.5, 1, 350, 5);
-static PID_t translate(10, 0, 0, 350, 25);
+static PID_t translate(10, 0, 0, 350, 50);
 
-static pos_t targetlist[WAYPOINT_COUNT];                                
+static pos_t targetlist[WAYPOINT_COUNT] = {{0,0}, {0,0}, {0,0}, {0,0}, {0, 500}};                                
 static int targetIndex = -1;
 bool pathfinished = 0;
 
@@ -44,9 +44,9 @@ void findTarget() {
     } else {  
         targetIndex = 0;
         pathfinished = 1;
-        for(int i = 0; i <= 4; i++) {
-            Serial.println("pos" + String(i) + ":" + String(completedTargetList[i].x) + ", " + String(completedTargetList[i].y));
-        }
+        // for(int i = 0; i <= 4; i++) {
+        //     Serial.println("pos" + String(i) + ":" + String(completedTargetList[i].x) + ", " + String(completedTargetList[i].y));
+        // }
     }
 }
 

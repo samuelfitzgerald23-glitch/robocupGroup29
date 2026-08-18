@@ -63,6 +63,7 @@ void TOFinit(SX1509* io) {
 }
 
 void TOF_task() {
+  Serial.println("TOF task");
   for (uint8_t i = 0; i < sensorCount; i++)
   {
     TOF_reading[i] = sensors[i].readRangeContinuousMillimeters();

@@ -113,6 +113,7 @@ void setup() {
 
   // put your setup code here, to run once:
   Serial.begin(BAUD_RATE);
+  Serial1.begin(BAUD_RATE);
 
   io.begin(SX1509_ADDRESS);
 
