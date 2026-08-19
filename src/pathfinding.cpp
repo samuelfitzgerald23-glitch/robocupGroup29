@@ -5,8 +5,8 @@ static Node pathMap[GRID_HEIGHT][GRID_WIDTH];
 static Node fullPath[MAX_PATH_LEN];
 
 //movible directions
-static const int8_t dx4[4] = {1, -1, 0, 0};
-static const int8_t dy4[4] = {0, 0, 1, -1};
+static const int8_t dx8[8] = {1, -1, 0, 0, 1, 1, -1, -1};
+static const int8_t dy8[8] = {0, 0, 1, -1, 1, -1, 1, -1};
 
 struct Queue {
     GridPos data[MAX_PATH_LEN];
@@ -59,9 +59,9 @@ int findPath(Node start, Node goal) {
         GridPos current = q.pop();
         if (current == goal.myCord) {found = 1; break;}
 
-        for (int d = 0; d < 4; d++) {
-            uint8_t dx = current.x + dx4[d];
-            uint8_t dy = current.y + dy4[d];
+        for (int d = 0; d < 8; d++) {
+            uint8_t dx = current.x + dx8[d];
+            uint8_t dy = current.y + dy8[d];
             //check if we can go here or if weve already checked here
             if(!isWalkible(dx, dy)) continue;
             if(pathMap[dy][dx].visited) continue;

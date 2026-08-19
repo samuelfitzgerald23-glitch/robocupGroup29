@@ -16,7 +16,7 @@ static moveingState State = IDLE;
 static PID_t rotate(50, 1.5, 1, 350, 5);
 static PID_t translate(10, 0, 0, 350, 50);
 
-static pos_t targetlist[WAYPOINT_COUNT] = {{0,0}, {0,0}, {0,0}, {0,0}, {0, 500}};                                
+static pos_t targetlist[WAYPOINT_COUNT] = {{0,500}, {0,500}, {0,500}, {0,500}, {0, 500}};
 static int targetIndex = -1;
 bool pathfinished = 0;
 
