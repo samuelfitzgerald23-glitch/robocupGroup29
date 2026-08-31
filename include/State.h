@@ -2,6 +2,7 @@
 #define STATE_H
 
 #include "moving.h"
+#include "motor.h"
 #include "pathfinding.h"
 
 enum robotState {

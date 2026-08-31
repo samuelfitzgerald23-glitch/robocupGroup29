@@ -17,7 +17,7 @@ static moveingState State = IDLE;
 static PID_t rotate(50, 1.5, 1, 450, 5);
 static PID_t translate(1, 0.5, 0, 450, 50);
 
-static pos_t targetlist[WAYPOINT_COUNT] = {{0,0}, {0,0}, {0,0}, {0,0}, {0, 500}};                                
+static pos_t targetlist[WAYPOINT_COUNT];
 static int targetIndex = -1;
 bool pathfinished = 0;
 
@@ -125,7 +125,6 @@ void movementTask(float dt) {
             findTarget();
             completedTargetList[targetIndex] = myPOS.pos;
             State = IDLE;
-            delay(1000);
             break;
     }
 }
