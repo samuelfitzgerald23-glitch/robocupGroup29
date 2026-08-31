@@ -11,10 +11,6 @@ static pos_t goal_pos = {700,700};
 
 static pos_t microSteps[WAYPOINT_COUNT];
 
-static void logState() {
-    Serial.print("S, "); Serial1.println(CurrentState);
-}
-
 static void state_timeout() {
     //if a timeout occurs switch state to idle to start sequence again
     TimeoutCheck.end();
@@ -22,7 +18,6 @@ static void state_timeout() {
 }
 
 void StateMachineTask() {
-    logState();
     int now = micros();
     float dt = float(now - lastTime)/MICRO_TO_SEC;
     lastTime = now;

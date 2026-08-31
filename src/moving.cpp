@@ -1,20 +1,21 @@
 #include "moving.h"
 #include "motor.h"
 #include <string>
+#include <Arduino.h>
 
 /*
 TODO:
 - Tune PID controller
 */
 
-#define TIME_LIMIT 2*MICRO_TO_SEC
+#define TIME_LIMIT 2500000
 
 IntervalTimer movementTimeLimit;
 
 static moveingState State = IDLE;
 
-static PID_t rotate(50, 1.5, 1, 350, 5);
-static PID_t translate(10, 0, 0, 350, 50);
+static PID_t rotate(50, 1.5, 1, 450, 5);
+static PID_t translate(1, 0.5, 0, 450, 50);
 
 static pos_t targetlist[WAYPOINT_COUNT] = {{0,0}, {0,0}, {0,0}, {0,0}, {0, 500}};                                
 static int targetIndex = -1;
@@ -58,6 +59,7 @@ float findAngle(pos_t* myPose) {
 
 bool rotatePID(pos_vector_t* myPose, float dt, PID_t& rotate) {
     float error = findAngle(&(myPose->pos)) - (myPose->theta)/D_TO_R;
+    Serial.print("rotation error: ");
 
     //while (error > 180.0f)  error -= 360.0f;
     //while (error <= -180.0f) error += 360.0f;
@@ -66,6 +68,7 @@ bool rotatePID(pos_vector_t* myPose, float dt, PID_t& rotate) {
     if (rotate.tolerance >= fabs(error)) return 1;
 
     int motorSpeed = (int)rotate.update(error, dt);
+    Serial.println(motorSpeed);
     setDriveSpeed(-motorSpeed, motorSpeed);
     return 0;
 }
@@ -74,22 +77,19 @@ bool translatePID(pos_t* currentXY, float dt, PID_t& translate) {
     float dx = currentTarget.x - currentXY->x;
     float dy = currentTarget.y - currentXY->y;
     float error = std::sqrt(dx*dx + dy*dy);
+    Serial.print("translation error: ");
 
     //check if we are done
     if (translate.tolerance >= error) return 1;
 
     int motorSpeed = (int)translate.update(error, dt);
+    Serial.println(motorSpeed);
     setDriveSpeed(motorSpeed, motorSpeed);
     return 0;
 }
 
 void movementTask(float dt) {
     //if(getRobotState == move) {}
-
-    for(int i = 0; i < WAYPOINT_COUNT; i++) {
-        float wx = targetlist[i].x; float wy = targetlist[i].y;
-        writeToMap(wx, wy, 2);
-    }
 
     pos_vector_t myPOS = getMyPOS();
 
@@ -137,4 +137,8 @@ bool getPathStatus() {
 void setPath(const pos_t* path) {
     std::copy(path, path + WAYPOINT_COUNT, targetlist);
     pathfinished = 0;
+    for(int i = 0; i < WAYPOINT_COUNT; i++) {
+        float wx = targetlist[i].x; float wy = targetlist[i].y;
+        writeToMap(wx, wy, 2);
+    }
 }
