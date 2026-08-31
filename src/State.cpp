@@ -7,9 +7,7 @@ static int lastTime = 0;
 static robotState CurrentState = PATHFIND;
 
 static int8_t goal_type = 3;
-static pos_t goal_pos = {0,500};
-
-static bool firstCycle_done = 0;
+static pos_t goal_pos = {1000,1000};
 
 static pos_t microSteps[WAYPOINT_COUNT];
 

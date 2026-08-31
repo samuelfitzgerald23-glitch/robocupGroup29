@@ -8,14 +8,14 @@ TODO:
 - Tune PID controller
 */
 
-#define TIME_LIMIT 2500000
+#define TIME_LIMIT 2000000
 
 IntervalTimer movementTimeLimit;
 
 static moveingState State = IDLE;
 
 static PID_t rotate(50, 1.5, 1, 450, 5);
-static PID_t translate(1, 0.5, 0, 450, 50);
+static PID_t translate(5, 0, 0, 150, 50);
 
 static pos_t targetlist[WAYPOINT_COUNT];
 static int targetIndex = -1;
@@ -23,7 +23,7 @@ bool pathfinished = 0;
 
 static pos_t currentTarget = {0,0};
 
-static pos_t completedTargetList[5];
+static pos_t completedTargetList[5] = {{0,0}, {0, 100}, {100, 100}, {100, 0}, {0,0}};
 
 static void movementTimerCallback() {
     //if timer finishes before we are at the point reset the state and turn back
