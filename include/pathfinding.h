@@ -20,6 +20,6 @@ struct Node {
 
 int findPath(Node start, Node goal);
 
-bool findPathWaypoints(Node start, Node goal, pos_t (&waypoints)[WAYPOINT_COUNT]);
+int findPathWaypoints(Node start, Node goal, pos_t* waypoints);
 
 #endif //PATHFINDING_H

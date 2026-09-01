@@ -4,12 +4,12 @@ IntervalTimer TimeoutCheck;
 
 static int lastTime = 0;
 
-static robotState CurrentState = PATHFIND;
+static robotState CurrentState = MOVE;
 
 static int8_t goal_type = 3;
 static pos_t goal_pos = {1000,1000};
 
-static pos_t microSteps[WAYPOINT_COUNT];
+static pos_t microSteps[MAX_WAYPOINT_COUNT];
 
 static void state_timeout() {
     //if a timeout occurs switch state to idle to start sequence again
@@ -37,8 +37,10 @@ void StateMachineTask() {
             worldToGrid(currentPos.x, currentPos.y, start_x, start_y);
             worldToGrid(goal_pos.x, goal_pos.y, goal_x, goal_y);
 
-            if (findPathWaypoints({{(uint8_t)start_x, (uint8_t)start_y}}, {{(uint8_t)goal_x, (uint8_t)goal_y}}, microSteps)) {
-                setPath(&microSteps[0]);
+            int targetCount = findPathWaypoints({{(uint8_t)start_x, (uint8_t)start_y}}, {{(uint8_t)goal_x, (uint8_t)goal_y}}, microSteps);
+
+            if (targetCount > 0) {
+                setPath(&microSteps[0], targetCount);
                 CurrentState = MOVE;
             }
             break;

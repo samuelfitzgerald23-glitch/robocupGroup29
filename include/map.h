@@ -12,7 +12,8 @@
 #include "xy_optical.h"
 #include "IMU.h"
 
-#define WAYPOINT_COUNT 5
+#define MAX_WAYPOINT_COUNT 24
+#define WAYPOINT_SPACING 500.0f
 
 //meters -> decimeters
 #define GRID_WIDTH  40

@@ -1,6 +1,7 @@
 #include "moving.h"
 #include "motor.h"
 #include <string>
+#include <vector>
 #include <Arduino.h>
 
 /*
@@ -17,13 +18,12 @@ static moveingState State = IDLE;
 static PID_t rotate(50, 1.5, 1, 450, 5);
 static PID_t translate(5, 0, 0, 150, 50);
 
-static pos_t targetlist[WAYPOINT_COUNT];
+static pos_t targetlist[MAX_WAYPOINT_COUNT] = {{0,0},{0,100},{100,100},{100,0},{0,0}};
+static int targetCount;
 static int targetIndex = -1;
 bool pathfinished = 0;
 
 static pos_t currentTarget = {0,0};
-
-static pos_t completedTargetList[5] = {{0,0}, {0, 100}, {100, 100}, {100, 0}, {0,0}};
 
 static void movementTimerCallback() {
     //if timer finishes before we are at the point reset the state and turn back
@@ -39,7 +39,7 @@ static void setTarget() {
 
 void findTarget() {
     //get the next target
-    if((targetIndex < 4) && !pathfinished) {
+    if((targetIndex < targetCount-1) && !pathfinished) {
         targetIndex++;
         setTarget();
     } else {  
@@ -123,7 +123,6 @@ void movementTask(float dt) {
             break;
         case DONE:
             findTarget();
-            completedTargetList[targetIndex] = myPOS.pos;
             State = IDLE;
             break;
     }
@@ -133,10 +132,11 @@ bool getPathStatus() {
     return pathfinished;
 }
 
-void setPath(const pos_t* path) {
-    std::copy(path, path + WAYPOINT_COUNT, targetlist);
+void setPath(const pos_t* path, int count) {
+    targetCount = count;
+    std::copy(path, path + count, targetlist);
     pathfinished = 0;
-    for(int i = 0; i < WAYPOINT_COUNT; i++) {
+    for(int i = 0; i < count; i++) {
         float wx = targetlist[i].x; float wy = targetlist[i].y;
         writeToMap(wx, wy, 2);
     }

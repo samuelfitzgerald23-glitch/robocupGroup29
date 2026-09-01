@@ -51,6 +51,6 @@ void movementTask(float dt);
 
 bool getPathStatus();
 
-void setPath(const pos_t* path);
+void setPath(const pos_t* path, int count);
 
 #endif //MOVING_H
