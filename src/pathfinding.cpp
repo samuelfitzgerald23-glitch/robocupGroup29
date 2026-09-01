@@ -104,17 +104,17 @@ int findPathWaypoints(Node start, Node goal, pos_t* waypoints) {
 
     for(int i = 1; i < pathlength && count < MAX_WAYPOINT_COUNT; i++) {
         dist += CELL_SIZE;
-        bool isCorner = false;
+        bool isTurn = false;
         if (i < pathlength - 1) {
             int dx1 = fullPath[i].myCord.x - fullPath[i-1].myCord.x;
             int dy1 = fullPath[i].myCord.y - fullPath[i-1].myCord.y;
             int dx2 = fullPath[i+1].myCord.x - fullPath[i].myCord.x;
             int dy2 = fullPath[i+1].myCord.y - fullPath[i].myCord.y;
-            isCorner = (dx1 != dx2) || (dy1 != dy2);
+            isTurn = (dx1 != dx2) || (dy1 != dy2);
         }
         bool isGoal = (i == pathlength - 1);
 
-        if (isGoal || isCorner || dist >= WAYPOINT_SPACING) {
+        if (isGoal || isTurn || dist >= WAYPOINT_SPACING) {
             gridToWorld(fullPath[i].myCord.x, fullPath[i].myCord.y, wx, wy);
             waypoints[count++] = {wx, wy};
             dist = 0.0f;
