@@ -20,9 +20,9 @@
 #define IMU_READ_TASK_PERIOD                13
 
 #define SENSOR_AVERAGE_PERIOD               50
-#define LOCATION_TASK_PERIOD                3
+#define LOCATION_TASK_PERIOD                10
 
-#define STATE_TASK_PERIOD                   2
+#define STATE_TASK_PERIOD                   4
 #define SET_MOTOR_TASK_PERIOD               31
 
 #define CHECK_WATCHDOG_TASK_PERIOD          40
@@ -110,6 +110,9 @@ void setup() {
 
   pinMode(IO_POWER, OUTPUT);                 //Pin 49 is used to enable IO power
   digitalWrite(IO_POWER, 1);                 //Enable IO power on main CPU board
+
+  pinMode(14, OUTPUT);
+  digitalWrite(14, 1);
 
   // put your setup code here, to run once:
   Serial.begin(BAUD_RATE);

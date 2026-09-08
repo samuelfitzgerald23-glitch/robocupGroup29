@@ -15,11 +15,11 @@ IntervalTimer movementTimeLimit;
 
 static moveingState State = IDLE;
 
-static PID_t rotate(50, 1.5, 1, 450, 5);
+static PID_t rotate(25, 1.5, 1, 450, 5);
 static PID_t translate(5, 0, 0, 150, 50);
 
-static pos_t targetlist[MAX_WAYPOINT_COUNT] = {{0,0},{0,100},{100,100},{100,0},{0,0}};
-static int targetCount;
+static pos_t targetlist[MAX_WAYPOINT_COUNT] = {{0,0},{0,200},{200,200},{200,0},{0,0}};
+static int targetCount = 5;
 static int targetIndex = -1;
 bool pathfinished = 0;
 
@@ -57,12 +57,12 @@ float findAngle(pos_t* myPose) {
     return -1*std::atan2(dx, dy) / D_TO_R;
 }
 
-bool rotatePID(pos_vector_t* myPose, float dt, PID_t& rotate) {
+bool rotatePID(pos_vector_t* myPose, float dt) {
     float error = findAngle(&(myPose->pos)) - (myPose->theta)/D_TO_R;
     Serial.print("rotation error: ");
 
-    //while (error > 180.0f)  error -= 360.0f;
-    //while (error <= -180.0f) error += 360.0f;
+    while (error > 180.0f)  error -= 360.0f;
+    while (error <= -180.0f) error += 360.0f;
 
     //check if we are done
     if (rotate.tolerance >= fabs(error)) return 1;
@@ -73,7 +73,7 @@ bool rotatePID(pos_vector_t* myPose, float dt, PID_t& rotate) {
     return 0;
 }
 
-bool translatePID(pos_t* currentXY, float dt, PID_t& translate) {
+bool translatePID(pos_t* currentXY, float dt) {
     float dx = currentTarget.x - currentXY->x;
     float dy = currentTarget.y - currentXY->y;
     float error = std::sqrt(dx*dx + dy*dy);
@@ -108,20 +108,21 @@ void movementTask(float dt) {
             break;
         }
         case TURNING:
-            if (rotatePID(&myPOS, dt, rotate)) {
+            if (rotatePID(&myPOS, dt)) {
                 setDriveSpeed(0,0); 
                 State = MOVEING;
                 movementTimeLimit.begin(movementTimerCallback, (int)(TIME_LIMIT));
             }
             break;
         case MOVEING:
-            if (translatePID(&(myPOS.pos), dt, translate)) {
+            if (translatePID(&(myPOS.pos), dt)) {
                 setDriveSpeed(0,0); 
                 State = DONE;
                 movementTimeLimit.end();
             }
             break;
         case DONE:
+            delay(1000);
             findTarget();
             State = IDLE;
             break;

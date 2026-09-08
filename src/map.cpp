@@ -146,10 +146,12 @@ void poseTask() {
     float differential_heading = prev_heading - heading;
     prev_heading = heading;
 
+    while (differential_heading > 180.0f)  differential_heading -= 360.0f;
+    while (differential_heading <= -180.0f) differential_heading += 360.0f;
+
     //put x and y reading from optical flow sensor into a displacement vector
     pos_t displacement;
     read_opticalFlow(displacement.y, displacement.x);
-    //displacement.x *= -1;
 
     pos_vector_t robot_displacement = {
         differential_heading,

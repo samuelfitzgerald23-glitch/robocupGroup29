@@ -39,5 +39,5 @@ void read_opticalFlow(float& deltaX, float& deltaY) {
 
     deltaX = static_cast<float>(x)/COUNTS_PER_MM;
     deltaY = static_cast<float>(y)/COUNTS_PER_MM;
-    FastLED.show();
+    //FastLED.show();
 }

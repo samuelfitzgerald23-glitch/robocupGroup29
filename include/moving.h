@@ -44,8 +44,8 @@ void findTarget();
 float findAngle(pos_t* myPose);
 
 
-bool rotatePID(pos_vector_t* myPose, float dt, PID_t& rotate);
-bool translatePID(pos_t* currentXY, float dt, PID_t& translate);
+bool rotatePID(pos_vector_t* myPose, float dt);
+bool translatePID(pos_t* currentXY, float dt);
 
 void movementTask(float dt);
 

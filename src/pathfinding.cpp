@@ -1,6 +1,8 @@
 #include "pathfinding.h"
 #include <vector>
 
+#define WALL_CELL_INFLATION 2       //number of cells out from the wall we check to avoid it
+
 static Node pathMap[GRID_HEIGHT][GRID_WIDTH];
 
 static Node fullPath[MAX_PATH_LEN];
@@ -20,15 +22,17 @@ struct Queue {
     GridPos pop() { return data[head++]; }
 };
 
-static bool isWalkible(int x, int y) {
+static bool isWalkible(int x, int y, int inflation_factor) {
      if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return false;
     if (getMapValue(x, y) == INVALID_CELL) return false;
 
-    for (int i = 0; i < 8; i++) {
-        int nx = x + dx8[i];
-        int ny = y + dy8[i];
+    for (int n = 1; n == inflation_factor; n++) {
+        for (int i = 0; i < 8; i++) {
+        int nx = x + n*dx8[i];
+        int ny = y + n*dy8[i];
         if (nx < 0 || nx >= GRID_WIDTH || ny < 0 || ny >= GRID_HEIGHT) continue;  // off-grid neighbor isn't a wall, just skip it
         if (getMapValue(nx, ny) == INVALID_CELL) return false;
+    }
     }
     return true;
 }
@@ -71,11 +75,11 @@ int findPath(Node start, Node goal) {
         GridPos current = q.pop();
         if (current == goal.myCord) {found = 1; break;}
 
-        for (int d = 0; d < 8; d++) {
+        for (int d = 0; d < 4; d++) {
             uint8_t dx = current.x + dx4[d];
             uint8_t dy = current.y + dy4[d];
             //check if we can go here or if weve already checked here
-            if(!isWalkible(dx, dy)) continue;
+            if(!isWalkible(dx, dy, WALL_CELL_INFLATION)) continue;
             if(pathMap[dy][dx].visited) continue;
 
             pathMap[dy][dx].parentCord = current;

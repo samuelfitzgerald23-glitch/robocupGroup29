@@ -109,7 +109,7 @@ void IMU_task() {
   bno.getEvent(&accelerometerData, Adafruit_BNO055::VECTOR_ACCELEROMETER);
   bno.getEvent(&gravityData, Adafruit_BNO055::VECTOR_GRAVITY);
 
-  delay(BNO055_SAMPLERATE_DELAY_MS);
+  //delay(BNO055_SAMPLERATE_DELAY_MS);
 }
 
 float getHeading() {return (float)orientationData.orientation.x;}
