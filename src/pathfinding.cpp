@@ -1,7 +1,7 @@
 #include "pathfinding.h"
 #include <vector>
 
-#define WALL_CELL_INFLATION 2       //number of cells out from the wall we check to avoid it
+#define WALL_CELL_INFLATION 3       //number of cells out from the wall we check to avoid it
 
 static Node pathMap[GRID_HEIGHT][GRID_WIDTH];
 
@@ -91,10 +91,6 @@ int findPath(Node start, Node goal) {
     return reconsturctPath(start, goal, fullPath);
 
 }
-
-// fills waypoints[5] with world-mm points along the A* path, evenly spaced
-// through the path's cell indices. waypoints[4] is always the true goal.
-// returns false (waypoints untouched) if no path exists.
 
 int findPathWaypoints(Node start, Node goal, pos_t* waypoints) {
     int pathlength = findPath(start, goal);

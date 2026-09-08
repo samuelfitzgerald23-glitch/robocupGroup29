@@ -111,9 +111,6 @@ void setup() {
   pinMode(IO_POWER, OUTPUT);                 //Pin 49 is used to enable IO power
   digitalWrite(IO_POWER, 1);                 //Enable IO power on main CPU board
 
-  pinMode(14, OUTPUT);
-  digitalWrite(14, 1);
-
   // put your setup code here, to run once:
   Serial.begin(BAUD_RATE);
   Serial1.begin(BAUD_RATE);
@@ -130,6 +127,9 @@ void setup() {
   initMotors();
   sensorInit(&io);
   filteringInit();
+
+  pinMode(14, OUTPUT);
+  digitalWrite(14, 1);
 }
 
 void loop() {
