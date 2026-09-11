@@ -50,7 +50,7 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
 
 pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sensorVector, float theta);
 
-void map_init();
+void map_init(bool isLeftSide);
 
 void poseTask();
 

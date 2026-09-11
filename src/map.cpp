@@ -8,7 +8,9 @@ static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 //filtered sensors with offsets
 static location_sensor_t filtered_sensors[BUFFERCOUNT] = {
     {TOF1, {-5, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF1].offset))},
-    {TOF2, {5, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF2].offset))}
+    {TOF2, {5, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF2].offset))},
+    {DIFFTOF1, {}, PoseMatrix::buildFrame(&(filtered_sensors[TOF1].offset))},
+    {DIFFTOF2, {}, PoseMatrix::buildFrame(&(filtered_sensors[TOF2].offset))},
 };
 
 //non filtered sensors with offset
@@ -101,12 +103,10 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
     pos_t worldCoord;
     sensor_worldFrame.transformCoords(sensorVector, worldCoord);
 
-    if (!isWeight) {
-        int xr, yr, xw, yw;
-        worldToGrid(robot_worldFrame.x(), robot_worldFrame.y(), xr, yr);
-        worldToGrid(worldCoord.x, worldCoord.y, xw, yw);
-        rayTraceFree(xr, yr, xw, yw);
-    }
+    int xr, yr, xw, yw;
+    worldToGrid(robot_worldFrame.x(), robot_worldFrame.y(), xr, yr);
+    worldToGrid(worldCoord.x, worldCoord.y, xw, yw);
+    rayTraceFree(xr, yr, xw, yw);
 
     writeToMap(worldCoord.x, worldCoord.y, isWeight? static_cast<int8_t>(WEIGHT) : static_cast<int8_t>(INVALID_CELL));
 }
@@ -134,8 +134,13 @@ pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sen
  * overall func
  */
 
-void map_init() {
-    std::memset(mapData, static_cast<int8_t>(UNDEFINED_CELL), sizeof(mapData));
+void map_init(bool isLeftSide) {
+
+    int wallRow = (isLeftSide) ? X_ZERO-1 : X_ZERO+1;
+
+    for (int x = 0; x < GRID_WIDTH; x++) {
+        mapData[wallRow][x] = static_cast<int8_t>(INVALID_CELL);
+    }
 }
 
 void poseTask() {
@@ -163,30 +168,30 @@ void poseTask() {
     //find objects with the TOFs
     for (int i = 0; i < BUFFERCOUNT; i++) {
         pos_t sensorVector = {0, (float)getOutput(filtered_sensors[i].ID)};
-        projectSensorHit(filtered_sensors[i].sensor_robotFrame, &sensorVector, 0);
+        bool weightSeen = 0;
 
         //check to see if seen object is a weight
         switch (filtered_sensors[i].ID) {
-            case TOF1:  {
-                int16_t out1 = getOutput(DIFFTOF1);
-                if (out1 < (sensorVector.y - 100)) {
-                    pos_t diff1 = {0, (float)out1};
+            case DIFFTOF1:  {
+                int16_t out1 = getOutput(TOF1);
+                if (sensorVector.y < (out1 - 100)) {
                     //diff tofs have the same pose matrix as their parent sensor
-                    projectSensorHit(filtered_sensors[i].sensor_robotFrame, &diff1, 1);
+                    weightSeen = 1;
                 }
                 break;
             }
-            case TOF2:  {
-                int16_t out2 = getOutput(DIFFTOF2);
-                if (out2 < (sensorVector.y - 100)) {
-                    pos_t diff2 = {0, (float)out2};
-                    projectSensorHit(filtered_sensors[i].sensor_robotFrame, &diff2, 1);
+            case DIFFTOF2:  {
+                int16_t out2 = getOutput(TOF2);
+                if (sensorVector.y < (out2 - 100)) {
+                    weightSeen = 1;
                 }
                 break;
             }
             default:
                 break;
         }
+        if (sensorVector.y > 2000) continue; //ignore readings that are too far away
+        projectSensorHit(filtered_sensors[i].sensor_robotFrame, &sensorVector, weightSeen);
     }
 
     logPose(robot_worldFrame.theta(), robot_worldFrame.x(), robot_worldFrame.y());

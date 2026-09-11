@@ -16,7 +16,7 @@ IntervalTimer movementTimeLimit;
 static moveingState State = IDLE;
 
 static PID_t rotate(25, 1.5, 1, 450, 5);
-static PID_t translate(5, 0, 0, 150, 50);
+static PID_t translate(7, 0, 1, 450, 25);
 
 static pos_t targetlist[MAX_WAYPOINT_COUNT] = {{0,0},{0,200},{200,200},{200,0},{0,0}};
 static int targetCount = 5;

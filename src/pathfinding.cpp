@@ -1,7 +1,7 @@
 #include "pathfinding.h"
 #include <vector>
 
-#define WALL_CELL_INFLATION 3       //number of cells out from the wall we check to avoid it
+#define WALL_CELL_INFLATION 2       //number of cells out from the wall we check to avoid it
 
 static Node pathMap[GRID_HEIGHT][GRID_WIDTH];
 
@@ -26,7 +26,7 @@ static bool isWalkible(int x, int y, int inflation_factor) {
      if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return false;
     if (getMapValue(x, y) == INVALID_CELL) return false;
 
-    for (int n = 1; n == inflation_factor; n++) {
+    for (int n = 1; n <= inflation_factor; n++) {
         for (int i = 0; i < 8; i++) {
         int nx = x + n*dx8[i];
         int ny = y + n*dy8[i];
