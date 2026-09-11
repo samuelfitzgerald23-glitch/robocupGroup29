@@ -173,6 +173,7 @@ void poseTask() {
         //check to see if seen object is a weight
         switch (filtered_sensors[i].ID) {
             case DIFFTOF1:  {
+                if (sensorVector.y > 1000) continue;
                 int16_t out1 = getOutput(TOF1);
                 if (sensorVector.y < (out1 - 100)) {
                     //diff tofs have the same pose matrix as their parent sensor
@@ -181,6 +182,7 @@ void poseTask() {
                 break;
             }
             case DIFFTOF2:  {
+                if (sensorVector.y > 1000) continue;
                 int16_t out2 = getOutput(TOF2);
                 if (sensorVector.y < (out2 - 100)) {
                     weightSeen = 1;
