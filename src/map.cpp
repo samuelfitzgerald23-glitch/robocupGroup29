@@ -40,10 +40,15 @@ static void logPose(float theta, float x, float y) {
 
 bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y) {
     //converts world coords to map indeces, then returns true is point is on the map
-    grid_x = (int)roundf(world_x / CELL_SIZE) + X_ZERO;
-    grid_y = (int)roundf(world_y / CELL_SIZE) + Y_ZERO;
+    int gx = (int)roundf(world_x / CELL_SIZE) + X_ZERO;
+    int gy = (int)roundf(world_y / CELL_SIZE) + Y_ZERO;
 
-    return(grid_x >= 0 && grid_x < GRID_WIDTH && grid_y >= 0 && grid_y < GRID_HEIGHT);
+    bool inBounds = (gx >= 0 && gx < GRID_WIDTH && gy >= 0 && gy < GRID_HEIGHT);
+
+    grid_x = constrain(gx, 0, GRID_WIDTH - 1);
+    grid_y = constrain(gy, 0, GRID_HEIGHT - 1);
+
+    return inBounds;
 }
 
 void gridToWorld(int gx, int gy, float& world_x, float& world_y) {

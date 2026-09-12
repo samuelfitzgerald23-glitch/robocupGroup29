@@ -8,7 +8,7 @@
 #define MAX_PATH_LEN GRID_HEIGHT * GRID_WIDTH
 
 struct GridPos {
-    uint8_t x, y;
+    int x, y;
     bool operator==(const GridPos& o) const {return x==o.x && y==o.y;};
 };
 

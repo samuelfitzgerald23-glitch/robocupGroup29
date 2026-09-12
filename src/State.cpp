@@ -34,8 +34,12 @@ void StateMachineTask() {
             int start_x, start_y, goal_x, goal_y;
             pos_t currentPos = getMyPOS().pos;
 
-            worldToGrid(currentPos.x, currentPos.y, start_x, start_y);
-            worldToGrid(goal_pos.x, goal_pos.y, goal_x, goal_y);
+            bool startValid = worldToGrid(currentPos.x, currentPos.y, start_x, start_y);
+            bool goalValid = worldToGrid(goal_pos.x, goal_pos.y, goal_x, goal_y);
+
+            if (!startValid || !goalValid) {
+                break;  // don't pathfind from/to a clamped, not-really-there position
+            }
 
             int targetCount = findPathWaypoints({{(uint8_t)start_x, (uint8_t)start_y}}, {{(uint8_t)goal_x, (uint8_t)goal_y}}, microSteps);
 

@@ -76,8 +76,8 @@ int findPath(Node start, Node goal) {
         if (current == goal.myCord) {found = 1; break;}
 
         for (int d = 0; d < 4; d++) {
-            uint8_t dx = current.x + dx4[d];
-            uint8_t dy = current.y + dy4[d];
+            int dx = current.x + dx4[d];
+            int dy = current.y + dy4[d];
             //check if we can go here or if weve already checked here
             if(!isWalkible(dx, dy, WALL_CELL_INFLATION)) continue;
             if(pathMap[dy][dx].visited) continue;
