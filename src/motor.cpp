@@ -4,12 +4,12 @@
 #include <Arduino.h>
 
 //driving motors
-#define DRIVE1_PIN 0    //left
-#define DRIVE2_PIN 1    //right
+#define DRIVE1_PIN 3    //left
+#define DRIVE2_PIN 2    //right
 
 //fan blade motors
-#define FAN1_PIN 7 //RHS
-#define FAN2_PIN 8 //LHS
+#define FAN1_PIN 5 //RHS
+#define FAN2_PIN 4 //LHS
 
 
 //motor speed limits
@@ -41,7 +41,7 @@ void initMotors() {
 }
 
 void setDriveSpeed(int speed1, int speed2) {
-    int pulseWidth1 = STOP - speed1;
+    int pulseWidth1 = STOP + speed1;
     int pulseWidth2 = STOP - speed2;
 
     if (pulseWidth1 > FULLFORWARD) pulseWidth1 = FULLFORWARD;
@@ -63,6 +63,6 @@ void setFanSpeed(int speed) {
 }
 
 void motorTask() {
-    setDriveSpeed(0, 0);
+    setDriveSpeed(300, 300);
     setFanSpeed(450);
 }

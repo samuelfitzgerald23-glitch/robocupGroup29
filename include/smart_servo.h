@@ -11,7 +11,9 @@ void initSmartServo(void);
 void setServoPosition(uint16_t position);
 uint16_t getServoPosition(uint16_t &position);
 void servoTask();
-void startServoSequence(); 
+void startServoSequence(uint16_t position);
+void sortWantedWeight();
+void sortUnwantedWeight();
 
 #endif // SMART_SERVO_H
 

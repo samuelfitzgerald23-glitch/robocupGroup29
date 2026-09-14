@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include "sensor.h"
-#include "smart_servo.h"
+#include "colour_sensor.h"
 #include "circBuf.h"
+#include "proximity.h"
 
 #include <Wire.h>
 #include <VL53L0X.h>
@@ -27,13 +28,6 @@ const uint8_t xshutPins[8] = {0,1,2,3,4,5,6,7};
 
 SX1509 io; // Create an SX1509 object to be used throughout
 VL53L0X sensors[sensorCount];
-
-
-
-//proximity output
-#define LARGE_PROX_OUTPUT 20
-
-volatile bool largeProxTriggered = false;
 
 /*
 *   TOF sensor functions
@@ -225,45 +219,14 @@ void IMU_task() {
   delay(BNO055_SAMPLERATE_DELAY_MS);
 }
 
+
 /*
 *   main task for sensors
 */
 
-/*
-Proximity sensor init/task functions
-*/
-void largeProxISR()
-{
-    largeProxTriggered = true;
-}
-
-
-void proximity_init()
-{
-    pinMode(LARGE_PROX_OUTPUT, INPUT);
-
-    //make proximity sensor generate an interrupt if weight detected
-    attachInterrupt(
-      digitalPinToInterrupt(LARGE_PROX_OUTPUT),
-      largeProxISR,
-      FALLING
-    );
-
-}
-
-
-void proximity_task()
-{
-    if (largeProxTriggered) {
-      largeProxTriggered = false;
-      Serial.println("Large proximity triggered!");
-      
-      startServoSequence();
-    }
-}
-
 void sensorTask() {
-  TOF();
+  //TOF();
   //IMU_task();
   proximity_task();
 }
+

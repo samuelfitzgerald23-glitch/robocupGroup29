@@ -1,5 +1,7 @@
 #include <Arduino.h>
 #include "smart_servo.h"
+#include "proximity.h"
+#include "colour_sensor.h"
 #include <HerkulexServo.h>
 
 #define SERVO_SECOND 1000000
@@ -25,8 +27,8 @@ volatile bool servoTimeout = false;
 
 //variables for sorting servo sequence (state machine)
 volatile bool servoSequenceActive = false;
-
 uint8_t servoState = 0;
+uint16_t targetPosition;
 
 uint8_t num_weights = 0; //keep track of metal weights onboard
 
@@ -79,12 +81,20 @@ void servoTask()
 
                 servoTimeout = false;
 
-                setServoPosition(WANTED_WEIGHT);
-                Serial.println("Moved to wanted weight position");
+                setServoPosition(targetPosition);
+                
+                if (targetPosition == WANTED_WEIGHT) {
+                    Serial.println("Moved to wanted weight position");
+                } else {
+                    Serial.println("Moved to unwanted weight position");
+                }
 
                 servoState = 1;
 
                 ServoTimeout.begin(servo_timeout, 5*SERVO_SECOND);
+
+                resetMetalDetection();
+
             }
             break;
         case 1:
@@ -98,9 +108,10 @@ void servoTask()
                 servoSequenceActive = false;
                 servoState = 2;
             }
+            break;         
+
+        case 2: //finished
             break;
-        case 2: //finished (could add in rejection of plastic weights here once have colour sensor)
-            break;            
     }
 
     Serial.print("Current position: ");
@@ -111,13 +122,28 @@ void servoTask()
 
 }
 
-void startServoSequence() 
+void sortWantedWeight()
+{
+    startServoSequence(WANTED_WEIGHT);
+}
+
+void sortUnwantedWeight()
+{
+    startServoSequence(UNWANTED_WEIGHT);
+}
+
+
+void startServoSequence(uint16_t position) 
 {
     servoSequenceActive = true;
-    servoState = 0; //start at the first state in sorting sequence (waiting for 2 seconds)
+    servoState = 0; 
 
-    num_weights += 1;
+    targetPosition = position;
+
+    if (position == WANTED_WEIGHT) {
+        num_weights += 1;
+    }
+
     servoTimeout = false;
-
     ServoTimeout.begin(servo_timeout, 1*SERVO_SECOND); //starts 2 second timer
 }

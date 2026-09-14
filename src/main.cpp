@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include "motor.h"
 #include "sensor.h"
+#include "proximity.h"
+#include "colour_sensor.h"
 #include "smart_servo.h"
 #include "filtering.h"
 
@@ -9,6 +11,7 @@
 
 #define MOTORFREQUENCY 37 // 37Hz
 #define SENSORFREQUENCY 50 //50Hz
+#define COLOURFREQUENCY 10 // 10Hz 
 #define FILTERFREQUENCY 500 //500Hz
 #define SERVOFREQUENCY 50 //50HZ
 
@@ -16,6 +19,7 @@
 #define SENSORPERIOD (MAXFREQUENCY / SENSORFREQUENCY)
 #define FILTERPERIOD (MAXFREQUENCY /  FILTERFREQUENCY)
 #define SERVOPERIOD (MAXFREQUENCY /  SERVOFREQUENCY)
+#define COLOURPERIOD (MAXFREQUENCY /  COLOURFREQUENCY)
 
 IntervalTimer tickTimer;
 
@@ -30,6 +34,7 @@ static uint32_t motorNextRun = MOTORPERIOD;
 static uint32_t sensorNextRun = SENSORPERIOD;
 static uint32_t filterNextRun = FILTERPERIOD;
 static uint32_t servoNextRun = SERVOPERIOD;
+static uint32_t colourNextRun = COLOURPERIOD;
 
 void setup() {
   // put your setup code here, to run once:
@@ -39,6 +44,8 @@ void setup() {
   filteringInit();
   IMU_init();
   proximity_init();
+  colour_init();
+  initSmartServo();
 
   tickMain = 0;
   tickTimer.priority(0);
@@ -54,7 +61,7 @@ void loop() {
 
   if(tickCopy > motorNextRun) {
     motorNextRun += MOTORPERIOD;
-    motorTask();
+    //motorTask();
   }
   if(tickCopy > sensorNextRun) {
     sensorNextRun += SENSORPERIOD;
@@ -71,6 +78,11 @@ void loop() {
   if(tickCopy > servoNextRun) {
     servoNextRun += SERVOPERIOD;
     servoTask();
+  }
+
+  if(tickCopy > colourNextRun) {
+    colourNextRun += COLOURPERIOD;
+    colour_Task();
   }
 
 }
