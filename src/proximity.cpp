@@ -1,11 +1,17 @@
 #include <Arduino.h>
+#include "proximity.h"
+#include "colour_sensor.h"
 #include "smart_servo.h"
 
 
 #define LARGE_PROX_OUTPUT 20
 
 volatile bool largeProxTriggered = false;
-volatile bool metalWeightDetected = false; 
+volatile bool metalWeightDetected = false;
+
+#define METAL_CLEAR_MIN 900
+#define METAL_CLEAR_MAX 2700
+
 
 /*
 Proximity sensor init/task functions
@@ -13,7 +19,6 @@ Proximity sensor init/task functions
 void largeProxISR()
 {
     largeProxTriggered = true;
-    metalWeightDetected = true;
 }
 
 
@@ -33,11 +38,22 @@ void proximity_init()
 
 void proximity_task()
 {
-    if (largeProxTriggered) {
-      largeProxTriggered = false;
-      Serial.println("Large proximity triggered!");
-      
+    if (!largeProxTriggered) {
+        return;
+    }
+
+    largeProxTriggered = false;
+
+    uint16_t clear = get_clear_value();
+    Serial.print("Clear: ");
+    Serial.println(clear);
+
+    if (clear>=METAL_CLEAR_MIN && clear <= METAL_CLEAR_MAX) {
+      metalWeightDetected = true;
+      Serial.println("Metal weight detected!");
       sortWantedWeight();
+    } else {
+        Serial.println("False proximity trigger ignored");
     }
 }
 
@@ -50,3 +66,4 @@ void resetMetalDetection()
 {
     metalWeightDetected = false;
 }
+

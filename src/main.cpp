@@ -61,7 +61,7 @@ void loop() {
 
   if(tickCopy > motorNextRun) {
     motorNextRun += MOTORPERIOD;
-    //motorTask();
+    motorTask();
   }
   if(tickCopy > sensorNextRun) {
     sensorNextRun += SENSORPERIOD;
@@ -77,7 +77,7 @@ void loop() {
   }
   if(tickCopy > servoNextRun) {
     servoNextRun += SERVOPERIOD;
-    servoTask();
+    sortingServoTask();
   }
 
   if(tickCopy > colourNextRun) {
