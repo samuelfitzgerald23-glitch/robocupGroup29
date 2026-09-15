@@ -1,7 +1,6 @@
 #include "moving.h"
 #include "motor.h"
 #include <string>
-#include <vector>
 #include <Arduino.h>
 
 /*
@@ -15,8 +14,8 @@ IntervalTimer movementTimeLimit;
 
 static moveingState State = IDLE;
 
-static PID_t rotate(25, 1.5, 1, 450, 5);
-static PID_t translate(7, 0, 1, 450, 25);
+static PID_t rotate(25, 1.5, 1, 450, 300, 5);
+static PID_t translate(7, 0, 1, 450, 450, 25);
 
 static pos_t targetlist[MAX_WAYPOINT_COUNT] = {{0,0},{0,250},{250,250},{250,0},{0,0}};
 static int targetCount = 5;

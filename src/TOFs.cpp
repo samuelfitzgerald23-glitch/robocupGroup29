@@ -60,7 +60,7 @@ void TOFinit(SX1509* io) {
 
     sensors[i].setROISize(4, 4);  //set region of interest (default is 16x16)
 
-    sensors[i].startContinuous(50);
+    sensors[i].startContinuous(35);
   }
 }
 

@@ -98,8 +98,7 @@ void updatePose(pos_vector_t* Pose) {
     writeToMap(robot_worldFrame.x(), robot_worldFrame.y(), static_cast<int8_t>(VALID_POS));
 
     //get new POS
-    PoseMatrix delta = PoseMatrix::buildFrame(Pose);
-    robot_worldFrame = robot_worldFrame.transformFrame(delta);
+    robot_worldFrame = robot_worldFrame.transformFrame(PoseMatrix::buildFrame(Pose));
 
     //write current POS
     writeToMap(robot_worldFrame.x(), robot_worldFrame.y(), static_cast<int8_t>(MY_POS));
