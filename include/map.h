@@ -15,6 +15,8 @@
 #define MAX_WAYPOINT_COUNT 24
 #define WAYPOINT_SPACING 500.0f
 
+#define ROBOT_WIDTH  2          //1/2robot width/hieght in cells
+
 //meters -> decimeters
 #define GRID_WIDTH  40
 #define GRID_HEIGHT 80
@@ -59,5 +61,7 @@ pos_vector_t getMyPOS();
 int8_t getMapValue(int x, int y);
 
 void setTurning(bool turning);
+
+bool isWalkible(int x, int y, int inflation_factor);
 
 #endif //MAP_H

@@ -55,7 +55,13 @@ void StateMachineTask() {
         }
         case MOVE:
             movementTask(dt);
-            if(getPathStatus()) CurrentState = PATHFIND;
+            if(getPathStatus()) {
+                if(getPathBlockedStatus()) {
+                    CurrentState = PATHFIND;
+                } else {
+                    CurrentState = DETERMINE_ACTION;
+                }
+            }
             break;
         case DETERMINE_ACTION: {
             if(goal_type == static_cast<int8_t>(WEIGHT)) {

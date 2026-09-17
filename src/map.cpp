@@ -12,6 +12,9 @@
 #define MAX_WEIGHT_DIST (1/2 * MAX_SIGHT_DIST)
 #define WEIGHT_OFFSET 500.0f
 
+static const int8_t dx8[8] = {1, -1, 0, 0, 1, 1, -1, -1};
+static const int8_t dy8[8] = {0, 0, 1, -1, 1, -1, 1, -1};
+
 static bool isTurning = 0;
 
 static float prev_heading = 0;
@@ -246,4 +249,19 @@ int8_t getMapValue(int x, int y) {
 
 void setTurning(bool turning) {
     isTurning = turning;
+}
+
+bool isWalkible(int x, int y, int inflation_factor) {
+     if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return false;
+    if (getMapValue(x, y) == INVALID_CELL) return false;
+
+    for (int n = 1; n <= inflation_factor; n++) {
+        for (int i = 0; i < 8; i++) {
+        int nx = x + n*dx8[i];
+        int ny = y + n*dy8[i];
+        if (nx < 0 || nx >= GRID_WIDTH || ny < 0 || ny >= GRID_HEIGHT) continue;  // off-grid neighbor isn't a wall, just skip it
+        if (getMapValue(nx, ny) == INVALID_CELL) return false;
+    }
+    }
+    return true;
 }

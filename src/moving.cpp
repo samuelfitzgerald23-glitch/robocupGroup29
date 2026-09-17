@@ -21,6 +21,7 @@ static pos_t targetlist[MAX_WAYPOINT_COUNT];
 static int targetCount = 5;
 static int targetIndex = -1;
 bool pathfinished = 0;
+bool pathBlocked = 0;
 
 static pos_t currentTarget = {0,0};
 
@@ -36,11 +37,40 @@ static void setTarget() {
     currentTarget = targetlist[targetIndex];
 }
 
+static bool pathSegmentBlocked(pos_t from, pos_t to) {
+    int x0, y0, x1, y1;
+    worldToGrid(from.x, from.y, x0, y0);
+    worldToGrid(to.x, to.y, x1, y1);
+
+    // reuse the same Bresenham walk used elsewhere for ray tracing
+    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int error = dx + dy;
+    int x = x0, y = y0;
+
+    while (!(x == x1 && y == y1)) {
+        if (!isWalkible(x, y, ROBOT_WIDTH)) return true;
+        int e2 = 2 * error;
+        if (e2 >= dy) { error += dy; x += sx; }
+        if (e2 <= dx) { error += dx; y += sy; }
+    }
+    return false;
+}
+
 void findTarget() {
     //get the next target
     if((targetIndex < targetCount-1) && !pathfinished) {
         targetIndex++;
         setTarget();
+
+        pos_t myPos = getMyPOS().pos;
+        if (pathSegmentBlocked(myPos, currentTarget)) {
+            Serial.println("findTarget: upcoming segment now blocked, forcing re-path");
+            pathfinished = 1;   // signals State.cpp to go back through PATHFIND
+            pathBlocked = 1;
+            targetIndex = 0;
+        }
+
     } else {  
         targetIndex = 0;
         pathfinished = 1;
@@ -132,6 +162,10 @@ void movementTask(float dt) {
 
 bool getPathStatus() {
     return pathfinished;
+}
+
+bool getPathBlockedStatus() {
+    return pathBlocked;
 }
 
 void setPath(const pos_t* path, int count) {

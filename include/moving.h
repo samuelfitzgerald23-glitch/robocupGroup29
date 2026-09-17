@@ -53,6 +53,8 @@ void movementTask(float dt);
 
 bool getPathStatus();
 
+bool getPathBlockedStatus();
+
 void setPath(const pos_t* path, int count);
 
 #endif //MOVING_H
