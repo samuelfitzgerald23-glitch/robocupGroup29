@@ -1,7 +1,7 @@
 #include "pathfinding.h"
 #include <vector>
 
-#define WALL_CELL_INFLATION 2       //number of cells out from the wall we check to avoid it
+#define WALL_CELL_INFLATION 5       //number of cells out from the wall we check to avoid it
 
 static Node pathMap[GRID_HEIGHT][GRID_WIDTH];
 
@@ -59,7 +59,7 @@ static int reconsturctPath(Node start, Node goal, Node* path) {
 }
 
 
-int findPath(Node start, Node goal) {
+static int findPathAtInflation(Node start, Node goal, int inflation) {
     clearMap();
 
     static Queue q;
@@ -79,7 +79,7 @@ int findPath(Node start, Node goal) {
             int dx = current.x + dx4[d];
             int dy = current.y + dy4[d];
             //check if we can go here or if weve already checked here
-            if(!isWalkible(dx, dy, WALL_CELL_INFLATION)) continue;
+            if(!isWalkible(dx, dy, inflation)) continue;
             if(pathMap[dy][dx].visited) continue;
 
             pathMap[dy][dx].parentCord = current;
@@ -87,9 +87,25 @@ int findPath(Node start, Node goal) {
             q.push({dx, dy});
         }
     }
+
+
     if(!found) return 0;
     return reconsturctPath(start, goal, fullPath);
 
+}
+
+int findPath(Node start, Node goal) {
+    for (int inflation = WALL_CELL_INFLATION; inflation >= 0; inflation--) {
+        if (findPathAtInflation(start, goal, inflation)) {
+            if (inflation < WALL_CELL_INFLATION) {
+                Serial.print("findPath: reduced inflation to ");
+                Serial.print(inflation);
+                Serial.println(" to find a route");
+            }
+            return reconsturctPath(start, goal, fullPath);
+        }
+    }
+    return 0;  // no path even with zero inflation - genuinely blocked
 }
 
 int findPathWaypoints(Node start, Node goal, pos_t* waypoints) {

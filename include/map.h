@@ -58,4 +58,6 @@ pos_vector_t getMyPOS();
 
 int8_t getMapValue(int x, int y);
 
+void setTurning(bool turning);
+
 #endif //MAP_H

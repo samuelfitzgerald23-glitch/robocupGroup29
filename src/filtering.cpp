@@ -25,6 +25,8 @@ void filterTask() {
     Serial.println("filter task");
     for (int i = 0; i < BUFFERCOUNT; i++){
         filteredOutputs[i] = (int16_t)roundf(signalAverage(getBuf((BufID)i)));
+        Serial.print(BufID(i));
+        Serial.print(": ");
         Serial.print(filteredOutputs[i]);
         Serial.print(", ");
     }

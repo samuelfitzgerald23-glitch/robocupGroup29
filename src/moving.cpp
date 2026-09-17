@@ -8,16 +8,16 @@ TODO:
 - Tune PID controller
 */
 
-#define TIME_LIMIT 2000000
+#define TIME_LIMIT 2500000
 
 IntervalTimer movementTimeLimit;
 
 static moveingState State = IDLE;
 
-static PID_t rotate(25, 1.5, 1, 450, 300, 5);
-static PID_t translate(7, 0, 1, 450, 450, 25);
+static PID_t rotate(25, 1.5, 1, 450, 350, 5);
+static PID_t translate(8.5, 1, 0, 450, 450, 25);
 
-static pos_t targetlist[MAX_WAYPOINT_COUNT] = {{0,0},{0,250},{250,250},{250,0},{0,0}};
+static pos_t targetlist[MAX_WAYPOINT_COUNT];
 static int targetCount = 5;
 static int targetIndex = -1;
 bool pathfinished = 0;
@@ -107,8 +107,10 @@ void movementTask(float dt) {
             break;
         }
         case TURNING:
+            setTurning(1);
             if (rotatePID(&myPOS, dt)) {
-                setDriveSpeed(0,0); 
+                setDriveSpeed(0,0);
+                setTurning(0);
                 State = MOVEING;
                 movementTimeLimit.begin(movementTimerCallback, (int)(TIME_LIMIT));
             }

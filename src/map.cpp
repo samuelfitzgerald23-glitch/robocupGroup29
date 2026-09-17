@@ -1,11 +1,18 @@
 #include "map.h"
 #include <Arduino.h>
 
+//tof fov in deg
+#define TOF_FULL_FOV 27/2               //half of cone angle at max ROI (16x16)
+#define TOF_FOV TOF_FULL_FOV * 1/4      //half cone angle for 4x4 grid
+#define N_TOF_RAYS 5
+
 #define NON_COUPLED_SENSORS (BUFFERCOUNT - 2)
 #define MAX_SIGHT_DIST 1500
 #define MIN_SIGHT_DIST 50
 #define MAX_WEIGHT_DIST (1/2 * MAX_SIGHT_DIST)
-#define WEIGHT_OFFSET 100
+#define WEIGHT_OFFSET 500.0f
+
+static bool isTurning = 0;
 
 static float prev_heading = 0;
 
@@ -104,6 +111,22 @@ void updatePose(pos_vector_t* Pose) {
     writeToMap(robot_worldFrame.x(), robot_worldFrame.y(), static_cast<int8_t>(MY_POS));
 }
 
+void projectSensorCone(const PoseMatrix& sensor_robotFrame, float distance, bool isWeight) {
+    for (int i = 0; i < N_TOF_RAYS; i++) {
+        // spread evenly from -halfFOV to +halfFOV
+        float angleOffsetDeg = (2.0f * TOF_FOV) * i / (N_TOF_RAYS - 1) - TOF_FOV;
+        float angleOffsetRad = angleOffsetDeg * D_TO_R;
+
+        // same polar-to-Cartesian convention as your existing sensorVector (y-forward)
+        pos_t rayVector = {
+            distance * std::sin(angleOffsetRad),
+            distance * std::cos(angleOffsetRad)
+        };
+
+        projectSensorHit(sensor_robotFrame, &rayVector, isWeight);
+    }
+}
+
 void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, bool isWeight) {
     //transform sensor frame into world coords
     PoseMatrix sensor_worldFrame = robot_worldFrame.transformFrame(sensor_robotFrame);
@@ -175,27 +198,28 @@ void poseTask() {
 
     //find objects with the TOFs
     for (int i = 0; i < NON_COUPLED_SENSORS; i++) {
-        pos_t sensorVector = {0, (float)getOutput(filtered_sensors[i].ID)};
-        if (sensorVector.y > MAX_SIGHT_DIST) continue;
-        if (sensorVector.y < MIN_SIGHT_DIST) continue;
-        projectSensorHit(filtered_sensors[i].sensor_robotFrame, &sensorVector, 0);
+        if (isTurning) continue;
+
+        float sensorDist = (float)getOutput(filtered_sensors[i].ID);
+        if (sensorDist > MAX_SIGHT_DIST) continue;
+        if (sensorDist < MIN_SIGHT_DIST) continue;
+
+        projectSensorCone(filtered_sensors[i].sensor_robotFrame, sensorDist, 0);
 
         //check to see if seen object is a weight
         switch (filtered_sensors[i].ID) {
             case TOF1:  {
                 pos_t out1 = {0 , (float)getOutput(DIFFTOF1)};
-                if (out1.y < (sensorVector.y - WEIGHT_OFFSET)) {
-                    if (out1.y > MAX_WEIGHT_DIST) continue;
-                    if (out1.y < MIN_SIGHT_DIST) continue;
+                if (out1.y < (sensorDist - WEIGHT_OFFSET)) {
+                    Serial.println("WEIGHT WRITE FIRING");
                     projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out1, 1);
                 }
                 break;
             }
             case TOF2:  {
                 pos_t out2 = {0 , (float)getOutput(DIFFTOF2)};
-                if (out2.y < (sensorVector.y - WEIGHT_OFFSET)) {
-                    if (out2.y > MAX_WEIGHT_DIST) continue;
-                    if (out2.y < MIN_SIGHT_DIST) continue;
+                if (out2.y < (sensorDist - WEIGHT_OFFSET)) {
+                    Serial.println("WEIGHT WRITE FIRING");
                     projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out2, 1);
                 }
                 break;
@@ -209,7 +233,7 @@ void poseTask() {
 }
 
 /*******************************************************************************************************************************************************************************
- * getters
+ * getters/setters
  */
 
 pos_vector_t getMyPOS() {
@@ -218,4 +242,8 @@ pos_vector_t getMyPOS() {
 
 int8_t getMapValue(int x, int y) {
     return mapData[y][x];
+}
+
+void setTurning(bool turning) {
+    isTurning = turning;
 }

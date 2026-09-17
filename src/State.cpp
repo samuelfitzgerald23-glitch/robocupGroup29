@@ -4,12 +4,12 @@ IntervalTimer TimeoutCheck;
 
 static int lastTime = 0;
 
-static robotState CurrentState = MOVE;
+static robotState CurrentState = STARTUP;
 
-static int8_t goal_type = 3;
+static int8_t goal_type = 0;
 static pos_t goal_pos = {1000,1000};
 
-static pos_t microSteps[MAX_WAYPOINT_COUNT];
+static pos_t microSteps[MAX_WAYPOINT_COUNT] = {{0,0},{0,250},{250,250},{250,0},{0,0}};
 
 static void state_timeout() {
     //if a timeout occurs switch state to idle to start sequence again
@@ -23,6 +23,10 @@ void StateMachineTask() {
     lastTime = now;
 
     switch (CurrentState) {
+        case STARTUP:
+            setPath(&microSteps[0], 5);
+            CurrentState = MOVE;
+            break;
         case CHECK:
             //check fornumber of weights and stuff idk
             CurrentState = FIND_TARGET;
