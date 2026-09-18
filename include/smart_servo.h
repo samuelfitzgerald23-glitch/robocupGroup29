@@ -14,6 +14,7 @@ void sortingServoTask();
 void startServoSequence(uint16_t position);                   
 void sortWantedWeight();
 void sortUnwantedWeight();
+void servo_test();
 
 #endif // SMART_SERVO_H
 

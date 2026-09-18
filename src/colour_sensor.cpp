@@ -2,19 +2,24 @@
 #include <Arduino.h>
 #include "proximity.h"
 #include "smart_servo.h"
+#include "circBuf.h"
+#include "filtering.h"
 #include <Adafruit_TCS34725.h>
 
-Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_16X);
+Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_60X);
 
 // Latch one detection while the same plastic weight remains under the sensor.
 // colour_Task() runs repeatedly, so without this latch it continually restarts
 // the sorting timer until the weight is removed.
 static bool plasticWeightPresent = false;
+static uint16_t filteredClear = 0;
+
+#define PLASTIC_WEIGHT_TOL 11000 
 
 
 void colour_init() 
 {
-  if (tcs.begin()) 
+  if (tcs.begin(TCS34725_ADDRESS, &Wire1)) 
   {
     Serial.println("Found colour sensor");
   } else 
@@ -24,41 +29,44 @@ void colour_init()
   }
 }
 
-
-void colour_Task() 
+static void updateClearValue()
 {
   uint16_t clear, red, green, blue;
 
-  tcs.setInterrupt(false);      // turn on LED
-
-  delay(60);  // takes 50ms to read 
+  tcs.setInterrupt(false);      // turn on 
   
   tcs.getRawData(&red, &green, &blue, &clear);
 
   tcs.setInterrupt(true);  // turn off LED
+  writeCircBuf(getBuf(COLOUR_CLEAR), clear);
+
+  filteredClear = filterTask(COLOUR_CLEAR);
+}
+
+
+void colour_Task() 
+{
+  updateClearValue();
   
-  //Serial.print("Clear:\t"); Serial.println(clear);
+  Serial.print("Clear (filtered):\t"); Serial.println(filteredClear);
   //Serial.print("\tRed:\t"); Serial.print(red);
   //Serial.print("\tGreen:\t"); Serial.print(green);
   //Serial.print("\tBlue:\t"); Serial.println(blue);
 
-  if ((clear >= 3000) && !get_metal_weight_detected() && !plasticWeightPresent) {
+  if ((filteredClear >= PLASTIC_WEIGHT_TOL) && !get_metal_weight_detected() && !plasticWeightPresent) {
       Serial.println("Plastic weight detected!");
       plasticWeightPresent = true;
       sortUnwantedWeight();
   }
 
   // Rearm the detector only after the current weight has left the sensor.
-  if (clear < 3000) {
+  if (filteredClear < PLASTIC_WEIGHT_TOL) {
       plasticWeightPresent = false;
   }
 
 }
 
-
 uint16_t get_clear_value()
 {
-  uint16_t clear, red, green, blue;
-  tcs.getRawData(&red, &green, &blue, &clear);
-  return clear;
+  return filteredClear;
 }

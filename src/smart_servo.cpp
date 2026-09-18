@@ -5,9 +5,10 @@
 #include <HerkulexServo.h>
 
 #define SERVO_SECOND 1000000
+#define SERIAL_SERVO Serial2
 
 // Use the Teensy's Serial7 (pins D28/D29)
-HerkulexServoBus servoBus(Serial7);
+HerkulexServoBus servoBus(SERIAL_SERVO);
 
 // Create a servo with ID 1
 HerkulexServo servo(servoBus, 1);
@@ -39,7 +40,7 @@ uint8_t num_weights = 0; //keep track of metal weights onboard
 
 void initSmartServo()
 {
-    Serial7.begin(115200);
+    SERIAL_SERVO.begin(115200);
     delay(100);
     servo.reboot();
     delay(500);
@@ -188,4 +189,16 @@ void startServoSequence(uint16_t position)
 
     servoTimeout = false;
     ServoTimeout.begin(servo_timeout, 1*SERVO_SECOND); // wait 2 seconds before sorting
+}
+
+void servo_test()
+{
+    servoBus.update();
+
+    uint16_t currentPosition = getServoPosition();
+
+    if (currentPosition != WANTED_WEIGHT) {
+        setServoPosition(WANTED_WEIGHT);
+    }
+
 }

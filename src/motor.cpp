@@ -35,9 +35,6 @@ void initMotors() {
 
     Fan1.writeMicroseconds(STOP);
     Fan2.writeMicroseconds(STOP);
-     
-    //initialise the servo motor
-    initSmartServo();
 }
 
 void setDriveSpeed(int speed1, int speed2) {
@@ -64,5 +61,5 @@ void setFanSpeed(int speed) {
 
 void motorTask() {
     //setDriveSpeed(300, 300);
-    setFanSpeed(450);
+    //setFanSpeed(450);
 }

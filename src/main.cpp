@@ -68,8 +68,8 @@ void loop() {
     sensorTask();
   }
   if(tickCopy > filterNextRun) {
-    uint16_t TOF1Output = filterTask(TOF1);
-    uint16_t TOF2Output = filterTask(TOF2);
+    //uint16_t TOF1Output = filterTask(TOF1);
+    //uint16_t TOF2Output = filterTask(TOF2);
     // Serial.print(TOF1Output);
     // Serial.print(" : ");
     // Serial.println(TOF2Output);
@@ -78,6 +78,7 @@ void loop() {
   if(tickCopy > servoNextRun) {
     servoNextRun += SERVOPERIOD;
     sortingServoTask();
+    //servo_test();
   }
 
   if(tickCopy > colourNextRun) {
