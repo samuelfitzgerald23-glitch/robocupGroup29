@@ -72,7 +72,7 @@ void writeToMap(float world_x, float world_y, int8_t value) {
     //write a value to a cell on the map
     int gx, gy;
 
-    if (worldToGrid(world_x, world_y, gx, gy) && (mapData[gy][gx] != static_cast<int>(WEIGHT))) {
+    if (worldToGrid(world_x, world_y, gx, gy) && ((mapData[gy][gx] != static_cast<int8_t>(WEIGHT)) && (mapData[gy][gx] != static_cast<int8_t>(EDGE_CELL)))) {
         mapData[gy][gx] = value;
         logCell(gx, gy, value);
     }
@@ -91,7 +91,7 @@ static void rayTraceFree(int x0, int y0, int x1, int y1) {
         if (x == x1 && y == y1) break;
 
         if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
-            if (mapData[y][x] != static_cast<int8_t>(WEIGHT)) {
+            if ((mapData[y][x] != static_cast<int8_t>(WEIGHT)) && (mapData[y][x] != static_cast<int8_t>(EDGE_CELL))) {
                 mapData[y][x] = static_cast<int8_t>(VALID_POS);
                 logCell(x, y, static_cast<int8_t>(VALID_POS));
             }
@@ -173,7 +173,13 @@ void map_init(bool isLeftSide) {
     int wallRow = (isLeftSide) ? X_ZERO-1 : X_ZERO+1;
 
     for (int x = 0; x < GRID_WIDTH; x++) {
-        mapData[wallRow][x] = static_cast<int8_t>(INVALID_CELL);
+        mapData[wallRow][x] = static_cast<int8_t>(EDGE_CELL);
+        mapData[0][x] = static_cast<int8_t>(EDGE_CELL);
+        mapData[GRID_HEIGHT-1][x] = static_cast<int8_t>(EDGE_CELL);
+    }
+    for (int y = 0; y < GRID_HEIGHT; y++) {
+        mapData[y][0] = static_cast<int8_t>(EDGE_CELL);
+        mapData[y][GRID_WIDTH-1] = static_cast<int8_t>(EDGE_CELL);
     }
 }
 
@@ -260,7 +266,7 @@ bool isWalkible(int x, int y, int inflation_factor) {
         int nx = x + n*dx8[i];
         int ny = y + n*dy8[i];
         if (nx < 0 || nx >= GRID_WIDTH || ny < 0 || ny >= GRID_HEIGHT) continue;  // off-grid neighbor isn't a wall, just skip it
-        if (getMapValue(nx, ny) == INVALID_CELL) return false;
+        if ((getMapValue(nx, ny) == INVALID_CELL) || (getMapValue(nx, ny) == EDGE_CELL)) return false;
     }
     }
     return true;

@@ -9,7 +9,7 @@ static robotState CurrentState = STARTUP;
 static int8_t goal_type = 0;
 static pos_t goal_pos = {1000,1000};
 
-static pos_t microSteps[MAX_WAYPOINT_COUNT] = {{0,0},{0,250},{250,250},{250,0},{0,0}};
+static pos_t microSteps[MAX_WAYPOINT_COUNT] = {{0,0},{0,200},{200,200},{200,0},{0,0}};
 
 static void state_timeout() {
     //if a timeout occurs switch state to idle to start sequence again

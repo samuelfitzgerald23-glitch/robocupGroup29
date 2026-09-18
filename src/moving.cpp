@@ -63,14 +63,6 @@ void findTarget() {
         targetIndex++;
         setTarget();
 
-        pos_t myPos = getMyPOS().pos;
-        if (pathSegmentBlocked(myPos, currentTarget)) {
-            Serial.println("findTarget: upcoming segment now blocked, forcing re-path");
-            pathfinished = 1;   // signals State.cpp to go back through PATHFIND
-            pathBlocked = 1;
-            targetIndex = 0;
-        }
-
     } else {  
         targetIndex = 0;
         pathfinished = 1;
@@ -122,6 +114,16 @@ void movementTask(float dt) {
 
     pos_vector_t myPOS = getMyPOS();
 
+    if (pathSegmentBlocked(myPOS.pos, currentTarget)) {
+            Serial.println("findTarget: upcoming segment now blocked, forcing re-path");
+            pathfinished = 1;   // signals State.cpp to go back through PATHFIND
+            pathBlocked = 1;
+            targetIndex = 0;
+            setDriveSpeed(0,0);
+            State = IDLE;
+            return;
+        }
+
     switch (State) {
         case IDLE:
             {
@@ -172,6 +174,8 @@ void setPath(const pos_t* path, int count) {
     targetCount = count;
     std::copy(path, path + count, targetlist);
     pathfinished = 0;
+    pathBlocked = 0;
+    currentTarget = targetlist[0];
     for(int i = 0; i < count; i++) {
         float wx = targetlist[i].x; float wy = targetlist[i].y;
         writeToMap(wx, wy, 2);

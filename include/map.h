@@ -27,7 +27,8 @@
 #define Y_ZERO 1
 
 enum cell_t {
-    INVALID_CELL = -3,
+    EDGE_CELL = -4,
+    INVALID_CELL,
     MY_POS,
     VALID_POS,
     UNDEFINED_CELL,
