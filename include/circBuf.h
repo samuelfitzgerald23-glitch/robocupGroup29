@@ -10,13 +10,18 @@
 #define BUFFERCOUNT 6
 #define BUFSIZE 5
 
+#include <stdint.h>
+
 enum BufID {
+    NON_FILTERED = -1,
     TOF1,
     TOF2,
     COLOUR_CLEAR,
     COLOUR_RED,
     COLOUR_BLUE,
     COLOUR_GREEN
+    DIFFTOF1,
+    DIFFTOF2
 };
 
 struct circBuf_t {
