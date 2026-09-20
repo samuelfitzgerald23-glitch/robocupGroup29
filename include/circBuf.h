@@ -7,13 +7,16 @@
 
 #include <stdint.h>
 
-#define BUFFERCOUNT 3
+#define BUFFERCOUNT 6
 #define BUFSIZE 5
 
 enum BufID {
     TOF1,
     TOF2,
-    COLOUR_CLEAR
+    COLOUR_CLEAR,
+    COLOUR_RED,
+    COLOUR_BLUE,
+    COLOUR_GREEN
 };
 
 struct circBuf_t {
