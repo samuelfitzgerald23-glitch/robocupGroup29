@@ -1,4 +1,13 @@
+#include <Arduino.h>
 #include "Sensors.h"
+#include "colour_sensor.h"
+#include "circBuf.h"
+#include "proximity.h"
+
+#include <Wire.h>
+#include <VL53L0X.h>
+#include <SparkFunSX1509.h>
+
 
 /*
 known I2C addresses:

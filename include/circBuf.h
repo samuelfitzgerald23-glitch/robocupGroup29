@@ -5,7 +5,9 @@
 #ifndef CIRCBUF_H
 #define CIRCBUF_H
 
-#define BUFFERCOUNT 4
+#include <stdint.h>
+
+#define BUFFERCOUNT 6
 #define BUFSIZE 5
 
 #include <stdint.h>
@@ -14,6 +16,10 @@ enum BufID {
     NON_FILTERED = -1,
     TOF1,
     TOF2,
+    COLOUR_CLEAR,
+    COLOUR_RED,
+    COLOUR_BLUE,
+    COLOUR_GREEN
     DIFFTOF1,
     DIFFTOF2
 };

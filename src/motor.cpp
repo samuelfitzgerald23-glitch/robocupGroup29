@@ -1,5 +1,6 @@
 #include <Servo.h>
 #include "motor.h"
+#include "smart_servo.h"
 #include <Arduino.h>
 
 //driving motors
@@ -7,9 +8,9 @@
 #define DRIVE2_PIN 0    //right
 
 //fan blade motors
-#define FAN1_PIN 7 //RHS
-#define FAN2_PIN 8 //LHS
-#define FAN_OFFSET 180
+#define FAN1_PIN 5 //RHS
+#define FAN2_PIN 4 //LHS
+
 
 //motor speed limits
 #define FULLREVERSE 1200
@@ -28,7 +29,6 @@ void initMotors() {
     Drive2.attach(DRIVE2_PIN);
     Fan1.attach(FAN1_PIN);
     Fan2.attach(FAN2_PIN);
-
     // Stop drive motors initially
     Drive1.writeMicroseconds(STOP);
     Drive2.writeMicroseconds(STOP);
@@ -42,8 +42,8 @@ void initMotors() {
 }
 
 void setDriveSpeed(int speed1, int speed2) {
-    int pulseWidth1 = STOP - speed1;
-    int pulseWidth2 = STOP + speed2;
+    int pulseWidth1 = STOP + speed1;
+    int pulseWidth2 = STOP - speed2;
 
     if (pulseWidth1 > FULLFORWARD) pulseWidth1 = FULLFORWARD;
     if (pulseWidth1 < FULLREVERSE) pulseWidth1 = FULLREVERSE;
@@ -58,11 +58,12 @@ void setDriveSpeed(int speed1, int speed2) {
 
 void setFanSpeed(int speed) {
     int pulse1 = STOP + speed; //RHS fan
-    int pulse2 = STOP - speed; //+ FAN_OFFSET; LHS fan
+    int pulse2 = STOP - speed; //LHS fan
     Fan1.writeMicroseconds(pulse1);
     Fan2.writeMicroseconds(pulse2);
 }
 
 void motorTask() {
-    
+    //setDriveSpeed(300, 300);
+    setFanSpeed(450);
 }

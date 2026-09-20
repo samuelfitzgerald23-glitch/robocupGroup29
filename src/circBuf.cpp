@@ -13,6 +13,10 @@ static circBuf_t buffersArray[BUFFERCOUNT];
 void bufArrayInit(void) {
     bufferInit(BUFSIZE, &buffersArray[TOF1]);
     bufferInit(BUFSIZE, &buffersArray[TOF2]);
+    bufferInit(BUFSIZE, &buffersArray[COLOUR_CLEAR]);
+    bufferInit(BUFSIZE, &buffersArray[COLOUR_RED]);
+    bufferInit(BUFSIZE, &buffersArray[COLOUR_GREEN]);
+    bufferInit(BUFSIZE, &buffersArray[COLOUR_BLUE]);
 }
 
 void bufferInit(uint16_t size, circBuf_t *Buffer) {

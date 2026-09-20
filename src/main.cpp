@@ -5,6 +5,10 @@
 #include <TaskScheduler.h>
 
 #include "motor.h"
+#include "sensor.h"
+#include "proximity.h"
+#include "colour_sensor.h"
+#include "smart_servo.h"
 #include "Sensors.h"
 #include "filtering.h"
 #include "map.h"
