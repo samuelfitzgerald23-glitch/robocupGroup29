@@ -42,17 +42,16 @@ static bool pathSegmentBlocked(pos_t from, pos_t to) {
     worldToGrid(from.x, from.y, x0, y0);
     worldToGrid(to.x, to.y, x1, y1);
 
-    // reuse the same Bresenham walk used elsewhere for ray tracing
     int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
     int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
     int error = dx + dy;
     int x = x0, y = y0;
 
     while (!(x == x1 && y == y1)) {
-        if (!isWalkible(x, y, ROBOT_WIDTH)) return true;
         int e2 = 2 * error;
         if (e2 >= dy) { error += dy; x += sx; }
         if (e2 <= dx) { error += dx; y += sy; }
+        if (!isWalkible(x, y, ROBOT_WIDTH)) return true;   // now checks the cell just stepped into, not the starting cell
     }
     return false;
 }
@@ -66,9 +65,6 @@ void findTarget() {
     } else {  
         targetIndex = 0;
         pathfinished = 1;
-        // for(int i = 0; i <= 4; i++) {
-        //     Serial.println("pos" + String(i) + ":" + String(completedTargetList[i].x) + ", " + String(completedTargetList[i].y));
-        // }
     }
 }
 
@@ -115,14 +111,14 @@ void movementTask(float dt) {
     pos_vector_t myPOS = getMyPOS();
 
     if (pathSegmentBlocked(myPOS.pos, currentTarget)) {
-            Serial.println("findTarget: upcoming segment now blocked, forcing re-path");
-            pathfinished = 1;   // signals State.cpp to go back through PATHFIND
-            pathBlocked = 1;
-            targetIndex = 0;
-            setDriveSpeed(0,0);
-            State = IDLE;
-            return;
-        }
+        pathfinished = 1;   // signals State.cpp to go back through PATHFIND
+        pathBlocked = 1;
+        targetIndex = 0;
+        setDriveSpeed(0,0);
+        State = IDLE;
+        movementTimeLimit.end();
+        return;
+    }
 
     switch (State) {
         case IDLE:
@@ -155,7 +151,6 @@ void movementTask(float dt) {
             }
             break;
         case DONE:
-            delay(1000);
             findTarget();
             State = IDLE;
             break;

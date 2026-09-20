@@ -8,7 +8,6 @@
 
 #define NON_COUPLED_SENSORS (BUFFERCOUNT - 2)
 #define MAX_SIGHT_DIST 1500
-#define MIN_SIGHT_DIST 50
 #define MAX_WEIGHT_DIST (1/2 * MAX_SIGHT_DIST)
 #define WEIGHT_OFFSET 500.0f
 
@@ -168,18 +167,20 @@ pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sen
  * overall func
  */
 
-void map_init(bool isLeftSide) {
-
-    int wallRow = (isLeftSide) ? X_ZERO-1 : X_ZERO+1;
+void map_init() {
 
     for (int x = 0; x < GRID_WIDTH; x++) {
-        mapData[wallRow][x] = static_cast<int8_t>(EDGE_CELL);
         mapData[0][x] = static_cast<int8_t>(EDGE_CELL);
         mapData[GRID_HEIGHT-1][x] = static_cast<int8_t>(EDGE_CELL);
+        logCell(0, x, static_cast<int8_t>(EDGE_CELL));
+        logCell(GRID_HEIGHT-1, x, static_cast<int8_t>(EDGE_CELL));
     }
+
     for (int y = 0; y < GRID_HEIGHT; y++) {
         mapData[y][0] = static_cast<int8_t>(EDGE_CELL);
         mapData[y][GRID_WIDTH-1] = static_cast<int8_t>(EDGE_CELL);
+        logCell(y, 0, static_cast<int8_t>(EDGE_CELL));
+        logCell(y, GRID_WIDTH-1, static_cast<int8_t>(EDGE_CELL));
     }
 }
 
@@ -211,7 +212,6 @@ void poseTask() {
 
         float sensorDist = (float)getOutput(filtered_sensors[i].ID);
         if (sensorDist > MAX_SIGHT_DIST) continue;
-        if (sensorDist < MIN_SIGHT_DIST) continue;
 
         projectSensorCone(filtered_sensors[i].sensor_robotFrame, sensorDist, 0);
 

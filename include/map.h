@@ -17,14 +17,14 @@
 
 #define ROBOT_WIDTH  2          //1/2robot width/hieght in cells
 
-//meters -> decimeters
-#define GRID_WIDTH  40
-#define GRID_HEIGHT 80
+#define GRID_WIDTH  50
+#define GRID_HEIGHT 96
 
-#define CELL_SIZE 100.0f      //mm per cell
+#define CELL_SIZE 50.0f      //mm per cell
 
-#define X_ZERO GRID_WIDTH/2
-#define Y_ZERO 1
+//#define X_ZERO (GRID_WIDTH-ROBOT_WIDTH-1)   //right side
+#define X_ZERO (ROBOT_WIDTH+1)              //left side
+#define Y_ZERO (ROBOT_WIDTH+1)
 
 enum cell_t {
     EDGE_CELL = -4,
@@ -53,7 +53,7 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
 
 pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sensorVector, float theta);
 
-void map_init(bool isLeftSide);
+void map_init();
 
 void poseTask();
 

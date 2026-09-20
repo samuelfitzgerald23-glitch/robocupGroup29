@@ -55,12 +55,8 @@ void StateMachineTask() {
         }
         case MOVE:
             movementTask(dt);
-            if(getPathStatus()) {
-                if(getPathBlockedStatus()) {
-                    CurrentState = PATHFIND;
-                } else {
-                    CurrentState = DETERMINE_ACTION;
-                }
+            if (getPathStatus()) {
+                CurrentState = getPathBlockedStatus() ? PATHFIND : DETERMINE_ACTION;
             }
             break;
         case DETERMINE_ACTION: {
