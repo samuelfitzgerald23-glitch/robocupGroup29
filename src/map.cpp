@@ -4,7 +4,7 @@
 //tof fov in deg
 #define TOF_FULL_FOV 27/2               //half of cone angle at max ROI (16x16)
 #define TOF_FOV TOF_FULL_FOV * 1/4      //half cone angle for 4x4 grid
-#define N_TOF_RAYS 5
+#define N_TOF_RAYS 6
 
 #define NON_COUPLED_SENSORS (BUFFERCOUNT - 2)
 #define MAX_SIGHT_DIST 1500
@@ -168,20 +168,6 @@ pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sen
  */
 
 void map_init() {
-
-    for (int x = 0; x < GRID_WIDTH; x++) {
-        mapData[0][x] = static_cast<int8_t>(EDGE_CELL);
-        mapData[GRID_HEIGHT-1][x] = static_cast<int8_t>(EDGE_CELL);
-        logCell(0, x, static_cast<int8_t>(EDGE_CELL));
-        logCell(GRID_HEIGHT-1, x, static_cast<int8_t>(EDGE_CELL));
-    }
-
-    for (int y = 0; y < GRID_HEIGHT; y++) {
-        mapData[y][0] = static_cast<int8_t>(EDGE_CELL);
-        mapData[y][GRID_WIDTH-1] = static_cast<int8_t>(EDGE_CELL);
-        logCell(y, 0, static_cast<int8_t>(EDGE_CELL));
-        logCell(y, GRID_WIDTH-1, static_cast<int8_t>(EDGE_CELL));
-    }
 }
 
 void poseTask() {

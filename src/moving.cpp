@@ -63,8 +63,8 @@ void findTarget() {
         setTarget();
 
     } else {  
-        targetIndex = 0;
         pathfinished = 1;
+        targetIndex = 0;
     }
 }
 

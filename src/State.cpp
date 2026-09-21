@@ -50,6 +50,8 @@ void StateMachineTask() {
             if (targetCount > 0) {
                 setPath(&microSteps[0], targetCount);
                 CurrentState = MOVE;
+            } if (targetCount == 0) {
+                CurrentState = STARTUP;
             }
             break;
         }

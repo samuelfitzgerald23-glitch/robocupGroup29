@@ -127,9 +127,6 @@ void setup() {
   initMotors();
   sensorInit(&io);
   filteringInit();
-
-  pinMode(14, OUTPUT);
-  digitalWrite(14, 1);
 }
 
 void loop() {
