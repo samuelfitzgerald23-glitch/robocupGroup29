@@ -6,8 +6,9 @@
 
 #define LARGE_PROX_OUTPUT 20
 
-#define METAL_CLEAR_MIN 4000
-#define METAL_CLEAR_MAX 10000
+//metal must be between these values 
+#define METAL_CLEAR_MIN 3000
+#define METAL_CLEAR_MAX 8000
 
 #define WEIGHT_CONFIRM_DELAY 1000  // 1.5 seconds
 
@@ -40,7 +41,7 @@ void proximity_init()
 
 }
 
-void proximity_task()
+void proximityTask()
 {
     // Step 1: Start the confirmation timer when proximity triggers
     if (largeProxTriggered) {

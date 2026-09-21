@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-#define BUFFERCOUNT 6
+#define BUFFERCOUNT 8
 #define BUFSIZE 5
 
 #include <stdint.h>
@@ -19,7 +19,7 @@ enum BufID {
     COLOUR_CLEAR,
     COLOUR_RED,
     COLOUR_BLUE,
-    COLOUR_GREEN
+    COLOUR_GREEN,
     DIFFTOF1,
     DIFFTOF2
 };

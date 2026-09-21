@@ -7,7 +7,7 @@
 
 void largeProxISR(void);
 void proximity_init(void);
-void proximity_task(void);
+void proximityTask(void);
 bool get_metal_weight_detected(void);
 void resetMetalDetection(void);
 

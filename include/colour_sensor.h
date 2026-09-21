@@ -3,7 +3,7 @@
 
 
 void colour_init(void);
-void colour_Task(void);
+void colourTask(void);
 static void updateColourValue(void);
 uint16_t get_clear_value(void);
 void printColourPlot(void);

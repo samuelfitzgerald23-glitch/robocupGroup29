@@ -5,7 +5,6 @@
 #include <TaskScheduler.h>
 
 #include "motor.h"
-#include "sensor.h"
 #include "proximity.h"
 #include "colour_sensor.h"
 #include "smart_servo.h"
@@ -31,6 +30,10 @@
 
 #define CHECK_WATCHDOG_TASK_PERIOD          40
 
+#define COLOUR_TASK_PERIOD                   100 //in ms??
+#define SERVO_TASK_PERIOD                    20 
+#define PROXIMITY_TASK_PERIOD                20
+
 // Task execution amount definitions
 // -1 means indefinitely
 #define TOF_READ_TASK_NUM_EXECUTE          -1
@@ -39,10 +42,14 @@
 #define SENSOR_AVERAGE_NUM_EXECUTE         -1
 #define LOCATION_TASK_NUM_EXECUTE          -1
 
-#define STATE_TASK_NUM_EXECUTE          -1
+#define STATE_TASK_NUM_EXECUTE             -1
 #define SET_MOTOR_TASK_NUM_EXECUTE         -1
 
 #define CHECK_WATCHDOG_TASK_NUM_EXECUTE    -1
+
+#define COLOUR_TASK_NUM_EXECUTE             -1
+#define SERVO_TASK_NUM_EXECUTE              -1
+#define PROXIMITY_TASK_NUM_EXECUTE          -1
 
 // Pin deffinitions
 #define IO_POWER  49
@@ -67,11 +74,15 @@ Task tRead_IMU(IMU_READ_TASK_PERIOD,              IMU_READ_TASK_NUM_EXECUTE,    
 Task tSensor_average(SENSOR_AVERAGE_PERIOD,       SENSOR_AVERAGE_NUM_EXECUTE,       &filterTask);
 Task tLocate_task(LOCATION_TASK_PERIOD,           LOCATION_TASK_NUM_EXECUTE,        &poseTask);
 
+Task tRead_colour(COLOUR_TASK_PERIOD,             COLOUR_TASK_NUM_EXECUTE,          &colourTask);
+Task tRead_proximity(PROXIMITY_TASK_PERIOD,       PROXIMITY_TASK_NUM_EXECUTE,       &proximityTask);
+
 // Task to set the motor speeds and direction
 Task tState_task(STATE_TASK_PERIOD,               STATE_TASK_NUM_EXECUTE,           &StateMachineTask);
 Task tSet_motor(SET_MOTOR_TASK_PERIOD,            SET_MOTOR_TASK_NUM_EXECUTE,       &motorTask);
 
 // Tasks to scan for weights and collection upon detection
+Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &sortingServoTask);
 
 // Tasks to search for bases and unload weights
 
@@ -88,6 +99,8 @@ void task_init() {
   /*Sensors*/
   taskManager.addTask(tRead_TOF);
   taskManager.addTask(tRead_IMU);
+  taskManager.addTask(tRead_colour);
+  taskManager.addTask(tRead_proximity);
 
   /*Background tasks*/
   taskManager.addTask(tSensor_average);
@@ -96,14 +109,18 @@ void task_init() {
   /*actuators*/
   taskManager.addTask(tState_task);
   taskManager.addTask(tSet_motor);
+  taskManager.addTask(tSorting_servo);
 
   //enable the tasks
   tRead_TOF.enable();
   tRead_IMU.enable();
+  tRead_colour.enable();
+  tRead_proximity.enable();
   tSensor_average.enable();
   tLocate_task.enable();
   tState_task.enable();
   tSet_motor.enable();
+  tSorting_servo.enable();
   //tCheck_watchdog.enable();
 
   Serial.println("Tasks have been initialised \n");
@@ -130,10 +147,12 @@ void setup() {
   initMotors();
   sensorInit(&io);
   filteringInit();
+
+  proximity_init();
+  colour_init();
+  initSmartServo();
 }
 
 void loop() {
-
-
   taskManager.execute();    //execute the scheduler
 }

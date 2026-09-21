@@ -9,9 +9,13 @@
 
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_60X);
 
-// Latch one detection while the same plastic weight remains under the sensor.
-// colour_Task() runs repeatedly, so without this latch it continually restarts
-// the sorting timer until the weight is removed.
+#define PLASTIC_WEIGHT_TOL 9500
+
+//tolerances for snitch/bludger detection (need to update these)
+#define MOBILE_TOL_RED 250 
+#define MOBILE_TOL_BLUE 120 
+#define MOBILE_TOL_GREEN 160
+
 static bool plasticWeightPresent = false;
 static bool mobileElementPresent = false;
 
@@ -19,12 +23,6 @@ static uint16_t filteredClear = 0;
 static uint16_t filteredRed = 0;
 static uint16_t filteredBlue = 0;
 static uint16_t filteredGreen = 0;
-
-#define PLASTIC_WEIGHT_TOL 11000
-
-#define MOBILE_TOL_RED 250 
-#define MOBILE_TOL_BLUE 120 
-#define MOBILE_TOL_GREEN 160 
 
 void colour_init() 
 {
@@ -53,14 +51,14 @@ static void updateColourValue()
   writeCircBuf(getBuf(COLOUR_BLUE), blue);
   writeCircBuf(getBuf(COLOUR_GREEN), green);
 
-  filteredClear = filterTask(COLOUR_CLEAR);
-  filteredRed = filterTask(COLOUR_RED);
-  filteredBlue = filterTask(COLOUR_BLUE);
-  filteredGreen = filterTask(COLOUR_GREEN); //not filtered yet...
+  filteredClear = getOutput(COLOUR_CLEAR);
+  filteredRed = getOutput(COLOUR_RED);
+  filteredBlue = getOutput(COLOUR_BLUE);
+  filteredGreen = getOutput(COLOUR_GREEN);
 }
 
 
-void colour_Task() 
+void colourTask() 
 {
 
   updateColourValue();
@@ -111,7 +109,10 @@ void printColourPlot()
   Serial.print(filteredGreen);
 
   Serial.print(",blue:");
-  Serial.println(filteredBlue);
+  Serial.print(filteredBlue);
+
+  Serial.print(",clear:");
+  Serial.println(filteredClear);
 
 
 }

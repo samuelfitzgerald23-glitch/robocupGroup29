@@ -17,6 +17,8 @@ void bufArrayInit(void) {
     bufferInit(BUFSIZE, &buffersArray[COLOUR_RED]);
     bufferInit(BUFSIZE, &buffersArray[COLOUR_GREEN]);
     bufferInit(BUFSIZE, &buffersArray[COLOUR_BLUE]);
+    bufferInit(BUFSIZE, &buffersArray[DIFFTOF1]);
+    bufferInit(BUFSIZE, &buffersArray[DIFFTOF2]);
 }
 
 void bufferInit(uint16_t size, circBuf_t *Buffer) {
