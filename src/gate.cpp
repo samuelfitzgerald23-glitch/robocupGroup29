@@ -119,17 +119,14 @@ void gateTask() {
 void gateTest() {
     servoBus.update();
 
-    static bool freed = false;
-    if (!freed) {
-        rearServo.setTorqueOff();
-        Serial.println("GATE TEST: servo free - push the gate to a stop and read the number");
-        freed = true;
-    }
-
     static uint32_t last = 0;
-    if (millis() - last >= 250) {
+    static bool open = false;
+
+    if (millis() - last >= 2000) {          //swap every 2 s
         last = millis();
-        Serial.print("gate position = ");
-        Serial.println(rearServo.getPosition());
+        open = !open;
+        rearServo.setPosition(open ? GATE_OPEN_POS : GATE_CLOSED_POS,
+                              GATE_SPEED, HerkulexLed::Ignore);
+        Serial.println(open ? "gate -> OPEN" : "gate -> CLOSED");
     }
 }
