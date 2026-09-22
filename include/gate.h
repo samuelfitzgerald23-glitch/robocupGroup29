@@ -16,4 +16,7 @@ bool isAtBase();
 //overall task for gate control (services the bus, sets open/closed)
 void gateTask();
 
+//temporary: position tuning helper (see gate.cpp)
+void gateTest();
+
 #endif // GATE_H
