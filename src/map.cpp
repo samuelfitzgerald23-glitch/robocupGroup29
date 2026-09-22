@@ -24,13 +24,13 @@ static PoseMatrix robot_worldFrame = PoseMatrix::buildFrame(&worldOrigin);
  */
 
 static void logCell(int gx, int gy, int8_t value) {
-    Serial.print("C, "); Serial.print(gx); Serial.print(", "); Serial.print(gy);
-    Serial.print(", "); Serial.println(value);
+    //Serial.print("C, "); Serial.print(gx); Serial.print(", "); Serial.print(gy);
+    //Serial.print(", "); Serial.println(value);
 }
 
 static void logPose(float theta, float x, float y) {
-    Serial.print("P, "); Serial.print(theta, 4); Serial.print(", ");
-    Serial.print(x, 2); Serial.print(", "); Serial.print(y, 2);
+    //Serial.print("P, "); Serial.print(theta, 4); Serial.print(", ");
+    //Serial.print(x, 2); Serial.print(", "); Serial.print(y, 2);
 }
 
 bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y) {

@@ -57,13 +57,21 @@ void setDriveSpeed(int speed1, int speed2) {
 }
 
 void setFanSpeed(int speed) {
-    int pulse1 = STOP + speed; //RHS fan
-    int pulse2 = STOP - speed; //LHS fan
+
+    int pulse1;
+    int pulse2;
+    
+    if (getReverseFans()) {
+        pulse1 = STOP - speed; //RHS fan
+        pulse2 = STOP + speed; //LHS fan
+    } else {
+        pulse1 = STOP + speed; //RHS fan
+        pulse2 = STOP - speed; //LHS fan
+    }
     Fan1.writeMicroseconds(pulse1);
     Fan2.writeMicroseconds(pulse2);
 }
 
 void motorTask() {
-    //setDriveSpeed(300, 300);
-    setFanSpeed(450);
+    //setFanSpeed(450);
 }

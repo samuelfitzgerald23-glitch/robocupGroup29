@@ -15,6 +15,7 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS3472
 #define MOBILE_TOL_RED 250 
 #define MOBILE_TOL_BLUE 120 
 #define MOBILE_TOL_GREEN 160
+#define MOBILE_TOL_CLEAR 600 //?? maybe use this too?
 
 static bool plasticWeightPresent = false;
 static bool mobileElementPresent = false;
@@ -62,7 +63,8 @@ void colourTask()
 {
 
   updateColourValue();
-  printColourPlot();
+  //printColourPlot();
+
   plastic_weight_check();
   mobile_element_check();
 
@@ -89,11 +91,19 @@ void mobile_element_check(void)
 {
   if ((filteredRed < MOBILE_TOL_RED)&&(filteredBlue < MOBILE_TOL_BLUE)&&(filteredGreen < MOBILE_TOL_GREEN)) {
     mobileElementPresent = true;
+    Serial.println("Mobile element present");
+    ejectMobileElement();
   } else {
     mobileElementPresent = false;
+    //Serial.println("No mobile element");
   }
-
 }
+
+bool get_mobile_element_present(void)
+{
+    return mobileElementPresent;
+}
+
 
 uint16_t get_clear_value()
 {
