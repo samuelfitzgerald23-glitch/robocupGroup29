@@ -84,3 +84,7 @@ void StateMachineTask() {
             break;
     }
 }
+
+robotState getRobotState() {
+    return CurrentState;
+}
