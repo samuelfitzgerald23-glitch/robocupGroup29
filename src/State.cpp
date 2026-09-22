@@ -23,6 +23,8 @@ void StateMachineTask() {
     float dt = float(now - lastTime)/MICRO_TO_SEC;
     lastTime = now;
 
+    Serial1.print("S, "); Serial1.println(CurrentState);
+
     switch (CurrentState) {
         case STARTUP:
             setLEDColor(WRITIBLE_LED, GREEN);

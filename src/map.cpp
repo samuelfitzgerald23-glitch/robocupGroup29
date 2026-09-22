@@ -167,8 +167,27 @@ pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sen
  * overall func
  */
 
-// void map_init() {
-// }
+void map_init() {
+    //initialise map to undefined
+    for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            mapData[y][x] = static_cast<int8_t>(UNDEFINED_CELL);
+        }
+    }
+
+    //write the edge cells
+    for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            if (x == 0 || x == GRID_WIDTH - 1 || y == 0 || y == GRID_HEIGHT - 1) {
+                mapData[y][x] = static_cast<int8_t>(EDGE_CELL);
+                logCell(x, y, static_cast<int8_t>(EDGE_CELL));
+            }
+        }
+    }
+
+    //write the starting pos
+    writeToMap(robot_worldFrame.x(), robot_worldFrame.y(), static_cast<int8_t>(MY_POS));
+}
 
 void poseTask() {
     //Serial.println("pose task");
