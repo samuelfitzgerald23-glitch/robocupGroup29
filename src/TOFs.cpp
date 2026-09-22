@@ -46,11 +46,11 @@ void TOFinit(SX1509* io) {
     sensors[i].setTimeout(500);
     if (sensors[i].init())
     {
-      Serial.println("Sesnor detected");
+      Serial.println("Sensor detected");
     } else {
       Serial.print("Failed to detect and initialize sensor ");
       Serial.println(i);
-      while (1);
+      //while (1);
     }
 
     // Each sensor must have its address changed to a unique value other than
