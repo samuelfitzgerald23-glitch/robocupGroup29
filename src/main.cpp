@@ -143,7 +143,7 @@ void setup() {
 
   task_init();
 
-  map_init();          //1 for right side, 0 for left side
+  //map_init();          //1 for right side, 0 for left side
 
   initMotors();
   sensorInit(&io);

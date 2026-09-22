@@ -88,13 +88,13 @@ void sortingServoTask()
 
                 if ((num_weights < 2)&&(targetPosition == WANTED_WEIGHT)) {
                     setServoPosition(targetPosition);
-                    Serial.println("Moved to wanted weight position");
+                    //Serial.println("Moved to wanted weight position");
                     num_weights += 1;
                 } else if ((num_weights >= 2)&&(targetPosition == WANTED_WEIGHT))  {
-                    Serial.println("Holding 3rd metal weight in center");
+                    //Serial.println("Holding 3rd metal weight in center");
                 } else {
                     setServoPosition(targetPosition);
-                    Serial.println("Moved to unwanted weight position");
+                    //Serial.println("Moved to unwanted weight position");
                 }
 
                 Serial.print("Number of weights onboard: ");
@@ -127,20 +127,20 @@ void sortingServoTask()
                 uint16_t actualPosition = getServoPosition();
 
                 if (abs((int)actualPosition - (int)NEUTRAL) <= NEUTRAL_TOLERANCE) {
-                    Serial.println("Servo confirmed at neutral");
+                    //Serial.println("Servo confirmed at neutral");
                     servoSequenceActive = false;
                 } else if (neutralRetries < NEUTRAL_RETRY_LIMIT) {
                     neutralRetries++;
 
                     // Move away from the jam first.
                     setServoPosition(WANTED_WEIGHT);
-                    Serial.println("Neutral blocked; moving back to wanted position");
+                    //Serial.println("Neutral blocked; moving back to wanted position");
 
                     servoState = 3;
                     ServoTimeout.begin(servo_timeout, 3 * SERVO_SECOND); // wait for another 3 seconds before retrying to go to center
                 }
                 else {
-                    Serial.println("Servo failed to return to neutral; check for jam");
+                    //Serial.println("Servo failed to return to neutral; check for jam");
                     servoSequenceActive = false;
                 }
             }
@@ -151,7 +151,7 @@ void sortingServoTask()
                 servoTimeout = false;
 
                 setServoPosition(NEUTRAL);
-                Serial.println("Retrying neutral after recovery move");
+                //Serial.println("Retrying neutral after recovery move");
 
                 servoState = 2;
                 ServoTimeout.begin(servo_timeout, 3 * SERVO_SECOND);
@@ -179,7 +179,7 @@ void startServoSequence(uint16_t position)
 {
 
     if (servoSequenceActive) {
-        Serial.println("Sort request ignored: servo is already busy");
+        //Serial.println("Sort request ignored: servo is already busy");
         return;
     }
 

@@ -76,7 +76,7 @@ float findAngle(pos_t* myPose) {
 
 bool rotatePID(pos_vector_t* myPose, float dt) {
     float error = findAngle(&(myPose->pos)) - (myPose->theta)/D_TO_R;
-    Serial.print("rotation error: ");
+    //Serial.print("rotation error: ");
 
     while (error > 180.0f)  error -= 360.0f;
     while (error <= -180.0f) error += 360.0f;
@@ -94,7 +94,7 @@ bool translatePID(pos_t* currentXY, float dt) {
     float dx = currentTarget.x - currentXY->x;
     float dy = currentTarget.y - currentXY->y;
     float error = std::sqrt(dx*dx + dy*dy);
-    Serial.print("translation error: ");
+    //Serial.print("translation error: ");
 
     //check if we are done
     if (translate.tolerance >= error) return 1;

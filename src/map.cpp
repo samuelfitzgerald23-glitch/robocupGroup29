@@ -167,19 +167,17 @@ pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sen
  * overall func
  */
 
-void map_init() {
-}
+// void map_init() {
+// }
 
 void poseTask() {
-    Serial.println("pose task");
-    //get how far robot have moved since the last time we did this
-    //heading from IMU, dx and dy from encoders or IR camera or smth
+    //Serial.println("pose task");
     float heading = getHeading();
     float differential_heading = prev_heading - heading;
     prev_heading = heading;
 
-    // while (differential_heading > 180.0f)  differential_heading -= 360.0f;
-    // while (differential_heading <= -180.0f) differential_heading += 360.0f;
+    while (differential_heading > 180.0f)  differential_heading -= 360.0f;
+    while (differential_heading <= -180.0f) differential_heading += 360.0f;
 
     //put x and y reading from optical flow sensor into a displacement vector
     pos_t displacement;
@@ -206,7 +204,7 @@ void poseTask() {
             case TOF1:  {
                 pos_t out1 = {0 , (float)getOutput(DIFFTOF1)};
                 if (out1.y < (sensorDist - WEIGHT_OFFSET)) {
-                    Serial.println("WEIGHT WRITE FIRING");
+                    //Serial.println("WEIGHT WRITE FIRING");
                     projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out1, 1);
                 }
                 break;
@@ -214,7 +212,7 @@ void poseTask() {
             case TOF2:  {
                 pos_t out2 = {0 , (float)getOutput(DIFFTOF2)};
                 if (out2.y < (sensorDist - WEIGHT_OFFSET)) {
-                    Serial.println("WEIGHT WRITE FIRING");
+                    //Serial.println("WEIGHT WRITE FIRING");
                     projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out2, 1);
                 }
                 break;
