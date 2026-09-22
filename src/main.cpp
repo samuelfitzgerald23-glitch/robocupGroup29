@@ -30,7 +30,7 @@
 
 #define CHECK_WATCHDOG_TASK_PERIOD          40
 
-#define COLOUR_TASK_PERIOD                   100 //in ms??
+#define COLOUR_TASK_PERIOD                   100 //in Hz
 #define SERVO_TASK_PERIOD                    20 
 #define PROXIMITY_TASK_PERIOD                20
 
@@ -149,8 +149,6 @@ void setup() {
   sensorInit(&io);
   filteringInit();
 
-  proximity_init();
-  colour_init();
   initSmartServo();
 }
 

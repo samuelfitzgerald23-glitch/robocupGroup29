@@ -6,7 +6,7 @@
 #define TOF_FOV TOF_FULL_FOV * 1/4      //half cone angle for 4x4 grid
 #define N_TOF_RAYS 6
 
-#define NON_COUPLED_SENSORS (BUFFERCOUNT - 2)
+#define NON_COUPLED_SENSORS 2
 #define MAX_SIGHT_DIST 1500
 #define MAX_WEIGHT_DIST (1/2 * MAX_SIGHT_DIST)
 #define WEIGHT_OFFSET 500.0f

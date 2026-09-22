@@ -1,4 +1,5 @@
 #include "State.h"
+#include "LED_array.h"
 
 IntervalTimer TimeoutCheck;
 
@@ -24,6 +25,7 @@ void StateMachineTask() {
 
     switch (CurrentState) {
         case STARTUP:
+            setLEDColor(WRITIBLE_LED, GREEN);
             setPath(&microSteps[0], 5);
             CurrentState = MOVE;
             break;
@@ -35,6 +37,7 @@ void StateMachineTask() {
             CurrentState = PATHFIND;
             break;
         case PATHFIND:  {
+            setLEDColor(WRITIBLE_LED, RED);
             int start_x, start_y, goal_x, goal_y;
             pos_t currentPos = getMyPOS().pos;
 
@@ -56,12 +59,14 @@ void StateMachineTask() {
             break;
         }
         case MOVE:
+            setLEDColor(WRITIBLE_LED, WHITE);
             movementTask(dt);
             if (getPathStatus()) {
                 CurrentState = getPathBlockedStatus() ? PATHFIND : DETERMINE_ACTION;
             }
             break;
         case DETERMINE_ACTION: {
+            setLEDColor(WRITIBLE_LED, BLUE);
             if(goal_type == static_cast<int8_t>(WEIGHT)) {
                 CurrentState = PICKUP_SEQUENCE;
                 //start a ten seccond timer to pick up the weight

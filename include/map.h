@@ -15,7 +15,7 @@
 #define MAX_WAYPOINT_COUNT 24
 #define WAYPOINT_SPACING 500.0f
 
-#define ROBOT_WIDTH  2          //1/2robot width/hieght in cells
+#define ROBOT_WIDTH  3          //1/2robot width/hieght in cells
 
 #define GRID_WIDTH  50
 #define GRID_HEIGHT 96
