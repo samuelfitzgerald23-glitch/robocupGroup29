@@ -7,7 +7,7 @@
 #define N_TOF_RAYS 6
 
 #define NON_COUPLED_SENSORS 2
-#define MAX_SIGHT_DIST 1500
+#define MAX_SIGHT_DIST 1750
 #define MAX_WEIGHT_DIST (1/2 * MAX_SIGHT_DIST)
 #define WEIGHT_OFFSET 500.0f
 
@@ -22,8 +22,8 @@ static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 
 //filtered sensors with offsets
 static location_sensor_t filtered_sensors[NON_COUPLED_SENSORS] = {
-    {TOF1, {-5, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF1].offset))},
-    {TOF2, {5, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF2].offset))}
+    {TOF1, {-45, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF1].offset))},
+    {TOF2, {45, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF2].offset))}
 };
 
 //non filtered sensors with offset
@@ -168,12 +168,6 @@ pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sen
  */
 
 void map_init() {
-    //initialise map to undefined
-    for (int y = 0; y < GRID_HEIGHT; y++) {
-        for (int x = 0; x < GRID_WIDTH; x++) {
-            mapData[y][x] = static_cast<int8_t>(UNDEFINED_CELL);
-        }
-    }
 
     //write the edge cells
     for (int y = 0; y < GRID_HEIGHT; y++) {
@@ -211,7 +205,7 @@ void poseTask() {
 
     //find objects with the TOFs
     for (int i = 0; i < NON_COUPLED_SENSORS; i++) {
-        if (isTurning) continue;
+        if (isTurning || millis() < 500) continue;
 
         float sensorDist = (float)getOutput(filtered_sensors[i].ID);
         if (sensorDist > MAX_SIGHT_DIST) continue;

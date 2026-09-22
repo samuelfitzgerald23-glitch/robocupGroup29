@@ -15,11 +15,11 @@ IntervalTimer movementTimeLimit;
 static moveingState State = IDLE;
 
 static PID_t rotate(25, 1.5, 1, 450, 350, 5);
-static PID_t translate(7, 1, 0, 450, 425, 25);
+static PID_t translate(7, 1, 0, 450, 425, 50);
 
 static pos_t targetlist[MAX_WAYPOINT_COUNT];
 static int targetCount = 5;
-static int targetIndex = -1;
+static int targetIndex = 0;
 bool pathfinished = 0;
 bool pathBlocked = 0;
 

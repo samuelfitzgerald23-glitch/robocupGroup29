@@ -15,7 +15,7 @@
 #define MAX_WAYPOINT_COUNT 24
 #define WAYPOINT_SPACING 500.0f
 
-#define ROBOT_WIDTH  3          //1/2robot width/hieght in cells
+#define ROBOT_WIDTH  2          //1/2robot width/hieght in cells
 
 #define GRID_WIDTH  50
 #define GRID_HEIGHT 96
@@ -53,7 +53,7 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
 
 pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sensorVector, float theta);
 
-//void map_init();
+void map_init();
 
 void poseTask();
 

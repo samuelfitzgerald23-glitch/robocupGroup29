@@ -22,7 +22,7 @@
 #define TOF_READ_TASK_PERIOD                10
 #define IMU_READ_TASK_PERIOD                50
 
-#define SENSOR_AVERAGE_PERIOD               1000
+#define SENSOR_AVERAGE_PERIOD               100
 #define LOCATION_TASK_PERIOD                10
 
 #define STATE_TASK_PERIOD                   2
@@ -143,7 +143,7 @@ void setup() {
 
   task_init();
 
-  //map_init();          //1 for right side, 0 for left side
+  //map_init();
 
   initMotors();
   sensorInit(&io);

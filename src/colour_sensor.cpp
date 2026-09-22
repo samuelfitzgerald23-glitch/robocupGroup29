@@ -48,7 +48,7 @@ void colourTask()
 {
 
   updateColourValue();
-  printColourPlot();
+  //printColourPlot();
   plastic_weight_check();
   mobile_element_check();
 
