@@ -30,7 +30,7 @@
 #define GATE_CLOSED_POS    000        //raw position with the gate shut
 #define GATE_OPEN_POS      289        //raw position with the gate open
 
-#define GATE_SPEED         2000         //play-time / speed, 0 (fastest)..254 (slowest)
+#define GATE_SPEED         150         //play-time / speed, 0 (fastest)..254 (slowest)
 
 #define GATE_OPEN_MS       10000UL    //hold the gate open this long when dropping (ms)
 
