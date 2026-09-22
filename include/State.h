@@ -17,5 +17,6 @@ enum robotState {
 };
 
 void StateMachineTask();
+robotState getRobotState();
 
 #endif //STATE_H
