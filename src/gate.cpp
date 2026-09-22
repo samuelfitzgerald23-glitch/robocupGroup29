@@ -97,3 +97,21 @@ void gateTask() {
         }
     }
 }
+
+void gateTest() {
+    servoBus.update();
+
+    static bool freed = false;
+    if (!freed) {
+        rearServo.setTorqueOff();
+        Serial.println("GATE TEST: servo free - push the gate to a stop and read the number");
+        freed = true;
+    }
+
+    static uint32_t last = 0;
+    if (millis() - last >= 250) {
+        last = millis();
+        Serial.print("gate position = ");
+        Serial.println(rearServo.getPosition());
+    }
+}
