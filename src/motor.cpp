@@ -1,6 +1,5 @@
 #include <Servo.h>
 #include "motor.h"
-#include "smart_servo.h"
 #include <Arduino.h>
 
 //driving motors
@@ -36,9 +35,6 @@ void initMotors() {
     Fan1.writeMicroseconds(STOP);
     Fan2.writeMicroseconds(STOP);
     delay(10);
-
-    // start fans
-    // setFanSpeed(450);
 }
 
 void setDriveSpeed(int speed1, int speed2) {
@@ -57,21 +53,12 @@ void setDriveSpeed(int speed1, int speed2) {
 }
 
 void setFanSpeed(int speed) {
-
-    int pulse1;
-    int pulse2;
-    
-    if (getReverseFans()) {
-        pulse1 = STOP - speed; //RHS fan
-        pulse2 = STOP + speed; //LHS fan
-    } else {
-        pulse1 = STOP + speed; //RHS fan
-        pulse2 = STOP - speed; //LHS fan
-    }
+    int pulse1 = STOP + speed; //RHS fan
+    int pulse2 = STOP - speed; //LHS fan
     Fan1.writeMicroseconds(pulse1);
     Fan2.writeMicroseconds(pulse2);
 }
 
 void motorTask() {
-    //setFanSpeed(450);
+    setFanSpeed(450);
 }

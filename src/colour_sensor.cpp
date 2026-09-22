@@ -11,15 +11,17 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS3472
 
 #define PLASTIC_WEIGHT_TOL 9500
 
-//tolerances for snitch/bludger detection (need to update these)
+//tolerances for snitch/bludger detection (if below these, theres a mobile element)
 #define MOBILE_TOL_RED 250 
 #define MOBILE_TOL_BLUE 120 
 #define MOBILE_TOL_GREEN 160
-#define MOBILE_TOL_CLEAR 600 //?? maybe use this too?
+//#define MOBILE_TOL_CLEAR 600 //?? maybe use this too?
+#define MOBILE_STARTUP_DELAY 3000 // 3 seconds
 
 static bool plasticWeightPresent = false;
 static bool mobileElementPresent = false;
 
+static uint32_t colourStartTime = 0;
 static uint16_t filteredClear = 0;
 static uint16_t filteredRed = 0;
 static uint16_t filteredBlue = 0;
@@ -27,13 +29,14 @@ static uint16_t filteredGreen = 0;
 
 void colour_init() 
 {
+  colourStartTime = millis();
+
   if (tcs.begin(TCS34725_ADDRESS, &Wire1)) 
   {
     Serial.println("Found colour sensor");
   } else 
   {
     Serial.println("No TCS34725 found ... check your connections");
-    //while (1); // halt!
   }
 }
 
@@ -64,9 +67,12 @@ void colourTask()
 
   updateColourValue();
   //printColourPlot();
-
   plastic_weight_check();
-  mobile_element_check();
+  
+  //don't check for mobile elements until some time passes
+  if (millis() - colourStartTime >= MOBILE_STARTUP_DELAY) {
+      mobile_element_check();
+  }
 
 }
 

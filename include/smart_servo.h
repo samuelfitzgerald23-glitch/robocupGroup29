@@ -15,7 +15,6 @@ void startServoSequence(uint16_t position);
 void sortWantedWeight();
 void sortUnwantedWeight();
 void ejectMobileElement();
-bool getReverseFans(void);
 void servo_test();
 
 #endif // SMART_SERVO_H

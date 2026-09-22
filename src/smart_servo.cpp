@@ -19,15 +19,10 @@ volatile bool servoTimeout = false;
 
 
 //resolution of servo is 0-1023
-#define WANTED_WEIGHT 50 
-#define UNWANTED_WEIGHT 300 
-#define NEUTRAL 150 
-#define EJECT_MOBILE 10 //calbrate this???
-
-#define MOBILE_EJECT_SPEED -200
-#define MOBILE_EJECT_DURATION (2 * SERVO_SECOND)
-#define MOBILE_EJECT_WAIT (5 * SERVO_SECOND)
-#define MOBILE_NEUTRAL_WAIT (1 * SERVO_SECOND)
+#define WANTED_WEIGHT 600 
+#define UNWANTED_WEIGHT 850 
+#define NEUTRAL 720 
+#define EJECT_MOBILE 500 
 
 //to know if at center or not
 #define NEUTRAL_TOLERANCE 20
@@ -35,7 +30,10 @@ volatile bool servoTimeout = false;
 uint8_t neutralRetries = 0;
 
 //range 0 (fastest) to 254 (slowest)
-#define SERVO_SPEED 70
+#define SERVO_SPEED 50
+
+#define METAL_HOLD_TIME  (5 * SERVO_SECOND)
+#define REJECTION_HOLD_TIME (3 * SERVO_SECOND)
 
 //variables for sorting servo sequence (state machine)
 volatile bool servoSequenceActive = false;
@@ -44,24 +42,12 @@ uint16_t targetPosition;
 
 uint8_t num_weights = 0; //keep track of metal weights onboard
 
-//check whether to reverse the fans
-static bool reverse_fans = false;
-
-
 void initSmartServo()
 {
     SERIAL_SERVO.begin(115200);
     delay(100);
     servo.reboot();
     delay(500);
-    
-    // Initialise in position control mode
-    servo.setTorqueOff();
-    delay(100);
-
-    servo.enablePositionControlMode();
-    delay(100);
-
     servo.setTorqueOn();
     delay(100);
 
@@ -101,30 +87,14 @@ void sortingServoTask()
 
     switch(servoState)
     {
-        case 0: // logic fdor either turning to the unwanted or wanted position (after 2 seconds)
+        case 0: // logic for either turning to the unwanted or wanted position (after 1 second wait)
             if (servoTimeout) {
                 servoTimeout = false;
 
                 if (targetPosition == EJECT_MOBILE) {
 
-                    // Start reversing fans
-                    reverse_fans = true;
-
-                    // Switch to speed mode and begin clockwise rotation
-                    servo.enableSpeedControlMode();
-                    servo.setSpeed(MOBILE_EJECT_SPEED, 0);
-
-                    Serial.println("Starting mobile element ejection");
-
-                    // Move to dedicated mobile ejection state
-                    servoState = 4;
-                    ServoTimeout.begin(
-                        servo_timeout,
-                        MOBILE_EJECT_DURATION
-                    );
-
-                    resetMetalDetection();
-                    break;
+                    setServoPosition(targetPosition);
+                    Serial.println("Moved to eject mobile position");
                 }
 
                 // Normal wanted/unwanted weight sorting
@@ -148,7 +118,12 @@ void sortingServoTask()
                 Serial.println(num_weights);
 
                 servoState = 1;
-                ServoTimeout.begin(servo_timeout, 5 * SERVO_SECOND);
+
+                uint32_t holdTime = (targetPosition == WANTED_WEIGHT)
+                    ? METAL_HOLD_TIME
+                    : REJECTION_HOLD_TIME;
+
+                ServoTimeout.begin(servo_timeout, holdTime);
 
                 resetMetalDetection();
             }
@@ -165,40 +140,29 @@ void sortingServoTask()
             }
             break;         
 
-        case 2: //finished
+        case 2: //check it returned to neutral properly
 
             if (servoTimeout) {
                 servoTimeout = false;
 
                 uint16_t actualPosition = getServoPosition();
 
-                if (abs((int)actualPosition - (int)NEUTRAL)
-                        <= NEUTRAL_TOLERANCE) {
-
+                if (abs((int)actualPosition - (int)NEUTRAL) <= NEUTRAL_TOLERANCE) {
                     Serial.println("Servo confirmed at neutral");
                     servoSequenceActive = false;
-
                 } else if (neutralRetries < NEUTRAL_RETRY_LIMIT) {
-
                     neutralRetries++;
 
+                    servo.setTorqueOn();
                     setServoPosition(WANTED_WEIGHT);
-                    Serial.println(
-                        "Neutral blocked; moving back to wanted position"
-                    );
+                    Serial.println("Neutral blocked; moving back to wanted position");
 
                     servoState = 3;
-                    ServoTimeout.begin(
-                        servo_timeout,
-                        3 * SERVO_SECOND
-                    );
-
+                    ServoTimeout.begin(servo_timeout, 3 * SERVO_SECOND);
                 } else {
+                    Serial.println("Servo failed to return to neutral; check for jam");
 
-                    Serial.println(
-                        "Servo failed to return to neutral; check for jam"
-                    );
-
+                    servo.setTorqueOn();
                     setServoPosition(WANTED_WEIGHT);
                     servoSequenceActive = false;
                 }
@@ -208,7 +172,8 @@ void sortingServoTask()
         case 3: // recovery: wait at wanted position, then retry neutral (when it switches back to state 2)
             if (servoTimeout) {
                 servoTimeout = false;
-
+                
+                servo.setTorqueOn();
                 setServoPosition(NEUTRAL);
                 Serial.println("Retrying neutral after recovery move");
 
@@ -216,81 +181,10 @@ void sortingServoTask()
                 ServoTimeout.begin(servo_timeout, 3 * SERVO_SECOND);
             }
             break;
-
-        case 4: // Stop after clockwise ejection
-            if (servoTimeout) {
-                servoTimeout = false;
-
-                servo.setSpeed(0, 0);
-
-                Serial.println("Ejection rotation stopped");
-
-                servoState = 5;
-                ServoTimeout.begin(
-                    servo_timeout,
-                    MOBILE_EJECT_WAIT
-                );
-            }
-            break;
-        case 5: // Return to neutral position mode
-            if (servoTimeout) {
-                servoTimeout = false;
-
-                servo.setSpeed(0, 0);
-
-                servo.setTorqueOff();
-                servo.enablePositionControlMode();
-                servo.setTorqueOn();
-                
-                //Serial.print("Current position: ");
-                //Serial.println(getServoPosition());
-
-                setServoPosition(NEUTRAL);
-
-                Serial.println("Returning to neutral");
-
-                servoState = 6;
-                ServoTimeout.begin(
-                    servo_timeout,
-                    MOBILE_NEUTRAL_WAIT
-                );
-            }
-            break;
-        case 6: // Check whether mobile element cleared
-            if (servoTimeout) {
-                servoTimeout = false;
-
-                if (get_mobile_element_present()) {
-
-                    Serial.println(
-                        "Mobile element still present - repeating"
-                    );
-
-                    // Switch back to speed mode
-                    servo.enableSpeedControlMode();
-                    servo.setSpeed(MOBILE_EJECT_SPEED, 0);
-
-                    servoState = 4;
-                    ServoTimeout.begin(
-                        servo_timeout,
-                        MOBILE_EJECT_DURATION
-                    );
-
-                } else {
-
-                    Serial.println(
-                        "Mobile element cleared - fans forward"
-                    );
-
-                    reverse_fans = false;
-                    servoSequenceActive = false;
-                }
-            }
-            break;
     }
 
-    Serial.print("Current position: ");
-    Serial.println(getServoPosition());
+    //Serial.print("Current position: ");
+    //Serial.println(getServoPosition());
 
 }
 
@@ -323,83 +217,27 @@ void startServoSequence(uint16_t position)
     targetPosition = position;
 
     servoTimeout = false;
-    ServoTimeout.begin(servo_timeout, 1*SERVO_SECOND); // wait 2 seconds before sorting
+    ServoTimeout.begin(servo_timeout, 1*SERVO_SECOND); // wait 1 second before sorting
 }
 
-bool getReverseFans(void)
-{
-    return reverse_fans;
-}
-
-// void servo_test()
-// {
-//     servoBus.update();
-
-//     static bool torqueDisabled = false;
-
-//     if (!torqueDisabled) {
-//         servo.setTorqueOff();
-//         torqueDisabled = true;
-//         Serial.println("Servo torque OFF - move it by hand");
-//     }
-
-//     uint16_t currentPosition = getServoPosition();
-
-//     Serial.print("Current position: ");
-//     Serial.println(currentPosition);
-// }
 
 
-// void servo_test() 
-
-// { 
-//     servoBus.update(); 
-//     uint16_t currentPosition = getServoPosition(); 
-//     Serial.print("current pos:"); 
-//     Serial.println(currentPosition); 
-//     setServoPosition(EJECT_MOBILE); 
-
-//     // if (currentPosition != WANTED_WEIGHT) { 
-//     // setServoPosition(WANTED_WEIGHT); 
-//     // } 
-// }
-
-
-// void servo_test()
-// {
-//     servoBus.update();
-
-//     servo.setSpeed(-100, 100);
-// }
-
-
+//this test function lets you turn the servo to see its output position through serial monitor
 void servo_test()
-{    
-    Serial.print("inside servo test");
-
-    static bool moving = false;
-    static bool done = false;
-    static unsigned long startTime = 0;
-
+{
     servoBus.update();
 
-    if (done) {
-        return;  // Finished - never start again
+    static bool torqueDisabled = false;
+
+    if (!torqueDisabled) {
+        servo.setTorqueOff();
+        torqueDisabled = true;
+        Serial.println("Servo torque OFF - move it by hand");
     }
 
-    if (!moving) {
-        Serial.println("Starting 3-second clockwise movement");
+    uint16_t currentPosition = getServoPosition();
 
-        servo.setSpeed(-200, 0);  // go clockwise for bludger position
-        startTime = millis();
-        moving = true;
-    }
-
-    if (moving && millis() - startTime >= 3000) {
-        servo.setSpeed(0, 0);     // Stop
-        moving = false;
-        done = true;
-        
-        Serial.print("sServo movement finished");
-    }
+    Serial.print("Current position: ");
+    Serial.println(currentPosition);
 }
+
