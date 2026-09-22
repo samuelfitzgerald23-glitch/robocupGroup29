@@ -27,8 +27,8 @@
 #define REARSERVO_ID       2         //rear gate servo bus ID (sorting servo is ID 1)
 
 //DRS-0101 raw position is 0..1023. Calibrate these to your physical stops.
-#define GATE_CLOSED_POS    150        //raw position with the gate shut
-#define GATE_OPEN_POS      400        //raw position with the gate open
+#define GATE_CLOSED_POS    000        //raw position with the gate shut
+#define GATE_OPEN_POS      289        //raw position with the gate open
 
 #define GATE_SPEED         50         //play-time / speed, 0 (fastest)..254 (slowest)
 
@@ -98,20 +98,20 @@ void gateTask() {
     }
 }
 
-void gateTest() {
-    servoBus.update();
-
-    static bool freed = false;
-    if (!freed) {
-        rearServo.setTorqueOff();
-        Serial.println("GATE TEST: servo free - push the gate to a stop and read the number");
-        freed = true;
-    }
-
-    static uint32_t last = 0;
-    if (millis() - last >= 250) {
-        last = millis();
-        Serial.print("gate position = ");
-        Serial.println(rearServo.getPosition());
-    }
-}
+// void gateTest() {
+//    servoBus.update();
+//
+//    static bool freed = false;
+//    if (!freed) {
+//        rearServo.setTorqueOff();
+//        Serial.println("GATE TEST: servo free - push the gate to a stop and read the number");
+//        freed = true;
+//    }
+//
+//    static uint32_t last = 0;
+//    if (millis() - last >= 250) {
+//        last = millis();
+//        Serial.print("gate position = ");
+//        Serial.println(rearServo.getPosition());
+//    }
+// }
