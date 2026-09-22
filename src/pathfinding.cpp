@@ -1,7 +1,7 @@
 #include "pathfinding.h"
 #include <vector>
 
-#define WALL_CELL_INFLATION 5       //number of cells out from the wall we check to avoid it
+#define WALL_CELL_INFLATION 7       //number of cells out from the wall we check to avoid it
 
 static Node pathMap[GRID_HEIGHT][GRID_WIDTH];
 

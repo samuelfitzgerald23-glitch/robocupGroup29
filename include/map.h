@@ -28,7 +28,7 @@
 
 enum cell_t {
     EDGE_CELL = -4,
-    INVALID_CELL,
+    INVALID_CELL = -3,
     MY_POS,
     VALID_POS,
     UNDEFINED_CELL,
