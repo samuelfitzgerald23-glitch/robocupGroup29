@@ -18,12 +18,14 @@ class PID_t {
         float integral = 0.0;
         float prevError = 0.0;
         float intMax;
+        float constraint;
 
     public:
+
         float tolerance;
 
-        PID_t(float kp_, float ki_, float kd_, float intMax_, float tolerance_)
-            : kp(kp_), ki(ki_), kd(kd_), intMax(intMax_), tolerance(tolerance_) {}
+        PID_t(float kp_, float ki_, float kd_, float intMax_, float constraint_, float tolerance_)
+            : kp(kp_), ki(ki_), kd(kd_), intMax(intMax_), constraint(constraint_), tolerance(tolerance_) {}
 
         void reset() {integral = 0.0; prevError = 0.0;}
 
@@ -35,7 +37,7 @@ class PID_t {
             prevError = error;
 
             //speed is clamped when writing to the motors
-            return kp * error + ki * integral + kd * de;
+            return constrain(kp * error + ki * integral + kd * de, -constraint, constraint);
         }
 };
 
@@ -44,13 +46,15 @@ void findTarget();
 float findAngle(pos_t* myPose);
 
 
-bool rotatePID(pos_vector_t* myPose, float dt, PID_t& rotate);
-bool translatePID(pos_t* currentXY, float dt, PID_t& translate);
+bool rotatePID(pos_vector_t* myPose, float dt);
+bool translatePID(pos_t* currentXY, float dt);
 
 void movementTask(float dt);
 
 bool getPathStatus();
 
-void setPath(const pos_t* path);
+bool getPathBlockedStatus();
+
+void setPath(const pos_t* path, int count);
 
 #endif //MOVING_H

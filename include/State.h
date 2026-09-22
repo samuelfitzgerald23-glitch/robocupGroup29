@@ -2,8 +2,11 @@
 #define STATE_H
 
 #include "moving.h"
+#include "motor.h"
+#include "pathfinding.h"
 
 enum robotState {
+    STARTUP = -1,
     CHECK,   
     FIND_TARGET,
     PATHFIND,

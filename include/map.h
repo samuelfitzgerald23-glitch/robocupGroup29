@@ -12,17 +12,23 @@
 #include "xy_optical.h"
 #include "IMU.h"
 
-//meters -> decimeters
-#define GRID_WIDTH  40
-#define GRID_HEIGHT 80
+#define MAX_WAYPOINT_COUNT 24
+#define WAYPOINT_SPACING 500.0f
 
-#define CELL_SIZE 100.0f      //mm per cell
+#define ROBOT_WIDTH  2          //1/2robot width/hieght in cells
 
-#define X_ZERO GRID_WIDTH/2
-#define Y_ZERO 1
+#define GRID_WIDTH  50
+#define GRID_HEIGHT 96
+
+#define CELL_SIZE 50.0f      //mm per cell
+
+//#define X_ZERO (GRID_WIDTH-ROBOT_WIDTH-1)   //right side
+#define X_ZERO (ROBOT_WIDTH+1)              //left side
+#define Y_ZERO (ROBOT_WIDTH+1)
 
 enum cell_t {
-    INVALID_CELL = -1,
+    EDGE_CELL = -4,
+    INVALID_CELL = -3,
     MY_POS,
     VALID_POS,
     UNDEFINED_CELL,
@@ -37,6 +43,8 @@ struct location_sensor_t {
 
 bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y);
 
+void gridToWorld(int gx, int gy, float& world_x, float& world_y);
+
 void writeToMap(float world_x, float world_y, int8_t value);
 
 void updatePose(pos_vector_t* Pose);
@@ -50,5 +58,11 @@ void map_init();
 void poseTask();
 
 pos_vector_t getMyPOS();
+
+int8_t getMapValue(int x, int y);
+
+void setTurning(bool turning);
+
+bool isWalkible(int x, int y, int inflation_factor);
 
 #endif //MAP_H
