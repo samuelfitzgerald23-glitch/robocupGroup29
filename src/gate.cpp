@@ -119,20 +119,16 @@ void gateTask() {
 void gateTest() {
     servoBus.update();
 
-    static uint32_t lastScan = 0;
-    if (millis() - lastScan >= 3000) {          // rescan every 3 s
-        lastScan = millis();
-        Serial.println("---- BUS SCAN ----");
-        for (int id = 0; id <= 20; id++) {
-            HerkulexPacket resp;
-            if (servoBus.sendPacketAndReadResponse(resp, id, HerkulexCommand::Stat)) {
-                Serial.print("  found servo ID ");
-                Serial.println(id);
-            }
-        }
-        HerkulexPacket resp;
-        if (servoBus.sendPacketAndReadResponse(resp, 253, HerkulexCommand::Stat))
-            Serial.println("  found servo ID 253 (factory default)");
-        Serial.println("---- scan done ----");
+    static uint32_t last = 0;
+    static bool open = false;
+
+    if (millis() - last >= 2000) {              // swap every 2 s
+        last = millis();
+        open = !open;
+        rearServo.setTorqueOn();
+        rearServo.setPosition(open ? GATE_OPEN_POS : GATE_CLOSED_POS,
+                              GATE_SPEED, HerkulexLed::Ignore);
+        Serial.print(open ? "gate -> OPEN  readback=" : "gate -> CLOSED readback=");
+        Serial.println(rearServo.getPosition());
     }
 }
