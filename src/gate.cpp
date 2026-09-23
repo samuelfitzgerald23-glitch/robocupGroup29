@@ -122,11 +122,13 @@ void gateTest() {
     static uint32_t last = 0;
     static bool open = false;
 
-    if (millis() - last >= 2000) {          //swap every 2 s
+    if (millis() - last >= 2000) {
         last = millis();
         open = !open;
+        rearServo.setTorqueOn();                    // <-- ensure torque is ON before moving
         rearServo.setPosition(open ? GATE_OPEN_POS : GATE_CLOSED_POS,
                               GATE_SPEED, HerkulexLed::Ignore);
-        Serial.println(open ? "gate -> OPEN" : "gate -> CLOSED");
+        Serial.print(open ? "gate -> OPEN  readback=" : "gate -> CLOSED readback=");
+        Serial.println(rearServo.getPosition());
     }
 }
