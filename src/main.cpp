@@ -125,7 +125,7 @@ void task_init() {
   tRead_proximity.enable();
   tSensor_average.enable();
   tLocate_task.enable();
-  tState_task.enable();
+  // tState_task.enable();
   tSet_motor.enable();
   tSorting_servo.enable();
   tRear_gate.enable();
