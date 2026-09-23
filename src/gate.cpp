@@ -116,19 +116,3 @@ void gateTask() {
 //    }
 // }
 
-void gateTest() {
-    servoBus.update();
-
-    static uint32_t last = 0;
-    static bool open = false;
-
-    if (millis() - last >= 2000) {              // swap every 2 s
-        last = millis();
-        open = !open;
-        rearServo.setTorqueOn();
-        rearServo.setPosition(open ? GATE_OPEN_POS : GATE_CLOSED_POS,
-                              GATE_SPEED, HerkulexLed::Ignore);
-        Serial.print(open ? "gate -> OPEN  readback=" : "gate -> CLOSED readback=");
-        Serial.println(rearServo.getPosition());
-    }
-}
