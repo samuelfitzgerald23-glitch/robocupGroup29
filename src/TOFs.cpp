@@ -5,6 +5,8 @@
 //TOF sensor stuff
 #define VL53L1X_ADDRESS_START 0x30
 
+#define MAX_SIGHT_DIST 1750
+
 
 // The number of sensors in your system.
 const uint8_t sensorCount = 4;
@@ -69,6 +71,7 @@ void TOF_task() {
   for (uint8_t i = 0; i < sensorCount; i++)
   {
     TOF_reading[i] = sensors[i].readRangeContinuousMillimeters();
+    if (TOF_reading[i] > MAX_SIGHT_DIST) continue;
 
     // Serial.print("Sensor ");
     // Serial.print(i);

@@ -1,24 +1,12 @@
 #include "map.h"
 #include <Arduino.h>
 
-static pos_t running_wall = {GRID_WIDTH/2, 0};
-
-IntervalTimer MovingWall;
-
-#define MOVEINGWALLTIMER 5000000
-
-static void MovingWall_callback() {
-    writeToMap(running_wall.x, running_wall.y, static_cast<int8_t>(INVALID_CELL));
-    running_wall.y += 1;
-}
-
 //tof fov in deg
 #define TOF_FULL_FOV 27/2               //half of cone angle at max ROI (16x16)
 #define TOF_FOV TOF_FULL_FOV * 1/4      //half cone angle for 4x4 grid
 #define N_TOF_RAYS 6
 
 #define NON_COUPLED_SENSORS 2
-#define MAX_SIGHT_DIST 1750
 #define MAX_WEIGHT_DIST (1/2 * MAX_SIGHT_DIST)
 #define WEIGHT_OFFSET 500.0f
 
@@ -190,16 +178,11 @@ void map_init() {
         }
     }
 
-    for (int i = 0; i < 5; i++) {
-        writeToMap(running_wall.x, running_wall.y, static_cast<int8_t>(INVALID_CELL));
-        running_wall.y += i;
-    }
-
-    MovingWall.begin(MovingWall_callback, MOVEINGWALLTIMER);
-
     //write the starting pos
     writeToMap(robot_worldFrame.x(), robot_worldFrame.y(), static_cast<int8_t>(MY_POS));
 }
+
+static bool sensorsOff = 1;
 
 void poseTask() {
     //Serial.println("pose task");
@@ -223,12 +206,11 @@ void poseTask() {
 
     //find objects with the TOFs
     for (int i = 0; i < NON_COUPLED_SENSORS; i++) {
-        if (isTurning || millis() < 500) continue;
+        if (!sensorsOff || isTurning || millis() < 500) continue;
 
         float sensorDist = (float)getOutput(filtered_sensors[i].ID);
-        if (sensorDist > MAX_SIGHT_DIST) continue;
 
-        //projectSensorCone(filtered_sensors[i].sensor_robotFrame, sensorDist, 0);
+        projectSensorCone(filtered_sensors[i].sensor_robotFrame, sensorDist, 0);
 
         //check to see if seen object is a weight
         switch (filtered_sensors[i].ID) {
@@ -236,7 +218,7 @@ void poseTask() {
                 pos_t out1 = {0 , (float)getOutput(DIFFTOF1)};
                 if (out1.y < (sensorDist - WEIGHT_OFFSET)) {
                     //Serial.println("WEIGHT WRITE FIRING");
-                    //projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out1, 1);
+                    projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out1, 1);
                 }
                 break;
             }
@@ -244,7 +226,7 @@ void poseTask() {
                 pos_t out2 = {0 , (float)getOutput(DIFFTOF2)};
                 if (out2.y < (sensorDist - WEIGHT_OFFSET)) {
                     //Serial.println("WEIGHT WRITE FIRING");
-                    //projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out2, 1);
+                    projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out2, 1);
                 }
                 break;
             }
