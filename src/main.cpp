@@ -87,8 +87,8 @@ Task tSet_motor(SET_MOTOR_TASK_PERIOD,            SET_MOTOR_TASK_NUM_EXECUTE,   
 
 // Tasks to scan for weights and collection upon detection
 Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &sortingServoTask);
-// Task tRear_gate(GATE_TASK_PERIOD,                 GATE_TASK_NUM_EXECUTE,            &gateTask);
-Task tRear_gate(GATE_TASK_PERIOD, GATE_TASK_NUM_EXECUTE, &gateTest);   // swing test
+Task tRear_gate(GATE_TASK_PERIOD,                 GATE_TASK_NUM_EXECUTE,            &gateTask);
+// Task tRear_gate(GATE_TASK_PERIOD, GATE_TASK_NUM_EXECUTE, &gateTest);   // swing test
 
 // Tasks to search for bases and unload weights
 
@@ -125,7 +125,7 @@ void task_init() {
   tRead_proximity.enable();
   tSensor_average.enable();
   tLocate_task.enable();
-  // tState_task.enable();
+  tState_task.enable();
   tSet_motor.enable();
   tSorting_servo.enable();
   tRear_gate.enable();
