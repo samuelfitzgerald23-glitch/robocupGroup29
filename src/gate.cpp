@@ -119,22 +119,20 @@ void gateTask() {
 void gateTest() {
     servoBus.update();
 
-    // --- one-time bus scan (temporary debug) ---
-    static bool scanned = false;
-    if (!scanned) {
-        scanned = true;
-        Serial.println("Scanning bus for servos...");
+    static uint32_t lastScan = 0;
+    if (millis() - lastScan >= 3000) {          // rescan every 3 s
+        lastScan = millis();
+        Serial.println("---- BUS SCAN ----");
         for (int id = 0; id <= 20; id++) {
             HerkulexPacket resp;
             if (servoBus.sendPacketAndReadResponse(resp, id, HerkulexCommand::Stat)) {
-                Serial.print("  found servo ID "); Serial.println(id);
+                Serial.print("  found servo ID ");
+                Serial.println(id);
             }
         }
         HerkulexPacket resp;
         if (servoBus.sendPacketAndReadResponse(resp, 253, HerkulexCommand::Stat))
             Serial.println("  found servo ID 253 (factory default)");
-        Serial.println("scan done");
+        Serial.println("---- scan done ----");
     }
-
-    // ... your existing swing code ...
 }
