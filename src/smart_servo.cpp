@@ -26,7 +26,7 @@ volatile bool servoTimeout = false;
 
 //to know if at center or not
 #define NEUTRAL_TOLERANCE 20
-#define NEUTRAL_RETRY_LIMIT 3 //how many times to try unblock stuck metal weight 
+#define NEUTRAL_RETRY_LIMIT 3 //number of recovery attempts
 uint8_t neutralRetries = 0;
 
 //range 0 (fastest) to 254 (slowest)
@@ -119,7 +119,7 @@ void sortingServoTask()
 
                 servoState = 1;
 
-                uint32_t holdTime = (targetPosition == WANTED_WEIGHT)
+                uint32_t holdTime = (targetPosition == WANTED_WEIGHT) //wait longer for metal than plastic+bludger rejections
                     ? METAL_HOLD_TIME
                     : REJECTION_HOLD_TIME;
 
@@ -147,18 +147,45 @@ void sortingServoTask()
 
                 uint16_t actualPosition = getServoPosition();
 
+                // HerkulexStatusError error;
+                // HerkulexStatusDetail detail;
+                // servo.getStatus(error, detail);
+                
+                // Serial.print("Position: ");
+                // Serial.println(actualPosition);
+
+                // Serial.print("Status error: 0x");
+                // Serial.println((uint8_t)error, HEX);
+
+
+                // Serial.print("Status detail: 0x");
+                // Serial.println((uint8_t)detail, HEX);
+
+                // Serial.print("neutralRetries: ");
+                // Serial.println(neutralRetries);
+
                 if (abs((int)actualPosition - (int)NEUTRAL) <= NEUTRAL_TOLERANCE) {
                     Serial.println("Servo confirmed at neutral");
                     servoSequenceActive = false;
                 } else if (neutralRetries < NEUTRAL_RETRY_LIMIT) {
                     neutralRetries++;
 
-                    servo.setTorqueOn();
+                    Serial.println("Neutral blocked; recovery attempt");
+
+                    if (!resetServoAfterOverload()) {
+                        Serial.println("Could not restore servo torque");
+                        servoSequenceActive = false;
+                        break;
+                    }
+
                     setServoPosition(WANTED_WEIGHT);
-                    Serial.println("Neutral blocked; moving back to wanted position");
+                    Serial.println("Moving back to wanted position");
 
                     servoState = 3;
                     ServoTimeout.begin(servo_timeout, 3 * SERVO_SECOND);
+                
+
+                    
                 } else {
                     Serial.println("Servo failed to return to neutral; check for jam");
 
@@ -173,7 +200,7 @@ void sortingServoTask()
             if (servoTimeout) {
                 servoTimeout = false;
                 
-                servo.setTorqueOn();
+                //ervo.setTorqueOn();
                 setServoPosition(NEUTRAL);
                 Serial.println("Retrying neutral after recovery move");
 
@@ -182,11 +209,8 @@ void sortingServoTask()
             }
             break;
     }
-
-    //Serial.print("Current position: ");
-    //Serial.println(getServoPosition());
-
 }
+
 
 void sortWantedWeight()
 {
@@ -203,6 +227,36 @@ void ejectMobileElement()
     startServoSequence(EJECT_MOBILE);
 }
 
+bool resetServoAfterOverload()
+{
+    HerkulexStatusError error;
+    HerkulexStatusDetail detail;
+
+    servo.getStatus(error, detail);
+
+    if ((uint8_t)error & 0x10) {
+        Serial.println("Servo overload detected - resetting");
+
+        // Clear overload status
+        servo.writeRam(HerkulexRamRegister::StatusError, 0x00);
+
+        // Restore torque
+        servo.setTorqueOn();
+
+        // Check that torque has actually returned
+        servo.getStatus(error, detail);
+
+        if ((uint8_t)detail & 0x40) {
+            Serial.println("Servo torque restored");
+            return true;
+        }
+
+        Serial.println("Servo torque failed to restore");
+        return false;
+    }
+
+    return true;
+}
 
 void startServoSequence(uint16_t position) 
 {

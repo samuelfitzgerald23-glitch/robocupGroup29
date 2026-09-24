@@ -101,7 +101,6 @@ void mobile_element_check(void)
     ejectMobileElement();
   } else {
     mobileElementPresent = false;
-    //Serial.println("No mobile element");
   }
 }
 

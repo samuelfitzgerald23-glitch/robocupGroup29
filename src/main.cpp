@@ -30,9 +30,9 @@
 
 #define CHECK_WATCHDOG_TASK_PERIOD          40
 
-#define COLOUR_TASK_PERIOD                   100 //in ms??
-#define SERVO_TASK_PERIOD                    20 
-#define PROXIMITY_TASK_PERIOD                20
+#define COLOUR_TASK_PERIOD                   10 //in Hz
+#define SERVO_TASK_PERIOD                    50 
+#define PROXIMITY_TASK_PERIOD                50
 
 // Task execution amount definitions
 // -1 means indefinitely

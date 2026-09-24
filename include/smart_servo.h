@@ -14,6 +14,7 @@ void sortingServoTask();
 void startServoSequence(uint16_t position);                   
 void sortWantedWeight();
 void sortUnwantedWeight();
+bool resetServoAfterOverload();
 void ejectMobileElement();
 void servo_test();
 
