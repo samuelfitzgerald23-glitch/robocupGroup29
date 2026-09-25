@@ -15,24 +15,25 @@
 #define MAX_WAYPOINT_COUNT 24
 #define WAYPOINT_SPACING 500.0f
 
-#define ROBOT_WIDTH  2          //1/2robot width/hieght in cells
+#define ROBOT_WIDTH  3          //1/2robot width/hieght in cells
 
 #define GRID_WIDTH  50
 #define GRID_HEIGHT 96
 
 #define CELL_SIZE 50.0f      //mm per cell
 
-//#define X_ZERO (GRID_WIDTH-ROBOT_WIDTH-1)   //right side
+//#define X_ZERO (GRID_WIDTH-ROBOT_WIDTH-3)   //right side
 #define X_ZERO (ROBOT_WIDTH+1)              //left side
 #define Y_ZERO (ROBOT_WIDTH+1)
 
+#define CONFIDENCE_THRESHOLD -15
+
 enum cell_t {
-    EDGE_CELL = -4,
-    INVALID_CELL = -3,
-    MY_POS,
-    VALID_POS,
-    UNDEFINED_CELL,
-    WEIGHT
+    MY_POS = -51,
+    EDGE_CELL = -50,
+    UNDEFINED_CELL = 0,
+    WEIGHT = 50,
+    PATH = 51
 };
 
 struct location_sensor_t {

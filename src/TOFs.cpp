@@ -71,7 +71,6 @@ void TOF_task() {
   for (uint8_t i = 0; i < sensorCount; i++)
   {
     TOF_reading[i] = sensors[i].readRangeContinuousMillimeters();
-    if (TOF_reading[i] > MAX_SIGHT_DIST) continue;
 
     // Serial.print("Sensor ");
     // Serial.print(i);

@@ -3,8 +3,8 @@
 
 //tof fov in deg
 #define TOF_FULL_FOV 27/2               //half of cone angle at max ROI (16x16)
-#define TOF_FOV TOF_FULL_FOV * 1/4      //half cone angle for 4x4 grid
-#define N_TOF_RAYS 6
+#define TOF_FOV (TOF_FULL_FOV * 1/4)      //half cone angle for 4x4 grid
+#define N_TOF_RAYS 5
 
 #define NON_COUPLED_SENSORS 2
 #define MAX_WEIGHT_DIST (1/2 * MAX_SIGHT_DIST)
@@ -21,8 +21,8 @@ static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 
 //filtered sensors with offsets
 static location_sensor_t filtered_sensors[NON_COUPLED_SENSORS] = {
-    {TOF1, {-45, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF1].offset))},
-    {TOF2, {45, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF2].offset))}
+    {TOF1, {-5, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF1].offset))},
+    {TOF2, {5, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF2].offset))}
 };
 
 //non filtered sensors with offset
@@ -70,9 +70,9 @@ void writeToMap(float world_x, float world_y, int8_t value) {
     //write a value to a cell on the map
     int gx, gy;
 
-    if (worldToGrid(world_x, world_y, gx, gy) && ((mapData[gy][gx] != static_cast<int8_t>(WEIGHT)) && (mapData[gy][gx] != static_cast<int8_t>(EDGE_CELL)))) {
-        mapData[gy][gx] = value;
-        logCell(gx, gy, value);
+    if (worldToGrid(world_x, world_y, gx, gy) && ((mapData[gy][gx] < static_cast<int8_t>(WEIGHT)) && (mapData[gy][gx] > static_cast<int8_t>(EDGE_CELL)))) {
+        mapData[gy][gx] = constrain(mapData[gy][gx] + value, static_cast<int8_t>(EDGE_CELL)+1, static_cast<int8_t>(WEIGHT)-1);
+        logCell(gx, gy, mapData[gy][gx]);
     }
 }
 
@@ -90,8 +90,8 @@ static void rayTraceFree(int x0, int y0, int x1, int y1) {
 
         if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
             if ((mapData[y][x] != static_cast<int8_t>(WEIGHT)) && (mapData[y][x] != static_cast<int8_t>(EDGE_CELL))) {
-                mapData[y][x] = static_cast<int8_t>(VALID_POS);
-                logCell(x, y, static_cast<int8_t>(VALID_POS));
+                mapData[y][x] = constrain(mapData[y][x] + 1, static_cast<int8_t>(EDGE_CELL)+1, static_cast<int8_t>(WEIGHT)-1);
+                logCell(x, y, mapData[y][x]);
             }
         }
     }
@@ -103,13 +103,17 @@ static void rayTraceFree(int x0, int y0, int x1, int y1) {
 
 void updatePose(pos_vector_t* Pose) {
     //overwrite last pos
-    writeToMap(robot_worldFrame.x(), robot_worldFrame.y(), static_cast<int8_t>(VALID_POS));
+    int x, y;
+    worldToGrid(robot_worldFrame.x(), robot_worldFrame.y(), x, y);
+    mapData[y][x] = 10;
 
     //get new POS
     robot_worldFrame = robot_worldFrame.transformFrame(PoseMatrix::buildFrame(Pose));
 
     //write current POS
-    writeToMap(robot_worldFrame.x(), robot_worldFrame.y(), static_cast<int8_t>(MY_POS));
+    int gx, gy;
+    worldToGrid(robot_worldFrame.x(), robot_worldFrame.y(), gx, gy);
+    mapData[gy][gx] = static_cast<int8_t>(MY_POS);
 }
 
 void projectSensorCone(const PoseMatrix& sensor_robotFrame, float distance, bool isWeight) {
@@ -140,7 +144,11 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
     worldToGrid(worldCoord.x, worldCoord.y, xw, yw);
     rayTraceFree(xr, yr, xw, yw);
 
-    writeToMap(worldCoord.x, worldCoord.y, isWeight? static_cast<int8_t>(WEIGHT) : static_cast<int8_t>(INVALID_CELL));
+    if (isWeight) {
+        mapData[yw][xw] = static_cast<int8_t>(WEIGHT);
+    } else {
+        writeToMap(worldCoord.x, worldCoord.y, -1);
+    }
 }
 
 pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sensorVector, float theta) {
@@ -182,8 +190,6 @@ void map_init() {
     writeToMap(robot_worldFrame.x(), robot_worldFrame.y(), static_cast<int8_t>(MY_POS));
 }
 
-static bool sensorsOff = 1;
-
 void poseTask() {
     //Serial.println("pose task");
     float heading = getHeading();
@@ -206,7 +212,7 @@ void poseTask() {
 
     //find objects with the TOFs
     for (int i = 0; i < NON_COUPLED_SENSORS; i++) {
-        if (!sensorsOff || isTurning || millis() < 500) continue;
+        if (isTurning || millis() < 1000) continue;
 
         float sensorDist = (float)getOutput(filtered_sensors[i].ID);
 
@@ -256,14 +262,14 @@ void setTurning(bool turning) {
 
 bool isWalkible(int x, int y, int inflation_factor) {
      if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return false;
-    if (getMapValue(x, y) == INVALID_CELL) return false;
+    if ((getMapValue(x, y) < CONFIDENCE_THRESHOLD) || (getMapValue(x, y) == EDGE_CELL)) return false;
 
     for (int n = 1; n <= inflation_factor; n++) {
         for (int i = 0; i < 8; i++) {
         int nx = x + n*dx8[i];
         int ny = y + n*dy8[i];
         if (nx < 0 || nx >= GRID_WIDTH || ny < 0 || ny >= GRID_HEIGHT) continue;  // off-grid neighbor isn't a wall, just skip it
-        if ((getMapValue(nx, ny) == INVALID_CELL) || (getMapValue(nx, ny) == EDGE_CELL)) return false;
+        if ((getMapValue(nx, ny) < CONFIDENCE_THRESHOLD) || (getMapValue(nx, ny) == EDGE_CELL)) return false;
     }
     }
     return true;

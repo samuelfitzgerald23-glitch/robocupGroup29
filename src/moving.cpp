@@ -171,8 +171,4 @@ void setPath(const pos_t* path, int count) {
     pathfinished = 0;
     pathBlocked = 0;
     currentTarget = targetlist[0];
-    for(int i = 0; i < count; i++) {
-        float wx = targetlist[i].x; float wy = targetlist[i].y;
-        writeToMap(wx, wy, 2);
-    }
 }

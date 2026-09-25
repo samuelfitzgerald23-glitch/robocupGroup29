@@ -120,7 +120,7 @@ void task_init() {
   tLocate_task.enable();
   tState_task.enable();
   tSet_motor.enable();
-  tSorting_servo.enable();
+  //tSorting_servo.enable();
   //tCheck_watchdog.enable();
 
   Serial.println("Tasks have been initialised \n");
