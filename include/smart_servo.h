@@ -9,11 +9,13 @@
 
 void initSmartServo(void);
 void setServoPosition(uint16_t position);
-uint16_t getServoPosition(uint16_t &position);
+uint16_t getServoPosition(void);
 void sortingServoTask();
 void startServoSequence(uint16_t position);                   
 void sortWantedWeight();
 void sortUnwantedWeight();
+bool resetServoAfterOverload();
+void ejectMobileElement();
 void servo_test();
 
 #endif // SMART_SERVO_H

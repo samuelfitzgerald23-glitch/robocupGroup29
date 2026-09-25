@@ -5,6 +5,7 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS3472
 static bool plasticWeightPresent = false;
 static bool mobileElementPresent = false;
 
+static uint32_t colourStartTime = 0;
 static uint16_t filteredClear = 0;
 static uint16_t filteredRed = 0;
 static uint16_t filteredBlue = 0;
@@ -12,13 +13,14 @@ static uint16_t filteredGreen = 0;
 
 void colour_init() 
 {
+  colourStartTime = millis();
+
   if (tcs.begin(TCS34725_ADDRESS, &Wire1)) 
   {
     Serial.println("Found colour sensor");
   } else 
   {
     Serial.println("No TCS34725 found ... check your connections");
-    //while (1); // halt!
   }
 }
 
@@ -50,7 +52,11 @@ void colourTask()
   updateColourValue();
   //printColourPlot();
   plastic_weight_check();
-  mobile_element_check();
+  
+  //don't check for mobile elements until some time passes
+  if (millis() - colourStartTime >= MOBILE_STARTUP_DELAY) {
+      mobile_element_check();
+  }
 
 }
 
@@ -75,11 +81,18 @@ void mobile_element_check(void)
 {
   if ((filteredRed < MOBILE_TOL_RED)&&(filteredBlue < MOBILE_TOL_BLUE)&&(filteredGreen < MOBILE_TOL_GREEN)) {
     mobileElementPresent = true;
+    Serial.println("Mobile element present");
+    ejectMobileElement();
   } else {
     mobileElementPresent = false;
   }
-
 }
+
+bool get_mobile_element_present(void)
+{
+    return mobileElementPresent;
+}
+
 
 uint16_t get_clear_value()
 {

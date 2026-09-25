@@ -1,6 +1,5 @@
 #include <Servo.h>
 #include "motor.h"
-#include "smart_servo.h"
 #include <Arduino.h>
 
 //driving motors
@@ -36,9 +35,6 @@ void initMotors() {
     Fan1.writeMicroseconds(STOP);
     Fan2.writeMicroseconds(STOP);
     delay(10);
-
-    //start fans
-    //setFanSpeed(450);
 }
 
 void setDriveSpeed(int speed1, int speed2) {
@@ -62,7 +58,5 @@ void setFanSpeed(int speed) {
 }
 
 void motorTask() {
-    Serial.println("motor task");
-    //setDriveSpeed(300, 300);
     setFanSpeed(450);
 }

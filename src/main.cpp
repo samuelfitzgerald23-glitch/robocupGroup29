@@ -30,9 +30,9 @@
 
 #define CHECK_WATCHDOG_TASK_PERIOD          40
 
-#define COLOUR_TASK_PERIOD                  10 //in Hz
-#define SERVO_TASK_PERIOD                   10 
-#define PROXIMITY_TASK_PERIOD               10
+#define COLOUR_TASK_PERIOD                   10 //in Hz
+#define SERVO_TASK_PERIOD                    50 
+#define PROXIMITY_TASK_PERIOD                50
 
 // Task execution amount definitions
 // -1 means indefinitely
@@ -83,6 +83,7 @@ Task tSet_motor(SET_MOTOR_TASK_PERIOD,            SET_MOTOR_TASK_NUM_EXECUTE,   
 
 // Tasks to scan for weights and collection upon detection
 Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &sortingServoTask);
+//Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &servo_test);
 
 // Tasks to search for bases and unload weights
 
@@ -107,7 +108,7 @@ void task_init() {
   taskManager.addTask(tLocate_task);
 
   /*actuators*/
-  taskManager.addTask(tState_task);
+  //taskManager.addTask(tState_task);
   taskManager.addTask(tSet_motor);
   taskManager.addTask(tSorting_servo);
 
