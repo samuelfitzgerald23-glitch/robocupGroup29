@@ -101,14 +101,18 @@ void printIMUEvent(sensors_event_t* event) {
 }
 
 void IMU_task() {
+  Serial.println("IMU task");
   //could add VECTOR_ACCELEROMETER, VECTOR_MAGNETOMETER,VECTOR_GRAVITY...
-  bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
+  bool ok = bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
+    if (!ok) {
+        Serial1.println("I, IMU read FAILED");
+    }
   bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
   bno.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
   bno.getEvent(&accelerometerData, Adafruit_BNO055::VECTOR_ACCELEROMETER);
   bno.getEvent(&gravityData, Adafruit_BNO055::VECTOR_GRAVITY);
 
-  delay(BNO055_SAMPLERATE_DELAY_MS);
+  //delay(BNO055_SAMPLERATE_DELAY_MS);
 }
 
 float getHeading() {return (float)orientationData.orientation.x;}

@@ -1,22 +1,6 @@
-#include <Wire.h>
-#include <Arduino.h>
-#include "proximity.h"
-#include "smart_servo.h"
-#include "circBuf.h"
-#include "filtering.h"
 #include "colour_sensor.h"
-#include <Adafruit_TCS34725.h>
 
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_60X);
-
-#define PLASTIC_WEIGHT_TOL 9500
-
-//tolerances for snitch/bludger detection (if below these, theres a mobile element)
-#define MOBILE_TOL_RED 250 
-#define MOBILE_TOL_BLUE 120 
-#define MOBILE_TOL_GREEN 160
-//#define MOBILE_TOL_CLEAR 600 //?? maybe use this too?
-#define MOBILE_STARTUP_DELAY 3000 // 3 seconds
 
 static bool plasticWeightPresent = false;
 static bool mobileElementPresent = false;
@@ -117,17 +101,17 @@ uint16_t get_clear_value()
 
 void printColourPlot()
 {
-  Serial.print(">red:");
+  Serial1.print(">red:");
   Serial.print(filteredRed);
 
-  Serial.print(",green:");
+  Serial1.print(",green:");
   Serial.print(filteredGreen);
 
-  Serial.print(",blue:");
+  Serial1.print(",blue:");
   Serial.print(filteredBlue);
 
-  Serial.print(",clear:");
-  Serial.println(filteredClear);
+  Serial1.print(",clear:");
+  Serial1.println(filteredClear);
 
 
 }

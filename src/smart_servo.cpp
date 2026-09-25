@@ -111,7 +111,7 @@ void sortingServoTask()
                 } else if (targetPosition == UNWANTED_WEIGHT) {
 
                     setServoPosition(targetPosition);
-                    Serial.println("Moved to unwanted weight position");
+                    //Serial.println("Moved to unwanted weight position");
                 }
 
                 Serial.print("Number of weights onboard: ");
@@ -148,7 +148,7 @@ void sortingServoTask()
                 uint16_t actualPosition = getServoPosition();
 
                 if (abs((int)actualPosition - (int)NEUTRAL) <= NEUTRAL_TOLERANCE) {
-                    Serial.println("Servo confirmed at neutral");
+                    //Serial.println("Servo confirmed at neutral");
                     servoSequenceActive = false;
                 } else if (neutralRetries < NEUTRAL_RETRY_LIMIT) {
                     neutralRetries++;
@@ -185,7 +185,7 @@ void sortingServoTask()
                 
                 //ervo.setTorqueOn();
                 setServoPosition(NEUTRAL);
-                Serial.println("Retrying neutral after recovery move");
+                //Serial.println("Retrying neutral after recovery move");
 
                 servoState = 2;
                 ServoTimeout.begin(servo_timeout, 3 * SERVO_SECOND);
@@ -245,7 +245,7 @@ void startServoSequence(uint16_t position)
 {
 
     if (servoSequenceActive) {
-        Serial.println("Sort request ignored: servo is already busy");
+        //Serial.println("Sort request ignored: servo is already busy");
         return;
     }
 

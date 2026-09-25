@@ -6,7 +6,7 @@
 #define TOFS_H
 
 #include <Wire.h>
-#include <VL53L0X.h>
+#include <VL53L1X.h>
 #include <SparkFunSX1509.h>
 
 void TOFinit(SX1509* io);

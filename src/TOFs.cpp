@@ -3,23 +3,23 @@
 #include "circBuf.h"
 
 //TOF sensor stuff
-#define VL53L0X_ADDRESS_START 0x30
+#define VL53L1X_ADDRESS_START 0x30
 
 
 // The number of sensors in your system.
-const uint8_t sensorCount = 2;
+const uint8_t sensorCount = 4;
 
 // The Arduino pin connected to the XSHUT pin of each sensor.
 const uint8_t xshutPins[8] = {0,1,2,3,4,5,6,7};
 
 
-VL53L0X sensors[sensorCount];
+VL53L1X sensors[sensorCount];
 
 /*
 *   TOF sensor functions
 */
 
-static uint16_t TOF_reading[2];
+static uint16_t TOF_reading[sensorCount];
 
 void TOFinit(SX1509* io) {
   //while (!Serial) {}
@@ -56,13 +56,16 @@ void TOFinit(SX1509* io) {
     // Each sensor must have its address changed to a unique value other than
     // the default of 0x29 (except for the last one, which could be left at
     // the default). To make it simple, we'll just count up from 0x2A.
-    sensors[i].setAddress(VL53L0X_ADDRESS_START + i);
+    sensors[i].setAddress(VL53L1X_ADDRESS_START + i);
 
-    sensors[i].startContinuous(50);
+    sensors[i].setROISize(4, 4);  //set region of interest (default is 16x16)
+
+    sensors[i].startContinuous(35);
   }
 }
 
 void TOF_task() {
+  //Serial.println("TOF task");
   for (uint8_t i = 0; i < sensorCount; i++)
   {
     TOF_reading[i] = sensors[i].readRangeContinuousMillimeters();
