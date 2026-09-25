@@ -7,8 +7,8 @@
 //at ~12cm off the ground this is 1259 counts / 300 mm
 #define COUNTS_PER_MM 3.0f
 
-#define NUM_LEDS 16
-#define DATA_PIN 2
+#define NUM_LEDS 14
+#define DATA_PIN 33
 
 CRGB leds[NUM_LEDS];
 
@@ -16,13 +16,13 @@ Bitcraze_PMW3901 flow(XY_CS);
 
 void init_optical_flow()
 {
-    // FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
-    // FastLED.setBrightness(130);
+    FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+    FastLED.setBrightness(130);
 
-    // for(int i = 0; i < NUM_LEDS; i++) {
-    //     leds[i] = CRGB(255,255,255);
-    // }
-    // FastLED.show();
+    for(int i = 0; i < NUM_LEDS; i++) {
+        leds[i] = CRGB(255,255,255);
+    }
+    FastLED.show();
 
     if (!flow.begin()) {
         Serial.println("Initialization of the flow sensor failed");

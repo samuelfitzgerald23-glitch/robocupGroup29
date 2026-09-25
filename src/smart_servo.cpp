@@ -147,23 +147,6 @@ void sortingServoTask()
 
                 uint16_t actualPosition = getServoPosition();
 
-                // HerkulexStatusError error;
-                // HerkulexStatusDetail detail;
-                // servo.getStatus(error, detail);
-                
-                // Serial.print("Position: ");
-                // Serial.println(actualPosition);
-
-                // Serial.print("Status error: 0x");
-                // Serial.println((uint8_t)error, HEX);
-
-
-                // Serial.print("Status detail: 0x");
-                // Serial.println((uint8_t)detail, HEX);
-
-                // Serial.print("neutralRetries: ");
-                // Serial.println(neutralRetries);
-
                 if (abs((int)actualPosition - (int)NEUTRAL) <= NEUTRAL_TOLERANCE) {
                     Serial.println("Servo confirmed at neutral");
                     servoSequenceActive = false;
