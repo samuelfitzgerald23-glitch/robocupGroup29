@@ -11,25 +11,36 @@ static float microsecondsToMillimeters(uint32_t microseconds)
 }
 
 void leftCallback() {
-  float dist = microsecondsToMillimeters((micros() - start_left));
-  writeCircBuf(getBuf(ULTRASOUND_LEFT), dist);
+  if ((bool)digitalReadFast(ULTRASOUND_LEFT_ECHO)) {
+    start_left = micros();
+  } else {
+    float dist = microsecondsToMillimeters((micros() - start_left));
+    writeCircBuf(getBuf(ULTRASOUND_LEFT), dist);
+  }
 }
 
 void rightCallback() {
-  float dist = microsecondsToMillimeters((micros() - start_left));
-  writeCircBuf(getBuf(ULTRASOUND_RIGHT), dist);
+  if ((bool)digitalReadFast(ULTRASOUND_RIGHT_ECHO)) {
+    start_right = micros();
+  } else {
+    float dist = microsecondsToMillimeters((micros() - start_right));
+    writeCircBuf(getBuf(ULTRASOUND_RIGHT), dist);
+  }
 }
  
 void Ultrasound_init() 
 {  
   pinMode(ULTRASOUND_LEFT_TRIG, OUTPUT);            //Setup ultrasound pins
-  attachInterrupt(ULTRASOUND_LEFT_ECHO, leftCallback, RISING);
+  pinMode(ULTRASOUND_LEFT_ECHO, INPUT_PULLDOWN);
+  attachInterrupt(ULTRASOUND_LEFT_ECHO, leftCallback, CHANGE);
 
   pinMode(ULTRASOUND_RIGHT_TRIG, OUTPUT);            //Setup ultrasound pins
-  attachInterrupt(ULTRASOUND_RIGHT_ECHO, rightCallback, RISING);
+  pinMode(ULTRASOUND_RIGHT_ECHO, INPUT_PULLDOWN);
+  attachInterrupt(ULTRASOUND_RIGHT_ECHO, rightCallback, CHANGE);
+  Serial.println("ultrasound initialised");
 }
  
-void ultrasound_start(uint8_t Trigger)
+static void ultrasound_start(uint8_t Trigger)
 {
  
   // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
@@ -39,8 +50,6 @@ void ultrasound_start(uint8_t Trigger)
   digitalWrite(Trigger, HIGH);
   delayMicroseconds(10);
   digitalWrite(Trigger, LOW);
-  if (Trigger == ULTRASOUND_LEFT_TRIG) start_left = micros();
-  if (Trigger == ULTRASOUND_RIGHT_TRIG) start_right = micros();
  
   // Read the signal from the sensor: a HIGH pulse whose
   // duration is the time (in microseconds) from the sending
@@ -51,8 +60,4 @@ void ultrasound_task() {
   for (int i = 0; i < N_ULTRASOUND; i++) {
     ultrasound_start(ultrasound_sensors[i]);
   }
-  Serial.print("Ultrasound "); Serial.print(1); Serial.print(": ");
-  Serial.print(getOutput(ULTRASOUND_LEFT));
-  Serial.print(" Ultrasound "); Serial.print(2); Serial.print(": ");
-  Serial.println(getOutput(ULTRASOUND_RIGHT));
 }

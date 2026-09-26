@@ -62,7 +62,7 @@ void setFanSpeed(int speed) {
 }
 
 void motorTask() {
-    Serial.println("motor task");
+    //Serial.println("motor task");
     //setDriveSpeed(300, 300);
     setFanSpeed(450);
 }

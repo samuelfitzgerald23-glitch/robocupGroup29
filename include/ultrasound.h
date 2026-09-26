@@ -12,6 +12,8 @@
 #define ULTRASOUND_RIGHT_TRIG 32
 #define ULTRASOUND_RIGHT_ECHO 33
 
+void Ultrasound_init();
 
+void ultrasound_task();
 
 #endif //ULTRASOUND_H

@@ -16,6 +16,7 @@
 #define WAYPOINT_SPACING 500.0f
 
 #define ROBOT_WIDTH  3          //1/2robot width/hieght in cells
+#define MAX_SIGHT_DIST 2000
 
 #define GRID_WIDTH  50
 #define GRID_HEIGHT 96
@@ -26,7 +27,10 @@
 #define X_ZERO (ROBOT_WIDTH+1)              //left side
 #define Y_ZERO (ROBOT_WIDTH+1)
 
-#define CONFIDENCE_THRESHOLD -15
+#define CONFIDENCE_THRESHOLD -10
+
+#define TOF_CONFIDENCE 1
+#define ULTRASOUND_CONFIDENCE 2
 
 enum cell_t {
     MY_POS = -51,
@@ -40,6 +44,7 @@ struct location_sensor_t {
     BufID ID;
     pos_vector_t offset;            //mounting angle from zero heading (robot frame), x distence & y distence from centre
     PoseMatrix sensor_robotFrame;   //pose matrix used for transforms
+    int8_t confidence;
 };
 
 bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y);
@@ -50,7 +55,9 @@ void writeToMap(float world_x, float world_y, int8_t value);
 
 void updatePose(pos_vector_t* Pose);
 
-void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, bool isWeight);
+void projectSensorCone(const location_sensor_t& sensor, float distance, bool isWeight);
+
+void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, bool isWeight, int8_t confidence);
 
 pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sensorVector, float theta);
 

@@ -21,8 +21,10 @@ static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 
 //filtered sensors with offsets
 static location_sensor_t filtered_sensors[NON_COUPLED_SENSORS] = {
-    {TOF1, {-5, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF1].offset))},
-    {TOF2, {5, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF2].offset))}
+    {TOF1, {-5, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF1].offset)), TOF_CONFIDENCE},
+    {TOF2, {5, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF2].offset)), TOF_CONFIDENCE},
+    //{ULTRASOUND_LEFT, {}, PoseMatrix::buildFrame(&(filtered_sensors[ULTRASOUND_LEFT].offset)), ULTRASOUND_CONFIDENCE},
+    //{ULTRASOUND_RIGHT, {}, PoseMatrix::buildFrame(&(filtered_sensors[ULTRASOUND_RIGHT].offset)), ULTRASOUND_CONFIDENCE},
 };
 
 //non filtered sensors with offset
@@ -116,7 +118,7 @@ void updatePose(pos_vector_t* Pose) {
     mapData[gy][gx] = static_cast<int8_t>(MY_POS);
 }
 
-void projectSensorCone(const PoseMatrix& sensor_robotFrame, float distance, bool isWeight) {
+void projectSensorCone(const location_sensor_t& sensor, float distance, bool isWeight) {
     for (int i = 0; i < N_TOF_RAYS; i++) {
         // spread evenly from -halfFOV to +halfFOV
         float angleOffsetDeg = (2.0f * TOF_FOV) * i / (N_TOF_RAYS - 1) - TOF_FOV;
@@ -128,11 +130,11 @@ void projectSensorCone(const PoseMatrix& sensor_robotFrame, float distance, bool
             distance * std::cos(angleOffsetRad)
         };
 
-        projectSensorHit(sensor_robotFrame, &rayVector, isWeight);
+        projectSensorHit(sensor.sensor_robotFrame, &rayVector, isWeight, sensor.confidence);
     }
 }
 
-void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, bool isWeight) {
+void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, bool isWeight, int8_t confidence) {
     //transform sensor frame into world coords
     PoseMatrix sensor_worldFrame = robot_worldFrame.transformFrame(sensor_robotFrame);
 
@@ -147,7 +149,7 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
     if (isWeight) {
         mapData[yw][xw] = static_cast<int8_t>(WEIGHT);
     } else {
-        writeToMap(worldCoord.x, worldCoord.y, -1);
+        writeToMap(worldCoord.x, worldCoord.y, -confidence);
     }
 }
 
@@ -215,8 +217,9 @@ void poseTask() {
         if (isTurning || millis() < 1000) continue;
 
         float sensorDist = (float)getOutput(filtered_sensors[i].ID);
+        if (sensorDist > MAX_SIGHT_DIST) continue;
 
-        projectSensorCone(filtered_sensors[i].sensor_robotFrame, sensorDist, 0);
+        projectSensorCone(filtered_sensors[i], sensorDist, 0);
 
         //check to see if seen object is a weight
         switch (filtered_sensors[i].ID) {
@@ -224,7 +227,7 @@ void poseTask() {
                 pos_t out1 = {0 , (float)getOutput(DIFFTOF1)};
                 if (out1.y < (sensorDist - WEIGHT_OFFSET)) {
                     //Serial.println("WEIGHT WRITE FIRING");
-                    projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out1, 1);
+                    projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out1, 1, 0);
                 }
                 break;
             }
@@ -232,7 +235,7 @@ void poseTask() {
                 pos_t out2 = {0 , (float)getOutput(DIFFTOF2)};
                 if (out2.y < (sensorDist - WEIGHT_OFFSET)) {
                     //Serial.println("WEIGHT WRITE FIRING");
-                    projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out2, 1);
+                    projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out2, 1, 0);
                 }
                 break;
             }
