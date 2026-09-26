@@ -12,6 +12,8 @@
 #include "xy_optical.h"
 #include "IMU.h"
 
+#define BLUETOOTH_SERIAL Serial1
+
 #define MAX_WAYPOINT_COUNT 24
 #define WAYPOINT_SPACING 500.0f
 
@@ -23,9 +25,9 @@
 
 #define CELL_SIZE 50.0f      //mm per cell
 
-//#define X_ZERO (GRID_WIDTH-ROBOT_WIDTH-3)   //right side
-#define X_ZERO (ROBOT_WIDTH+1)              //left side
-#define Y_ZERO (ROBOT_WIDTH+1)
+//#define X_ZERO (GRID_WIDTH-(2*ROBOT_WIDTH))   //right side
+#define X_ZERO (2*ROBOT_WIDTH)              //left side
+#define Y_ZERO (2*ROBOT_WIDTH)
 
 #define CONFIDENCE_THRESHOLD -10
 
@@ -33,11 +35,11 @@
 #define ULTRASOUND_CONFIDENCE 2
 
 enum cell_t {
-    MY_POS = -51,
     EDGE_CELL = -50,
     UNDEFINED_CELL = 0,
     WEIGHT = 50,
-    PATH = 51
+    PATH = 51,
+    MY_POS = 52
 };
 
 struct location_sensor_t {

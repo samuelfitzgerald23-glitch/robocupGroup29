@@ -2,11 +2,11 @@
 #include <Arduino.h>
 
 //tof fov in deg
-#define TOF_FULL_FOV 27/2               //half of cone angle at max ROI (16x16)
-#define TOF_FOV (TOF_FULL_FOV * 1/4)      //half cone angle for 4x4 grid
+#define TOF_FOV (27/2 * 0.25)      //half cone angle for 4x4 grid
+
 #define N_TOF_RAYS 5
 
-#define NON_COUPLED_SENSORS 2
+#define NON_COUPLED_SENSORS 4
 #define MAX_WEIGHT_DIST (1/2 * MAX_SIGHT_DIST)
 #define WEIGHT_OFFSET 500.0f
 
@@ -21,10 +21,10 @@ static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 
 //filtered sensors with offsets
 static location_sensor_t filtered_sensors[NON_COUPLED_SENSORS] = {
-    {TOF1, {-5, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF1].offset)), TOF_CONFIDENCE},
-    {TOF2, {5, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF2].offset)), TOF_CONFIDENCE},
-    //{ULTRASOUND_LEFT, {}, PoseMatrix::buildFrame(&(filtered_sensors[ULTRASOUND_LEFT].offset)), ULTRASOUND_CONFIDENCE},
-    //{ULTRASOUND_RIGHT, {}, PoseMatrix::buildFrame(&(filtered_sensors[ULTRASOUND_RIGHT].offset)), ULTRASOUND_CONFIDENCE},
+    {TOF1, {-5, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset)), TOF_CONFIDENCE},
+    {TOF2, {5, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[1].offset)), TOF_CONFIDENCE},
+    {ULTRASOUND_LEFT, {0, {65, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[2].offset)), ULTRASOUND_CONFIDENCE},
+    {ULTRASOUND_RIGHT, {0, {-65, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[3].offset)), ULTRASOUND_CONFIDENCE},
 };
 
 //non filtered sensors with offset
@@ -40,13 +40,13 @@ static PoseMatrix robot_worldFrame = PoseMatrix::buildFrame(&worldOrigin);
  */
 
 static void logCell(int gx, int gy, int8_t value) {
-    Serial1.print("C, "); Serial1.print(gx); Serial1.print(", "); Serial1.print(gy);
-    Serial1.print(", "); Serial1.println(value);
+    BLUETOOTH_SERIAL.print("C, "); BLUETOOTH_SERIAL.print(gx); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(gy);
+    BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(value);
 }
 
 static void logPose(float theta, float x, float y) {
-    Serial1.print("P, "); Serial1.print(theta, 4); Serial1.print(", ");
-    Serial1.print(x, 2); Serial1.print(", "); Serial1.println(y, 2);
+    BLUETOOTH_SERIAL.print("P, "); BLUETOOTH_SERIAL.print(theta, 4); BLUETOOTH_SERIAL.print(", ");
+    BLUETOOTH_SERIAL.print(x, 2); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(y, 2);
 }
 
 bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y) {
@@ -265,14 +265,14 @@ void setTurning(bool turning) {
 
 bool isWalkible(int x, int y, int inflation_factor) {
      if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return false;
-    if ((getMapValue(x, y) < CONFIDENCE_THRESHOLD) || (getMapValue(x, y) == EDGE_CELL)) return false;
+    if ((getMapValue(x, y) < CONFIDENCE_THRESHOLD)) return false;
 
     for (int n = 1; n <= inflation_factor; n++) {
         for (int i = 0; i < 8; i++) {
         int nx = x + n*dx8[i];
         int ny = y + n*dy8[i];
         if (nx < 0 || nx >= GRID_WIDTH || ny < 0 || ny >= GRID_HEIGHT) continue;  // off-grid neighbor isn't a wall, just skip it
-        if ((getMapValue(nx, ny) < CONFIDENCE_THRESHOLD) || (getMapValue(nx, ny) == EDGE_CELL)) return false;
+        if ((getMapValue(nx, ny) < CONFIDENCE_THRESHOLD)) return false;
     }
     }
     return true;

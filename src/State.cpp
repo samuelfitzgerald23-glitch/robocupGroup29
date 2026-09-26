@@ -9,6 +9,7 @@ static robotState CurrentState = STARTUP;
 
 static int8_t goal_type = 0;
 static pos_t goal_pos = {1000,1000};
+static pos_t prev_target = goal_pos;
 
 static pos_t microSteps[MAX_WAYPOINT_COUNT] = {{0,0},{0,200},{200,200},{200,0},{0,0}};
 
@@ -24,11 +25,12 @@ void StateMachineTask() {
     float dt = float(now - lastTime)/MICRO_TO_SEC;
     lastTime = now;
 
-    Serial1.print("S, "); Serial1.println(CurrentState);
+    BLUETOOTH_SERIAL.print("S, "); BLUETOOTH_SERIAL.println(CurrentState);
 
     switch (CurrentState) {
         case STARTUP:
             setLEDColor(WRITIBLE_LED, GREEN);
+            BLUETOOTH_SERIAL.print("G, "); BLUETOOTH_SERIAL.print(goal_pos.x); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(goal_pos.y);
             CurrentState = PATHFIND;
             break;
         case CHECK:
@@ -64,11 +66,13 @@ void StateMachineTask() {
                 }
             }
 
-            if (goal_pos.x == prev_target.x && goal_pos.y == prev_target.y) {
+            if ((goal_pos.x == prev_target.x && goal_pos.y == prev_target.y) || !found) {
                 goal_pos = {0,0};
             }
 
-            Serial1.print("G, "); Serial1.print(goal_pos.x); Serial1.print(", "); Serial1.print(goal_pos.y);
+            prev_target = goal_pos;
+
+            BLUETOOTH_SERIAL.print("G, "); BLUETOOTH_SERIAL.print(goal_pos.x); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(goal_pos.y);
             CurrentState = PATHFIND;
             break;
         }

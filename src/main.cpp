@@ -24,7 +24,7 @@
 #define IMU_READ_TASK_PERIOD                50
 
 #define SENSOR_AVERAGE_PERIOD               100
-#define LOCATION_TASK_PERIOD                5
+#define LOCATION_TASK_PERIOD                10
 
 #define STATE_TASK_PERIOD                   2
 #define SET_MOTOR_TASK_PERIOD               31
@@ -139,7 +139,7 @@ void setup() {
 
   // put your setup code here, to run once:
   Serial.begin(BAUD_RATE);
-  Serial1.begin(BAUD_RATE);
+  BLUETOOTH_SERIAL.begin(BAUD_RATE);
 
   io.begin(SX1509_ADDRESS);
 
