@@ -40,10 +40,10 @@ void initMotors() {
 void setDriveSpeed(int speed1, int speed2) {
     int pulseWidth1 = constrain((STOP - speed1), FULLREVERSE, FULLFORWARD);
     int pulseWidth2 = constrain((STOP + speed2), FULLREVERSE, FULLFORWARD);
-    Serial.print("motor 1, 2 speeds: ");
-    Serial.print(pulseWidth1);
-    Serial.print(" ");
-    Serial.println(pulseWidth2);
+    //Serial.print("motor 1, 2 speeds: ");
+    //Serial.print(pulseWidth1);
+    //Serial.print(" ");
+    //Serial.println(pulseWidth2);
 
     Drive1.writeMicroseconds(pulseWidth1);
     Drive2.writeMicroseconds(pulseWidth2);

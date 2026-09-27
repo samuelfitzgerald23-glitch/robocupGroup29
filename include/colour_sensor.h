@@ -14,9 +14,11 @@
 #define PLASTIC_WEIGHT_TOL 9500
 
 //tolerances for snitch/bludger detection (need to update these)
-#define MOBILE_TOL_RED 250 
-#define MOBILE_TOL_BLUE 120 
-#define MOBILE_TOL_GREEN 160
+#define MOBILE_TOL_RED 190 
+#define MOBILE_TOL_BLUE 90 
+#define MOBILE_TOL_GREEN 130
+
+#define MOBILE_STARTUP_DELAY 200
 
 void colour_init(void);
 void colourTask(void);

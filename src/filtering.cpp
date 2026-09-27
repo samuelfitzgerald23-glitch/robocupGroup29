@@ -30,7 +30,7 @@ void filterTask() {
         // Serial.print(filteredOutputs[i]);
         // Serial.print(", ");
     }
-    // Serial.println();
+     Serial.println();
 }
 
 int16_t getOutput(BufID ID) {

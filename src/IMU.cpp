@@ -101,7 +101,7 @@ void printIMUEvent(sensors_event_t* event) {
 }
 
 void IMU_task() {
-  Serial.println("IMU task");
+  //Serial.println("IMU task");
   //could add VECTOR_ACCELEROMETER, VECTOR_MAGNETOMETER,VECTOR_GRAVITY...
   bool ok = bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
     if (!ok) {

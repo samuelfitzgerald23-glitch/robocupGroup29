@@ -57,7 +57,7 @@ void proximityTask()
             waitingForConfirmation = true;
             confirmationStartTime = millis();
 
-            Serial.println("Proximity triggered - waiting to confirm weight");
+            //Serial.println("Proximity triggered - waiting to confirm weight");
         }
     }
 
@@ -72,8 +72,8 @@ void proximityTask()
             // Get the latest filtered colour reading
             uint16_t clear = get_clear_value();
 
-            Serial.print("Colour reading after wait: clear = ");
-            Serial.println(clear);
+            //Serial.print("Colour reading after wait: clear = ");
+            //Serial.println(clear);
 
             // Step 3: Confirm whether the weight is metal
             if (clear >= METAL_CLEAR_MIN &&

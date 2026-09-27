@@ -108,18 +108,18 @@ void task_init() {
   taskManager.addTask(tLocate_task);
 
   /*actuators*/
-  //taskManager.addTask(tState_task);
+  taskManager.addTask(tState_task);
   taskManager.addTask(tSet_motor);
   taskManager.addTask(tSorting_servo);
 
   //enable the tasks
-  tRead_TOF.enable();
-  tRead_IMU.enable();
+  //tRead_TOF.enable();
+  //tRead_IMU.enable();
   tRead_colour.enable();
   tRead_proximity.enable();
   tSensor_average.enable();
-  tLocate_task.enable();
-  tState_task.enable();
+  //tLocate_task.enable();
+  //tState_task.enable();
   tSet_motor.enable();
   tSorting_servo.enable();
   //tCheck_watchdog.enable();

@@ -50,7 +50,7 @@ void colourTask()
 {
 
   updateColourValue();
-  //printColourPlot();
+  printColourPlot();
   plastic_weight_check();
   
   //don't check for mobile elements until some time passes
@@ -65,7 +65,7 @@ void plastic_weight_check(void)
 {
   // check if the colour sensor output is within a tolerance & proximity not triggered (not metal)
   if ((filteredClear >= PLASTIC_WEIGHT_TOL) && !get_metal_weight_detected() && !plasticWeightPresent) {
-      Serial.println("Plastic weight detected!");
+      //Serial.println("Plastic weight detected!");
       plasticWeightPresent = true;
       sortUnwantedWeight();
   }
@@ -81,7 +81,7 @@ void mobile_element_check(void)
 {
   if ((filteredRed < MOBILE_TOL_RED)&&(filteredBlue < MOBILE_TOL_BLUE)&&(filteredGreen < MOBILE_TOL_GREEN)) {
     mobileElementPresent = true;
-    Serial.println("Mobile element present");
+    //Serial.println("Mobile element present");
     ejectMobileElement();
   } else {
     mobileElementPresent = false;
@@ -101,17 +101,17 @@ uint16_t get_clear_value()
 
 void printColourPlot()
 {
-  Serial1.print(">red:");
+  Serial.print(">red:");
   Serial.print(filteredRed);
 
-  Serial1.print(",green:");
+  Serial.print(",green:");
   Serial.print(filteredGreen);
 
-  Serial1.print(",blue:");
+  Serial.print(",blue:");
   Serial.print(filteredBlue);
 
-  Serial1.print(",clear:");
-  Serial1.println(filteredClear);
+  Serial.print(",clear:");
+  Serial.println(filteredClear);
 
 
 }
