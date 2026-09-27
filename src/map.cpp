@@ -264,7 +264,7 @@ void setTurning(bool turning) {
 }
 
 bool isWalkible(int x, int y, int inflation_factor) {
-     if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return false;
+    if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return false;
     if ((getMapValue(x, y) < CONFIDENCE_THRESHOLD)) return false;
 
     for (int n = 1; n <= inflation_factor; n++) {

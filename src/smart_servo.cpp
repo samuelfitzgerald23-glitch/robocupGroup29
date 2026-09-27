@@ -36,7 +36,7 @@ volatile bool servoSequenceActive = false;
 uint8_t servoState = 0;
 uint16_t targetPosition;
 
-uint8_t num_weights = 0; //keep track of metal weights onboard
+static uint8_t num_weights = 0; //keep track of metal weights onboard
 
 void initSmartServo()
 {
@@ -55,12 +55,6 @@ void initSmartServo()
 void setServoPosition(uint16_t position)
 {
     servo.setPosition(position, SERVO_SPEED, HerkulexLed::Ignore);
-}
-
-
-uint16_t getServoPosition()
-{
-    return servo.getPosition();
 }
 
 
@@ -201,4 +195,15 @@ void servo_test()
         setServoPosition(WANTED_WEIGHT);
     }
 
+}
+
+/*getters*************************************************************************************************************************** */
+
+uint8_t getNumWeights() {
+    return num_weights;
+}
+
+uint16_t getServoPosition()
+{
+    return servo.getPosition();
 }

@@ -4,6 +4,7 @@
 #include "moving.h"
 #include "motor.h"
 #include "pathfinding.h"
+#include "target_finding.h"
 
 enum robotState {
     STARTUP = -1,

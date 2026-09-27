@@ -16,5 +16,7 @@ void sortWantedWeight();
 void sortUnwantedWeight();
 void servo_test();
 
+uint8_t getNumWeights();
+
 #endif // SMART_SERVO_H
 
