@@ -7,6 +7,11 @@
 #ifndef SMART_SERVO_H
 #define SMART_SERVO_H
 
+#include "proximity.h"
+#include "colour_sensor.h"
+#include <HerkulexServo.h>
+#include <Arduino.h>
+
 void initSmartServo(void);
 void setServoPosition(uint16_t position);
 uint16_t getServoPosition(uint16_t &position);

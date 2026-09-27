@@ -2,14 +2,14 @@
 #include <Arduino.h>
 
 //tof fov in deg
-#define TOF_FOV (27/4)      //half cone angle (deg)
+#define TOF_FOV (27/2)      //half cone angle (deg)
 #define ULTRASOUND_FOV 15
 
 #define N_RAYS 5
 
 #define NON_COUPLED_SENSORS 4
 #define MAX_WEIGHT_DIST (1/2 * MAX_SIGHT_DIST)
-#define WEIGHT_OFFSET 500.0f
+#define WEIGHT_OFFSET 200.0f
 
 static const int8_t dx8[8] = {1, -1, 0, 0, 1, 1, -1, -1};
 static const int8_t dy8[8] = {0, 0, 1, -1, 1, -1, 1, -1};
@@ -22,8 +22,8 @@ static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 
 //filtered sensors with offsets
 static location_sensor_t filtered_sensors[NON_COUPLED_SENSORS] = {
-    {TOF1, {-5, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset)), TOF_FOV, TOF_CONFIDENCE},
-    {TOF2, {5, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[1].offset)), TOF_FOV, TOF_CONFIDENCE},
+    {TOF1, {-45, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset)), TOF_FOV, TOF_CONFIDENCE},
+    {TOF2, {45, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[1].offset)), TOF_FOV, TOF_CONFIDENCE},
     {ULTRASOUND_LEFT, {0, {65, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[2].offset)), ULTRASOUND_FOV, ULTRASOUND_CONFIDENCE},
     {ULTRASOUND_RIGHT, {0, {-65, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[3].offset)), ULTRASOUND_FOV, ULTRASOUND_CONFIDENCE},
 };
@@ -219,9 +219,6 @@ void poseTask() {
         if (isTurning || millis() < 1000) continue;
 
         float sensorDist = (float)getOutput(filtered_sensors[i].ID);
-        if (sensorDist > MAX_SIGHT_DIST) continue;
-
-        projectSensorCone(filtered_sensors[i], sensorDist, 0);
 
         //check to see if seen object is a weight
         switch (filtered_sensors[i].ID) {
@@ -244,6 +241,9 @@ void poseTask() {
             default:
                 break;
         }
+
+        if (sensorDist > MAX_SIGHT_DIST) continue;
+        projectSensorCone(filtered_sensors[i], sensorDist, 0);
     }
 
     logPose(robot_worldFrame.theta(), robot_worldFrame.x(), robot_worldFrame.y());

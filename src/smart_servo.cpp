@@ -1,8 +1,4 @@
-#include <Arduino.h>
 #include "smart_servo.h"
-#include "proximity.h"
-#include "colour_sensor.h"
-#include <HerkulexServo.h>
 
 #define SERVO_SECOND 1000000
 #define SERIAL_SERVO Serial2
@@ -62,6 +58,11 @@ void servo_timeout()
 {
     ServoTimeout.end();
     servoTimeout = true;
+}
+
+uint16_t getServoPosition()
+{
+    return servo.getPosition();
 }
 
 // 
@@ -201,9 +202,4 @@ void servo_test()
 
 uint8_t getNumWeights() {
     return num_weights;
-}
-
-uint16_t getServoPosition()
-{
-    return servo.getPosition();
 }

@@ -18,4 +18,4 @@ enum goal_t {
 
 pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type);
 
-#endif TARGET_FINDING_H
+#endif //TARGET_FINDING_H

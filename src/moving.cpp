@@ -9,6 +9,7 @@ TODO:
 */
 
 #define TIME_LIMIT 2500000
+#define WAYPOINT_PATIENCE 3         //number of times robot can fail to reach a waypoint
 
 IntervalTimer movementTimeLimit;
 
@@ -23,11 +24,14 @@ static int targetIndex = 0;
 bool pathfinished = 0;
 bool pathBlocked = 0;
 
+static int path_failures = 0;
+
 static pos_t currentTarget = {0,0};
 
 static void movementTimerCallback() {
     //if timer finishes before we are at the point reset the state and turn back
     setDriveSpeed(0,0);
+    path_failures++;
     State = IDLE;
     movementTimeLimit.end();
 }
@@ -118,6 +122,10 @@ void movementTask(float dt) {
         State = IDLE;
         movementTimeLimit.end();
         return;
+    }
+    if (path_failures >= WAYPOINT_PATIENCE) {
+        path_failures = 0;
+        State = DONE;
     }
 
     switch (State) {
