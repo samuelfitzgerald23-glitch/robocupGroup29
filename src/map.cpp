@@ -2,7 +2,7 @@
 #include <Arduino.h>
 
 //tof fov in deg
-#define TOF_FOV (27/2)      //half cone angle (deg)
+#define TOF_FOV (27/4)      //half cone angle (deg)
 #define ULTRASOUND_FOV 15
 
 #define N_RAYS 5
