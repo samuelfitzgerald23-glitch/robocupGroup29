@@ -46,7 +46,13 @@ struct location_sensor_t {
     BufID ID;
     pos_vector_t offset;            //mounting angle from zero heading (robot frame), x distence & y distence from centre
     PoseMatrix sensor_robotFrame;   //pose matrix used for transforms
+    float FOV;
     int8_t confidence;
+};
+
+struct GridPos {
+    int x, y;
+    bool operator==(const GridPos& o) const {return x==o.x && y==o.y;};
 };
 
 bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y);

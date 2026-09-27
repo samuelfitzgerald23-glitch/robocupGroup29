@@ -15,7 +15,6 @@
 struct pos_t {
     float x;        //mm
     float y;
-    bool operator==(const pos_t& o) const {return x==o.x && y==o.y;};
 };
 
 //total pos vecotr in terms of theta x and y

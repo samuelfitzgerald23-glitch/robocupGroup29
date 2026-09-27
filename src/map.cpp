@@ -2,9 +2,10 @@
 #include <Arduino.h>
 
 //tof fov in deg
-#define TOF_FOV (27/2 * 0.25)      //half cone angle for 4x4 grid
+#define TOF_FOV (27/2)      //half cone angle (deg)
+#define ULTRASOUND_FOV 15
 
-#define N_TOF_RAYS 5
+#define N_RAYS 5
 
 #define NON_COUPLED_SENSORS 4
 #define MAX_WEIGHT_DIST (1/2 * MAX_SIGHT_DIST)
@@ -21,10 +22,10 @@ static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 
 //filtered sensors with offsets
 static location_sensor_t filtered_sensors[NON_COUPLED_SENSORS] = {
-    {TOF1, {-5, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset)), TOF_CONFIDENCE},
-    {TOF2, {5, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[1].offset)), TOF_CONFIDENCE},
-    {ULTRASOUND_LEFT, {0, {65, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[2].offset)), ULTRASOUND_CONFIDENCE},
-    {ULTRASOUND_RIGHT, {0, {-65, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[3].offset)), ULTRASOUND_CONFIDENCE},
+    {TOF1, {-5, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset)), TOF_FOV, TOF_CONFIDENCE},
+    {TOF2, {5, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[1].offset)), TOF_FOV, TOF_CONFIDENCE},
+    {ULTRASOUND_LEFT, {0, {65, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[2].offset)), ULTRASOUND_FOV, ULTRASOUND_CONFIDENCE},
+    {ULTRASOUND_RIGHT, {0, {-65, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[3].offset)), ULTRASOUND_FOV, ULTRASOUND_CONFIDENCE},
 };
 
 //non filtered sensors with offset
@@ -119,9 +120,10 @@ void updatePose(pos_vector_t* Pose) {
 }
 
 void projectSensorCone(const location_sensor_t& sensor, float distance, bool isWeight) {
-    for (int i = 0; i < N_TOF_RAYS; i++) {
+    float fov = sensor.FOV;
+    for (int i = 0; i < N_RAYS; i++) {
         // spread evenly from -halfFOV to +halfFOV
-        float angleOffsetDeg = (2.0f * TOF_FOV) * i / (N_TOF_RAYS - 1) - TOF_FOV;
+        float angleOffsetDeg = (2.0f * fov) * i / (N_RAYS - 1) - fov;
         float angleOffsetRad = angleOffsetDeg * D_TO_R;
 
         // same polar-to-Cartesian convention as your existing sensorVector (y-forward)

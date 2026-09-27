@@ -60,7 +60,7 @@ void TOFinit(SX1509* io) {
     // the default). To make it simple, we'll just count up from 0x2A.
     sensors[i].setAddress(VL53L1X_ADDRESS_START + i);
 
-    sensors[i].setROISize(4, 4);  //set region of interest (default is 16x16)
+    sensors[i].setROISize(16, 4);  //set region of interest (default is 16x16)
 
     sensors[i].startContinuous(35);
   }

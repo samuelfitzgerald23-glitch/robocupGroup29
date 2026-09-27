@@ -6,16 +6,36 @@ static float conv_kernel[KERNEL_SIZE][KERNEL_SIZE] = {
     {1/9,1/9,1/9}
 };
 
-static bool collector_full() {
-    return getNumWeights() >= MAX_WEIGHTS_ONBOARD;
-}
-
-pos_t find_target(pos_t myPos, pos_t prev_pos) {
+pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
     //find the next target to pathfind toward
 
-    if(collector_full) return {0,0};        //if we have collected all weights the robot should return to base
+    if(getNumWeights() >= MAX_WEIGHTS_ONBOARD) {
+        target_type = BASE_ACTION;
+        return {0,0};
+    }                                                               //if we have collected all weights the robot should return to base
 
-    int rx, ry, px, py;
-    worldToGrid(myPos.x, myPos.y, rx, ry);          //robot pos on grid
-    worldToGrid(prev_pos.x, prev_pos.y, px, py);    //previous target on grid
+    GridPos robotGrid, prevGrid;
+    worldToGrid(myPos.x, myPos.y, robotGrid.x, robotGrid.y);        //robot pos on grid
+    worldToGrid(prev_pos.x, prev_pos.y, prevGrid.x, prevGrid.y);    //previous target on grid
+
+    //define section of map the robot looks for targets in
+    int x_min = ((robotGrid.x - TARGET_GRID_SIZE) <= 0) ? 0 : (robotGrid.x - TARGET_GRID_SIZE);
+    int x_max = ((robotGrid.x + TARGET_GRID_SIZE) >= GRID_WIDTH) ? GRID_WIDTH : (robotGrid.x + TARGET_GRID_SIZE);
+    int y_min = ((robotGrid.y - TARGET_GRID_SIZE) <= 0) ? 0 : (robotGrid.y - TARGET_GRID_SIZE);
+    int y_max = ((robotGrid.y + TARGET_GRID_SIZE) >= GRID_HEIGHT) ? GRID_HEIGHT : (robotGrid.y + TARGET_GRID_SIZE);
+
+    
 }
+
+/*
+pros vs cons of doing a convolution on target map:
+
+pros:
+allows for frontier edge detection
+gets a smoother transition between cells
+due to smoothing cells around weights have higher prioritys, and cells around walls have lower priority
+
+cons:
+possibly take a while
+hard to implament
+*/

@@ -3,9 +3,10 @@
 
 #include "smart_servo.h"
 #include "map.h"
+#include "Arduino.h"
 
 #define KERNEL_SIZE 3
-#define TARGET_GRID_SIZE 20
+#define TARGET_GRID_SIZE 10
 
 #define MAX_WEIGHTS_ONBOARD 3
 
