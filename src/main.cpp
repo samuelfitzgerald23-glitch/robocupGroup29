@@ -12,6 +12,7 @@
 #include "filtering.h"
 #include "map.h"
 #include "State.h"
+#include "gate.h"
 
 //**********************************************************************************
 // Local Definitions
@@ -30,6 +31,10 @@
 
 #define CHECK_WATCHDOG_TASK_PERIOD          40
 
+#define COLOUR_TASK_PERIOD                   100 //in ms??
+#define SERVO_TASK_PERIOD                    20
+
+#define PROXIMITY_TASK_PERIOD                20
 #define COLOUR_TASK_PERIOD                   10 //in Hz
 #define SERVO_TASK_PERIOD                    50 
 #define PROXIMITY_TASK_PERIOD                50
@@ -49,7 +54,9 @@
 
 #define COLOUR_TASK_NUM_EXECUTE             -1
 #define SERVO_TASK_NUM_EXECUTE              -1
+
 #define PROXIMITY_TASK_NUM_EXECUTE          -1
+
 
 // Pin deffinitions
 #define IO_POWER  49
@@ -85,6 +92,7 @@ Task tSet_motor(SET_MOTOR_TASK_PERIOD,            SET_MOTOR_TASK_NUM_EXECUTE,   
 Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &sortingServoTask);
 //Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &servo_test);
 
+
 // Tasks to search for bases and unload weights
 
 // Tasks to check the 'watchdog' timer (These will need to be added in)
@@ -111,6 +119,7 @@ void task_init() {
   taskManager.addTask(tState_task);
   taskManager.addTask(tSet_motor);
   taskManager.addTask(tSorting_servo);
+ 
 
   //enable the tasks
   //tRead_TOF.enable();
@@ -122,6 +131,7 @@ void task_init() {
   //tState_task.enable();
   tSet_motor.enable();
   tSorting_servo.enable();
+  
   //tCheck_watchdog.enable();
 
   Serial.println("Tasks have been initialised \n");
@@ -151,6 +161,7 @@ void setup() {
   filteringInit();
 
   initSmartServo();
+  initGate();
 }
 
 void loop() {

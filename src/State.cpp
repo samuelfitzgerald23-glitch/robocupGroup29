@@ -1,4 +1,5 @@
 #include "State.h"
+#include "gate.h"
 #include "LED_array.h"
 
 IntervalTimer TimeoutCheck;
@@ -110,7 +111,9 @@ void StateMachineTask() {
             } else if (goal_pos.x == 0 && goal_pos.y == 0) {
                 CurrentState = DROP_PAYLOAD;
                 //start a timer to drop the weights off
-                TimeoutCheck.begin(state_timeout, 2*MICRO_TO_SEC);
+                //safety net: bail out if the gate never finishes (jam), LONGER
+                //than the gate's 10 s hold so it only fires on a fault.
+                TimeoutCheck.begin(state_timeout, 20*MICRO_TO_SEC);
             } else {
                 CurrentState = CHECK;
             }
@@ -118,10 +121,20 @@ void StateMachineTask() {
         }
         case PICKUP_SEQUENCE:
             break;
+
         case DROP_PAYLOAD:
+            if (gateDrop()) {          // shakes + opens/holds/closes the gate
+                TimeoutCheck.end();
+                CurrentState = CHECK;
+            }
             break;
+        
         default:
             CurrentState = CHECK;
             break;
     }
+}
+
+robotState getRobotState() {
+    return CurrentState;
 }
