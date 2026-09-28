@@ -106,12 +106,13 @@ void sortingServoTask()
                         num_weights++;
                     } else {
                         Serial.println("Holding 3rd metal weight in center");
+                        num_weights++;
                     }
 
                 } else if (targetPosition == UNWANTED_WEIGHT) {
 
                     setServoPosition(targetPosition);
-                    //Serial.println("Moved to unwanted weight position");
+                    Serial.println("Moved to unwanted weight position");
                 }
 
                 Serial.print("Number of weights onboard: ");
@@ -148,7 +149,7 @@ void sortingServoTask()
                 uint16_t actualPosition = getServoPosition();
 
                 if (abs((int)actualPosition - (int)NEUTRAL) <= NEUTRAL_TOLERANCE) {
-                    //Serial.println("Servo confirmed at neutral");
+                    Serial.println("Servo confirmed at neutral");
                     servoSequenceActive = false;
                 } else if (neutralRetries < NEUTRAL_RETRY_LIMIT) {
                     neutralRetries++;
@@ -185,7 +186,7 @@ void sortingServoTask()
                 
                 //ervo.setTorqueOn();
                 setServoPosition(NEUTRAL);
-                //Serial.println("Retrying neutral after recovery move");
+                Serial.println("Retrying neutral after recovery move");
 
                 servoState = 2;
                 ServoTimeout.begin(servo_timeout, 3 * SERVO_SECOND);
@@ -249,6 +250,8 @@ void startServoSequence(uint16_t position)
         return;
     }
 
+    cancelMobileDetection();
+
     servoSequenceActive = true;
     servoState = 0; 
     targetPosition = position;
@@ -278,3 +281,13 @@ void servo_test()
     Serial.println(currentPosition);
 }
 
+
+bool isServoSequenceActive(void)
+{
+    return servoSequenceActive;
+}
+
+uint8_t get_num_weights(void)
+{
+    return num_weights;
+}

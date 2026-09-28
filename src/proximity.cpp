@@ -7,8 +7,8 @@
 #define LARGE_PROX_OUTPUT 20
 
 //metal must be between these values 
-#define METAL_CLEAR_MIN 3000
-#define METAL_CLEAR_MAX 8000
+#define METAL_CLEAR_MIN 5000
+#define METAL_CLEAR_MAX 8500
 
 #define WEIGHT_CONFIRM_DELAY 1000  // 1.5 seconds
 
@@ -57,7 +57,7 @@ void proximityTask()
             waitingForConfirmation = true;
             confirmationStartTime = millis();
 
-            //Serial.println("Proximity triggered - waiting to confirm weight");
+            Serial.println("Proximity triggered - waiting to confirm weight");
         }
     }
 
@@ -72,8 +72,8 @@ void proximityTask()
             // Get the latest filtered colour reading
             uint16_t clear = get_clear_value();
 
-            //Serial.print("Colour reading after wait: clear = ");
-            //Serial.println(clear);
+            Serial.print("Colour reading after wait: clear = ");
+            Serial.println(clear);
 
             // Step 3: Confirm whether the weight is metal
             if (clear >= METAL_CLEAR_MIN &&
