@@ -1,4 +1,5 @@
 #include "State.h"
+#include "gate.h"
 
 IntervalTimer TimeoutCheck;
 
@@ -78,6 +79,10 @@ void StateMachineTask() {
         case PICKUP_SEQUENCE:
             break;
         case DROP_PAYLOAD:
+            movementTask(dt);          // your shake/wiggle to unload (set a shake path)
+            if (gateDrop()) {          // opens, holds 10 s, closes - non-blocking
+                CurrentState = CHECK;  // gate finished -> move on
+            }
             break;
         default:
             CurrentState = CHECK;
