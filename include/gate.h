@@ -13,6 +13,7 @@ void initGate();
 //true when the robot is parked at the base (0,0) within tolerance
 bool isAtBase();
 
+void gateStartDrop();
 bool gateDrop();          // was: void gateTask();
 
 //temporary: position tuning helper (see gate.cpp)
