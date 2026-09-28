@@ -8,10 +8,9 @@ static int lastTime = 0;
 static robotState CurrentState = STARTUP;
 
 static goal_t goal_type = NO_ACTION;
-static pos_t goal_pos = {1000,1000};
-static pos_t prev_target;
+static pos_t goal_pos;
 
-static pos_t microSteps[MAX_WAYPOINT_COUNT] = {{0,0},{0,200},{200,200},{200,0},{0,0}};
+static pos_t microSteps[MAX_WAYPOINT_COUNT];
 
 static void state_timeout() {
     //if a timeout occurs switch state to idle to start sequence again
@@ -27,19 +26,23 @@ void StateMachineTask() {
 
     BLUETOOTH_SERIAL.print("S, "); BLUETOOTH_SERIAL.println(CurrentState);
 
+    if (divertToTarget(goal_pos)) {
+        setDriveSpeed(0,0);
+        CurrentState = FIND_TARGET;
+    }
+
     switch (CurrentState) {
         case STARTUP:
             setLEDColor(WRITIBLE_LED, GREEN);
-            BLUETOOTH_SERIAL.print("G, "); BLUETOOTH_SERIAL.print(goal_pos.x); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(goal_pos.y);
-            CurrentState = PATHFIND;
+            //BLUETOOTH_SERIAL.print("G, "); BLUETOOTH_SERIAL.print(goal_pos.x); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(goal_pos.y);
+            //CurrentState = CHECK;
             break;
         case CHECK:
             //check fornumber of weights and stuff idk
             CurrentState = FIND_TARGET;
             break;
         case FIND_TARGET:
-            prev_target = goal_pos;
-            goal_pos = find_target(currentPos, prev_target, goal_type);
+            goal_pos = find_target(currentPos, goal_pos, goal_type);
             BLUETOOTH_SERIAL.print("G, "); BLUETOOTH_SERIAL.print(goal_pos.x); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(goal_pos.y);
             CurrentState = PATHFIND;
             break;

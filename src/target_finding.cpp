@@ -1,11 +1,5 @@
 #include "target_finding.h"
 
-// static float conv_kernel[KERNEL_SIZE][KERNEL_SIZE] = {
-//     {1/9,1/9,1/9},
-//     {1/9,1/9,1/9},
-//     {1/9,1/9,1/9}
-// };
-
 static GridPos home = {0,0};
 
 pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
@@ -39,7 +33,7 @@ pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
             if (value == static_cast<int8_t>(WEIGHT)) {
                 target_type = WEIGHT_ACTION;
                 pos_t targetWorld;
-                gridToWorld(current_target.x, current_target.y, targetWorld.x, targetWorld.y);
+                gridToWorld(current.x, current.y, targetWorld.x, targetWorld.y);
 
                 return targetWorld;
             }
@@ -47,7 +41,16 @@ pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
             int dy = current.y - robotGrid.y;
             float dist = std::sqrt(dx*dx + dy*dy);
 
-            if (dist >= cost) {
+            bool isUnexplored = (value == static_cast<int8_t>(UNDEFINED_CELL));
+            bool bestSoFarIsUnexplored = (getMapValue(current_target.x, current_target.y) == static_cast<int8_t>(UNDEFINED_CELL));
+
+            //is current best is not unexplored an unexplored cell will overwrite it
+            //between cells in the same category distance wins
+
+            bool better = (isUnexplored && !bestSoFarIsUnexplored) ||
+                        (isUnexplored == bestSoFarIsUnexplored && dist >= cost);
+
+            if (better) {
                 current_target = current;
                 cost = dist;
             }

@@ -15,6 +15,8 @@ static const int8_t dx8[8] = {1, -1, 0, 0, 1, 1, -1, -1};
 static const int8_t dy8[8] = {0, 0, 1, -1, 1, -1, 1, -1};
 
 static bool isTurning = 0;
+static bool weightSeen = 0;
+static pos_t lastWeightSeen;
 
 static float prev_heading = 0;
 
@@ -150,6 +152,8 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
 
     if (isWeight) {
         mapData[yw][xw] = static_cast<int8_t>(WEIGHT);
+        weightSeen = 1;
+        lastWeightSeen = worldCoord;
     } else {
         writeToMap(worldCoord.x, worldCoord.y, -confidence);
     }
@@ -278,4 +282,13 @@ bool isWalkible(int x, int y, int inflation_factor) {
     }
     }
     return true;
+}
+
+bool divertToTarget(pos_t& current) {
+    if (weightSeen) {
+        weightSeen = 0;
+        current = lastWeightSeen;
+        return 1;
+    }
+    return 0;
 }
