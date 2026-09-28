@@ -20,6 +20,7 @@
 #include "gate.h"
 #include "map.h"                 //getMyPOS(), pos_vector_t
 #include "State.h"               //getRobotState(), DROP_PAYLOAD
+#include "motor.h"               // (setDriveSpeed)
 
 //----------------------------------------------------------------------------
 // Config - tune these for your hardware
@@ -85,7 +86,43 @@ void gateStartDrop() {
     dropPhase = 0;
 }
 
+//----------------------------------------------------------------------------
+// Shake helper - jerk fwd/back + spin to dislodge weights, staying on the base
+//----------------------------------------------------------------------------
+#define SHAKE_SPEED    400        //shake drive speed (-450..450)
+#define SHAKE_STEP_MS  120        //ms per move (smaller = sharper shaking)
+#define SHAKE_MAX_MM   200.0f     //stop shaking if we drift this far from base
+
+static void shakeRobot() {
+    //bounds check: if we've drifted too far from the base origin, stop
+    pos_t p = getMyPOS().pos;
+    if (fabsf(p.x) > SHAKE_MAX_MM || fabsf(p.y) > SHAKE_MAX_MM) {
+        setDriveSpeed(0, 0);
+        return;
+    }
+
+    static const int pattern[][2] = {   // {arg1, arg2} for setDriveSpeed()
+        {  SHAKE_SPEED,  SHAKE_SPEED },  // forward
+        { -SHAKE_SPEED, -SHAKE_SPEED },  // back
+        {  SHAKE_SPEED,  SHAKE_SPEED },  // forward
+        { -SHAKE_SPEED, -SHAKE_SPEED },  // back
+        { -SHAKE_SPEED,  SHAKE_SPEED },  // spin one way
+        {  SHAKE_SPEED, -SHAKE_SPEED },  // spin the other way
+    };
+    static const int steps = sizeof(pattern) / sizeof(pattern[0]);
+    static uint32_t lastStep = 0;
+    static int idx = 0;
+
+    if (millis() - lastStep >= SHAKE_STEP_MS) {
+        lastStep = millis();
+        setDriveSpeed(pattern[idx][0], pattern[idx][1]);
+        idx = (idx + 1) % steps;
+    }
+}
+
 bool gateDrop() {
+    shakeRobot();                  // shake to dislodge weights (bounded to base)
+
     if (dropPhase == 0) {
         rearServo.setPosition(GATE_OPEN_POS, GATE_SPEED, HerkulexLed::Ignore);
         openStart = millis();
@@ -94,6 +131,7 @@ bool gateDrop() {
     }
     if (millis() - openStart >= GATE_OPEN_MS) {
         rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore);
+        setDriveSpeed(0, 0);       // stop the shake
         dropPhase = 0;
         return true;
     }
