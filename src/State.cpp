@@ -70,7 +70,9 @@ void StateMachineTask() {
             } else if (goal_pos.x == 0 && goal_pos.y == 0) {
                 CurrentState = DROP_PAYLOAD;
                 //start a timer to drop the weights off
-                TimeoutCheck.begin(state_timeout, 2*MICRO_TO_SEC);
+                //safety net: bail out if the gate never finishes (jam), LONGER
+                //than the gate's 10 s hold so it only fires on a fault.
+                TimeoutCheck.begin(state_timeout, 20*MICRO_TO_SEC);
             } else {
                 CurrentState = CHECK;
             }
@@ -81,6 +83,7 @@ void StateMachineTask() {
         case DROP_PAYLOAD:
             movementTask(dt);          // your shake/wiggle to unload (set a shake path)
             if (gateDrop()) {          // opens, holds 10 s, closes - non-blocking
+                TimeoutCheck.end();    // gate done cleanly - cancel the safety timer
                 CurrentState = CHECK;  // gate finished -> move on
             }
             break;
