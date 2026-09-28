@@ -79,11 +79,6 @@ static int findPathAtInflation(Node start, Node goal, int inflation) {
 int findPath(Node start, Node goal) {
     for (int inflation = WALL_CELL_INFLATION; inflation > ROBOT_WIDTH; inflation--) {
         if (findPathAtInflation(start, goal, inflation)) {
-            if (inflation < WALL_CELL_INFLATION) {
-                Serial.print("findPath: reduced inflation to ");
-                Serial.print(inflation);
-                Serial.println(" to find a route");
-            }
             return reconsturctPath(start, goal, fullPath);
         }
     }

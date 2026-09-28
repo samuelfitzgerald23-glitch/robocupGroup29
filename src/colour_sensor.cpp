@@ -1,38 +1,33 @@
-#include <Wire.h>
-#include <Arduino.h>
-#include "proximity.h"
-#include "smart_servo.h"
-#include "circBuf.h"
-#include "filtering.h"
 #include "colour_sensor.h"
-#include <Adafruit_TCS34725.h>
 
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_60X);
-
-#define PLASTIC_WEIGHT_TOL 9500
-
-//tolerances for snitch/bludger detection (need to update these)
-#define MOBILE_TOL_RED 250 
-#define MOBILE_TOL_BLUE 120 
-#define MOBILE_TOL_GREEN 160
 
 static bool plasticWeightPresent = false;
 static bool mobileElementPresent = false;
 
+static uint32_t colourStartTime = 0;
 static uint16_t filteredClear = 0;
 static uint16_t filteredRed = 0;
 static uint16_t filteredBlue = 0;
 static uint16_t filteredGreen = 0;
 
+static bool mobileCheckPending = false;
+static uint32_t mobileCheckStartTime = 0;
+
+static bool goodMobileElementPresent = false;
+static bool goldCandidate = true;
+
+
 void colour_init() 
 {
+  colourStartTime = millis();
+
   if (tcs.begin(TCS34725_ADDRESS, &Wire1)) 
   {
     Serial.println("Found colour sensor");
   } else 
   {
     Serial.println("No TCS34725 found ... check your connections");
-    //while (1); // halt!
   }
 }
 
@@ -62,9 +57,20 @@ void colourTask()
 {
 
   updateColourValue();
-  printColourPlot();
+  //printColourPlot();
   plastic_weight_check();
-  mobile_element_check();
+  
+  //don't check for mobile elements until some time passes
+  if (millis() - colourStartTime >= MOBILE_STARTUP_DELAY &&
+      !isServoSequenceActive()) {
+      mobile_element_check();
+  }
+
+  // Serial.print("Snitch:");
+  // Serial.print(get_snitch_present());
+
+  // Serial.print("bludger:");
+  // Serial.print(get_bludger_present());
 
 }
 
@@ -87,12 +93,71 @@ void plastic_weight_check(void)
 
 void mobile_element_check(void)
 {
-  if ((filteredRed < MOBILE_TOL_RED)&&(filteredBlue < MOBILE_TOL_BLUE)&&(filteredGreen < MOBILE_TOL_GREEN)) {
-    mobileElementPresent = true;
-  } else {
-    mobileElementPresent = false;
-  }
+    bool possibleMobile =
+        (filteredRed < MOBILE_TOL_RED) &&
+        (filteredBlue < MOBILE_TOL_BLUE) &&
+        (filteredGreen < MOBILE_TOL_GREEN) && 
+        (filteredClear < MOBILE_TOL_CLEAR);
 
+      bool looksGold =
+        (filteredRed >= GOLD_RED_MIN) &&
+        (filteredRed <= GOLD_RED_MAX) &&
+        (filteredBlue >= GOLD_BLUE_MIN) &&
+        (filteredBlue <= GOLD_BLUE_MAX) &&
+        (filteredGreen >= GOLD_GREEN_MIN) &&
+        (filteredGreen <= GOLD_GREEN_MAX);
+
+// Start confirmation when a possible mobile element appears
+    if (possibleMobile && !mobileCheckPending &&
+        !mobileElementPresent) {
+
+        mobileCheckPending = true;
+        mobileCheckStartTime = millis();
+        goldCandidate = looksGold;
+
+        Serial.println("Possible mobile element; confirming");
+    }
+
+    // During confirmation, remember if readings stop matching gold at any point.
+    if (mobileCheckPending) {
+        if (!possibleMobile || !looksGold) {
+            goldCandidate = false;
+        }
+
+        // Wait for the full confirmation period
+        if (millis() - mobileCheckStartTime >=
+            MOBILE_CONFIRM_DELAY) {
+
+            mobileCheckPending = false;
+            mobileElementPresent = true;
+
+            if (possibleMobile && goldCandidate && looksGold) {
+                goodMobileElementPresent = true;
+                Serial.println("Gold mobile element confirmed");
+                // Keep the servo in its centre position
+                //setServoPosition(NEUTRAL);
+            } else {
+                goodMobileElementPresent = false;
+                Serial.println("Red/uncertain mobile element; ejecting");
+                ejectMobileElement();
+            }
+        }
+    }
+
+    // Rearm once the object has left the sensor
+    if (!possibleMobile && !mobileCheckPending) {
+        mobileElementPresent = false;
+    }
+}
+
+bool get_bludger_present(void)
+{
+    return mobileElementPresent;
+}
+
+bool get_snitch_present(void)
+{
+    return goodMobileElementPresent;
 }
 
 uint16_t get_clear_value()
@@ -115,4 +180,11 @@ void printColourPlot()
   Serial.println(filteredClear);
 
 
+}
+
+void cancelMobileDetection(void)
+{
+    mobileCheckPending = false;
+    mobileElementPresent = false;
+    goldCandidate = true;
 }

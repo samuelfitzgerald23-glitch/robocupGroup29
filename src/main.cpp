@@ -35,6 +35,9 @@
 #define SERVO_TASK_PERIOD                    20
 
 #define PROXIMITY_TASK_PERIOD                20
+#define COLOUR_TASK_PERIOD                   10 //in Hz
+#define SERVO_TASK_PERIOD                    50 
+#define PROXIMITY_TASK_PERIOD                50
 
 // Task execution amount definitions
 // -1 means indefinitely
@@ -87,6 +90,7 @@ Task tSet_motor(SET_MOTOR_TASK_PERIOD,            SET_MOTOR_TASK_NUM_EXECUTE,   
 
 // Tasks to scan for weights and collection upon detection
 Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &sortingServoTask);
+//Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &servo_test);
 
 
 // Tasks to search for bases and unload weights
@@ -118,13 +122,13 @@ void task_init() {
  
 
   //enable the tasks
-  tRead_TOF.enable();
-  tRead_IMU.enable();
+  //tRead_TOF.enable();
+  //tRead_IMU.enable();
   tRead_colour.enable();
   tRead_proximity.enable();
   tSensor_average.enable();
-  tLocate_task.enable();
-  tState_task.enable();
+  //tLocate_task.enable();
+  //tState_task.enable();
   tSet_motor.enable();
   tSorting_servo.enable();
   
@@ -150,14 +154,12 @@ void setup() {
 
   task_init();
 
-  map_init();          //1 for right side, 0 for left side
+  //map_init();
 
   initMotors();
   sensorInit(&io);
   filteringInit();
 
-  proximity_init();
-  colour_init();
   initSmartServo();
   initGate();
 }

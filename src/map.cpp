@@ -6,8 +6,8 @@
 #define TOF_FOV TOF_FULL_FOV * 1/4      //half cone angle for 4x4 grid
 #define N_TOF_RAYS 6
 
-#define NON_COUPLED_SENSORS (BUFFERCOUNT - 2)
-#define MAX_SIGHT_DIST 1500
+#define NON_COUPLED_SENSORS 2
+#define MAX_SIGHT_DIST 1750
 #define MAX_WEIGHT_DIST (1/2 * MAX_SIGHT_DIST)
 #define WEIGHT_OFFSET 500.0f
 
@@ -22,8 +22,8 @@ static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 
 //filtered sensors with offsets
 static location_sensor_t filtered_sensors[NON_COUPLED_SENSORS] = {
-    {TOF1, {-5, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF1].offset))},
-    {TOF2, {5, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF2].offset))}
+    {TOF1, {-45, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF1].offset))},
+    {TOF2, {45, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF2].offset))}
 };
 
 //non filtered sensors with offset
@@ -168,18 +168,29 @@ pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sen
  */
 
 void map_init() {
+
+    //write the edge cells
+    for (int y = 0; y < GRID_HEIGHT; y++) {
+        for (int x = 0; x < GRID_WIDTH; x++) {
+            if (x == 0 || x == GRID_WIDTH - 1 || y == 0 || y == GRID_HEIGHT - 1) {
+                mapData[y][x] = static_cast<int8_t>(EDGE_CELL);
+                logCell(x, y, static_cast<int8_t>(EDGE_CELL));
+            }
+        }
+    }
+
+    //write the starting pos
+    writeToMap(robot_worldFrame.x(), robot_worldFrame.y(), static_cast<int8_t>(MY_POS));
 }
 
 void poseTask() {
-    Serial.println("pose task");
-    //get how far robot have moved since the last time we did this
-    //heading from IMU, dx and dy from encoders or IR camera or smth
+    //Serial.println("pose task");
     float heading = getHeading();
     float differential_heading = prev_heading - heading;
     prev_heading = heading;
 
-    // while (differential_heading > 180.0f)  differential_heading -= 360.0f;
-    // while (differential_heading <= -180.0f) differential_heading += 360.0f;
+    while (differential_heading > 180.0f)  differential_heading -= 360.0f;
+    while (differential_heading <= -180.0f) differential_heading += 360.0f;
 
     //put x and y reading from optical flow sensor into a displacement vector
     pos_t displacement;
@@ -194,7 +205,7 @@ void poseTask() {
 
     //find objects with the TOFs
     for (int i = 0; i < NON_COUPLED_SENSORS; i++) {
-        if (isTurning) continue;
+        if (isTurning || millis() < 500) continue;
 
         float sensorDist = (float)getOutput(filtered_sensors[i].ID);
         if (sensorDist > MAX_SIGHT_DIST) continue;
@@ -206,7 +217,7 @@ void poseTask() {
             case TOF1:  {
                 pos_t out1 = {0 , (float)getOutput(DIFFTOF1)};
                 if (out1.y < (sensorDist - WEIGHT_OFFSET)) {
-                    Serial.println("WEIGHT WRITE FIRING");
+                    //Serial.println("WEIGHT WRITE FIRING");
                     projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out1, 1);
                 }
                 break;
@@ -214,7 +225,7 @@ void poseTask() {
             case TOF2:  {
                 pos_t out2 = {0 , (float)getOutput(DIFFTOF2)};
                 if (out2.y < (sensorDist - WEIGHT_OFFSET)) {
-                    Serial.println("WEIGHT WRITE FIRING");
+                    //Serial.println("WEIGHT WRITE FIRING");
                     projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out2, 1);
                 }
                 break;

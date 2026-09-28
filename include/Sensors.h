@@ -8,6 +8,9 @@
 #include "TOFs.h"
 #include "IMU.h"
 #include "xy_optical.h"
+#include "colour_sensor.h"
+#include "circBuf.h"
+#include "proximity.h"
 
 void I2C_scan();
 

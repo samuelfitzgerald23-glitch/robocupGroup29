@@ -7,8 +7,8 @@
 #define LARGE_PROX_OUTPUT 20
 
 //metal must be between these values 
-#define METAL_CLEAR_MIN 3000
-#define METAL_CLEAR_MAX 8000
+#define METAL_CLEAR_MIN 5000
+#define METAL_CLEAR_MAX 8500
 
 #define WEIGHT_CONFIRM_DELAY 1000  // 1.5 seconds
 

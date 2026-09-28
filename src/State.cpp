@@ -1,5 +1,6 @@
 #include "State.h"
 #include "gate.h"
+#include "LED_array.h"
 
 IntervalTimer TimeoutCheck;
 
@@ -19,31 +20,69 @@ static void state_timeout() {
 }
 
 void StateMachineTask() {
+    pos_t currentPos = getMyPOS().pos;
     int now = micros();
     float dt = float(now - lastTime)/MICRO_TO_SEC;
     lastTime = now;
 
+    Serial1.print("S, "); Serial1.println(CurrentState);
+
     switch (CurrentState) {
         case STARTUP:
-            setPath(&microSteps[0], 5);
-            CurrentState = MOVE;
+            setLEDColor(WRITIBLE_LED, GREEN);
+            CurrentState = PATHFIND;
             break;
         case CHECK:
             //check fornumber of weights and stuff idk
             CurrentState = FIND_TARGET;
             break;
         case FIND_TARGET:
+            {
+            pos_t prev_target = goal_pos;
+            int cur_gx, cur_gy;
+            worldToGrid(currentPos.x, currentPos.y, cur_gx, cur_gy);
+            bool found = false;
+            float cost = 0;
+
+            for (int y = 0; y < GRID_HEIGHT && !found; y++) {
+                for (int x = 0; x < GRID_WIDTH && !found; x++) {
+                    if (getMapValue(x, y) == static_cast<int8_t>(WEIGHT)) {
+                        gridToWorld(x, y, goal_pos.x, goal_pos.y);
+                        goal_type = static_cast<int8_t>(WEIGHT);
+                        found = true;
+                        break;
+                    }
+                    if (getMapValue(x, y) == static_cast<int8_t>(UNDEFINED_CELL)) {
+                        float dx = x - cur_gx;
+                        float dy = y - cur_gy;
+                        float temp = std::sqrt(dx*dx + dy*dy);
+                        if (temp > cost) {
+                            gridToWorld(x, y, goal_pos.x, goal_pos.y);
+                            goal_type = static_cast<int8_t>(UNDEFINED_CELL);
+                            cost = temp;
+                        }
+                    }
+                }
+            }
+
+            if (goal_pos.x == prev_target.x && goal_pos.y == prev_target.y) {
+                goal_pos = {0,0};
+            }
+
+            Serial1.print("G, "); Serial1.print(goal_pos.x); Serial1.print(", "); Serial1.print(goal_pos.y);
             CurrentState = PATHFIND;
             break;
+        }
         case PATHFIND:  {
+            setLEDColor(WRITIBLE_LED, RED);
             int start_x, start_y, goal_x, goal_y;
-            pos_t currentPos = getMyPOS().pos;
 
             bool startValid = worldToGrid(currentPos.x, currentPos.y, start_x, start_y);
             bool goalValid = worldToGrid(goal_pos.x, goal_pos.y, goal_x, goal_y);
 
             if (!startValid || !goalValid) {
-                break;  // don't pathfind from/to a clamped, not-really-there position
+                CurrentState = CHECK;
+                break;
             }
 
             int targetCount = findPathWaypoints({{(uint8_t)start_x, (uint8_t)start_y}}, {{(uint8_t)goal_x, (uint8_t)goal_y}}, microSteps);
@@ -52,17 +91,19 @@ void StateMachineTask() {
                 setPath(&microSteps[0], targetCount);
                 CurrentState = MOVE;
             } if (targetCount == 0) {
-                CurrentState = STARTUP;
+                CurrentState = CHECK;
             }
             break;
         }
         case MOVE:
+            setLEDColor(WRITIBLE_LED, WHITE);
             movementTask(dt);
             if (getPathStatus()) {
                 CurrentState = getPathBlockedStatus() ? PATHFIND : DETERMINE_ACTION;
             }
             break;
         case DETERMINE_ACTION: {
+            setLEDColor(WRITIBLE_LED, BLUE);
             if(goal_type == static_cast<int8_t>(WEIGHT)) {
                 CurrentState = PICKUP_SEQUENCE;
                 //start a ten seccond timer to pick up the weight

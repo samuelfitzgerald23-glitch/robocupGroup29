@@ -1,11 +1,7 @@
 #include <Arduino.h>
 #include "Sensors.h"
-#include "colour_sensor.h"
-#include "circBuf.h"
-#include "proximity.h"
 
 #include <Wire.h>
-#include <VL53L0X.h>
 #include <SparkFunSX1509.h>
 
 
@@ -24,6 +20,8 @@ void sensorInit(SX1509* io) {
     TOFinit(io);
     IMU_init();
     init_optical_flow();
+    colour_init();
+    proximity_init();
 }
 
 void I2C_scan() {
