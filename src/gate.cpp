@@ -47,8 +47,7 @@ static HerkulexServo    rearServo(servoBus, REARSERVO_ID);
 //----------------------------------------------------------------------------
 // Internal state (non-blocking open timer)
 //----------------------------------------------------------------------------
-static bool     gateOpen  = false;   //is the gate currently open?
-static bool     armed     = true;    //ready to trigger on the next drop?
+
 static uint32_t openStart = 0;       //millis() when the gate opened
 
 //----------------------------------------------------------------------------
@@ -73,29 +72,26 @@ bool isAtBase() {
            (fabsf(myPOS.pos.y) <= BASE_TOLERANCE_MM);
 }
 
-void gateTask() {
-    servoBus.update();               //service the shared bus every tick
+//Runs the drop sequence: open the gate, hold GATE_OPEN_MS, then close.
+//Non-blocking - call repeatedly while in DROP_PAYLOAD. Returns true once the
+//gate has closed, so the state machine knows the drop is finished.
+bool gateDrop() {
+    static uint8_t phase = 0;          //0 = open the gate, 1 = holding open
 
-    bool dropping = (getRobotState() == DROP_PAYLOAD) && isAtBase();
-
-    if (!gateOpen) {
-        //re-arm once we're out of the drop, so each drop opens the gate once
-        if (!dropping) armed = true;
-
-        //open on entering a drop, and start the 10 s hold
-        if (armed && dropping) {
-            rearServo.setPosition(GATE_OPEN_POS, GATE_SPEED, HerkulexLed::Ignore);
-            gateOpen  = true;
-            armed     = false;
-            openStart = millis();
-        }
-    } else {
-        //stay open exactly GATE_OPEN_MS, independent of the robot's state/motion
-        if (millis() - openStart >= GATE_OPEN_MS) {
-            rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore);
-            gateOpen = false;
-        }
+    if (phase == 0) {
+        rearServo.setPosition(GATE_OPEN_POS, GATE_SPEED, HerkulexLed::Ignore);
+        openStart = millis();
+        phase = 1;
+        return false;
     }
+
+    //phase 1: hold open for GATE_OPEN_MS, then close and report done
+    if (millis() - openStart >= GATE_OPEN_MS) {
+        rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore);
+        phase = 0;                     //reset for the next drop
+        return true;
+    }
+    return false;
 }
 
 // void gateTest() {
