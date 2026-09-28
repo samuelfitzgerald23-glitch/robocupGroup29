@@ -10,6 +10,10 @@ TODO:
 
 #define TIME_LIMIT 2500000
 
+#define SHAKE_SPEED    400        //shake drive speed (-450..450)
+#define SHAKE_STEP_MS  120        //ms per move (smaller = sharper shaking)
+#define SHAKE_MAX_MM   200.0f     //stop shaking if robot drifts this far from base (0,0)
+
 IntervalTimer movementTimeLimit;
 
 static moveingState State = IDLE;
@@ -154,6 +158,37 @@ void movementTask(float dt) {
             findTarget();
             State = IDLE;
             break;
+    }
+}
+
+//Multi-direction shake that stays on the base. Reads position each call and
+//halts if it strays past SHAKE_MAX_MM, so it can't wander off. Non-blocking -
+//call repeatedly from the DROP_PAYLOAD state.
+void shakeTask() {
+    //bounds check: if we've drifted too far from the base origin, stop
+    pos_t p = getMyPOS().pos;
+    if (fabsf(p.x) > SHAKE_MAX_MM || fabsf(p.y) > SHAKE_MAX_MM) {
+        setDriveSpeed(0, 0);
+        return;
+    }
+
+    static const int pattern[][2] = {   // each row is {arg1, arg2} for setDriveSpeed()
+        {  SHAKE_SPEED,  SHAKE_SPEED },  // lurch forward
+        { -SHAKE_SPEED, -SHAKE_SPEED },  // lurch back
+        {  SHAKE_SPEED,  SHAKE_SPEED },  // forward again
+        { -SHAKE_SPEED, -SHAKE_SPEED },  // back again
+        { -SHAKE_SPEED,  SHAKE_SPEED },  // spin one way
+        {  SHAKE_SPEED, -SHAKE_SPEED },  // spin the other way
+    };
+    static const int steps = sizeof(pattern) / sizeof(pattern[0]);
+
+    static uint32_t lastStep = 0;
+    static int idx = 0;
+
+    if (millis() - lastStep >= SHAKE_STEP_MS) {
+        lastStep = millis();
+        setDriveSpeed(pattern[idx][0], pattern[idx][1]);
+        idx = (idx + 1) % steps;
     }
 }
 
