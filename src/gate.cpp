@@ -93,9 +93,8 @@ void gateStartDrop() {
 #define SHAKE_STEP_MS  120        //ms per move (smaller = sharper shaking)
 #define SHAKE_MAX_MM   200.0f     //stop shaking if we drift this far from base
 
-static void shakeRobot() {
+static void shakeRobot(pos_t p) {
     //bounds check: if we've drifted too far from the base origin, stop
-    pos_t p = getMyPOS().pos;
     if (fabsf(p.x) > SHAKE_MAX_MM || fabsf(p.y) > SHAKE_MAX_MM) {
         setDriveSpeed(0, 0);
         return;
