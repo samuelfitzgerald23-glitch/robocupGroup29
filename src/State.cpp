@@ -80,14 +80,14 @@ void StateMachineTask() {
         }
         case PICKUP_SEQUENCE:
             break;
+
         case DROP_PAYLOAD:
-            shakeTask();               // shake to dislodge weights (stays on base)
-            if (gateDrop()) {          // opens, holds 10 s, closes - non-blocking
-                setDriveSpeed(0, 0);   // stop the shake
-                TimeoutCheck.end();    // gate done cleanly - cancel the safety timer
-                CurrentState = CHECK;  // gate finished -> move on
+            if (gateDrop()) {          // shakes + opens/holds/closes the gate
+                TimeoutCheck.end();
+                CurrentState = CHECK;
             }
             break;
+        
         default:
             CurrentState = CHECK;
             break;
