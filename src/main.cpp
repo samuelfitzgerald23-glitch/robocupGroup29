@@ -33,7 +33,7 @@
 
 #define COLOUR_TASK_PERIOD                   100 //in ms??
 #define SERVO_TASK_PERIOD                    20
-#define GATE_TASK_PERIOD                     20
+// #define GATE_TASK_PERIOD                     20
 #define PROXIMITY_TASK_PERIOD                20
 
 // Task execution amount definitions
@@ -51,7 +51,7 @@
 
 #define COLOUR_TASK_NUM_EXECUTE             -1
 #define SERVO_TASK_NUM_EXECUTE              -1
-#define GATE_TASK_NUM_EXECUTE               -1
+// #define GATE_TASK_NUM_EXECUTE               -1
 #define PROXIMITY_TASK_NUM_EXECUTE          -1
 
 
@@ -87,7 +87,7 @@ Task tSet_motor(SET_MOTOR_TASK_PERIOD,            SET_MOTOR_TASK_NUM_EXECUTE,   
 
 // Tasks to scan for weights and collection upon detection
 Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &sortingServoTask);
-Task tRear_gate(GATE_TASK_PERIOD,                 GATE_TASK_NUM_EXECUTE,            &gateTask);
+// Task tRear_gate(GATE_TASK_PERIOD,                 GATE_TASK_NUM_EXECUTE,            &gateTask);
 // Task tRear_gate(GATE_TASK_PERIOD, GATE_TASK_NUM_EXECUTE, &gateTest);   // swing test
 
 // Tasks to search for bases and unload weights
@@ -116,7 +116,7 @@ void task_init() {
   taskManager.addTask(tState_task);
   taskManager.addTask(tSet_motor);
   taskManager.addTask(tSorting_servo);
-  taskManager.addTask(tRear_gate);
+  // taskManager.addTask(tRear_gate);
 
   //enable the tasks
   tRead_TOF.enable();
@@ -128,7 +128,7 @@ void task_init() {
   tState_task.enable();
   tSet_motor.enable();
   tSorting_servo.enable();
-  tRear_gate.enable();
+  //tRear_gate.enable();
   //tCheck_watchdog.enable();
 
   Serial.println("Tasks have been initialised \n");
