@@ -50,6 +50,7 @@ bool rotatePID(pos_vector_t* myPose, float dt);
 bool translatePID(pos_t* currentXY, float dt);
 
 void movementTask(float dt);
+void shakeTask();
 
 bool getPathStatus();
 
