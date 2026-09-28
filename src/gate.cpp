@@ -75,20 +75,26 @@ bool isAtBase() {
 //Runs the drop sequence: open the gate, hold GATE_OPEN_MS, then close.
 //Non-blocking - call repeatedly while in DROP_PAYLOAD. Returns true once the
 //gate has closed, so the state machine knows the drop is finished.
-bool gateDrop() {
-    static uint8_t phase = 0;          //0 = open the gate, 1 = holding open
 
-    if (phase == 0) {
+static uint32_t openStart = 0;
+static uint8_t  dropPhase = 0;         // 0 = open the gate, 1 = holding open
+
+//call once when a drop begins, so a previous (possibly timed-out) drop
+//can't leave the sequence half-finished
+void gateStartDrop() {
+    dropPhase = 0;
+}
+
+bool gateDrop() {
+    if (dropPhase == 0) {
         rearServo.setPosition(GATE_OPEN_POS, GATE_SPEED, HerkulexLed::Ignore);
         openStart = millis();
-        phase = 1;
+        dropPhase = 1;
         return false;
     }
-
-    //phase 1: hold open for GATE_OPEN_MS, then close and report done
     if (millis() - openStart >= GATE_OPEN_MS) {
         rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore);
-        phase = 0;                     //reset for the next drop
+        dropPhase = 0;
         return true;
     }
     return false;
