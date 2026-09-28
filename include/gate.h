@@ -13,8 +13,7 @@ void initGate();
 //true when the robot is parked at the base (0,0) within tolerance
 bool isAtBase();
 
-//overall task for gate control (services the bus, sets open/closed)
-void gateTask();
+bool gateDrop();          // was: void gateTask();
 
 //temporary: position tuning helper (see gate.cpp)
 void gateTest();
