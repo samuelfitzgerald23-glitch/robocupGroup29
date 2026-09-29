@@ -9,6 +9,7 @@ enum moveingState {
     IDLE,
     TURNING,
     MOVEING,
+    RECOVERING,
     DONE
 };
 

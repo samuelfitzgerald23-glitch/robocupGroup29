@@ -1,14 +1,9 @@
 #include <Arduino.h>
 #include "proximity.h"
-#include "colour_sensor.h"
 #include "smart_servo.h"
 
 
 #define LARGE_PROX_OUTPUT 20
-
-//metal must be between these values 
-#define METAL_CLEAR_MIN 600
-#define METAL_CLEAR_MAX 1100
 
 #define WEIGHT_CONFIRM_DELAY 1000  // 1 second
 
@@ -69,15 +64,8 @@ void proximityTask()
 
             waitingForConfirmation = false;
 
-            // Get the latest filtered colour reading
-            uint16_t clear = get_clear_value();
-
-            Serial.print("Colour reading after wait: clear = ");
-            Serial.println(clear);
-
-            // Step 3: Confirm whether the weight is metal
-            if (clear >= METAL_CLEAR_MIN &&
-                clear <= METAL_CLEAR_MAX) {
+            // The proximity output is active-low; require it to remain active after the delay.
+            if (digitalRead(LARGE_PROX_OUTPUT) == LOW) {
 
                 metalWeightDetected = true;
 

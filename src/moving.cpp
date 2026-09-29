@@ -10,6 +10,11 @@ TODO:
 
 #define TIME_LIMIT 3000000
 #define WAYPOINT_PATIENCE 2         //number of times robot can fail to reach a waypoint
+#define STALL_TIMEOUT_MS 2500
+#define TURN_PROGRESS_THRESHOLD_DEG 2.0f
+#define MOVE_PROGRESS_THRESHOLD_MM 25.0f
+#define FORWARD_RECOVERY_DURATION_MS 1000
+#define FORWARD_RECOVERY_SPEED 300
 
 IntervalTimer movementTimeLimit;
 
@@ -29,6 +34,11 @@ bool pathBlocked = 0;
 static int path_failures = 0;
 
 static pos_t currentTarget = {0,0};
+static moveingState monitoredState = IDLE;
+static moveingState resumeState = IDLE;
+static float bestTargetError = 0.0f;
+static uint32_t lastTargetProgressTime = 0;
+static uint32_t recoveryEndTime = 0;
 
 static void movementTimerCallback() {
     //if timer finishes before we are at the point reset the state and turn back
@@ -54,6 +64,25 @@ static bool pathSegmentBlocked(pos_t from, pos_t to) {
         if (!isWalkible(x, y, ROBOT_WIDTH-1)) return true;   // now checks the cell just stepped into, not the starting cell
     }
     return false;
+}
+
+static float targetError(pos_vector_t pose, moveingState state) {
+    if (state == TURNING) {
+        float error = findAngle(&pose.pos) - pose.theta / D_TO_R;
+        while (error > 180.0f) error -= 360.0f;
+        while (error <= -180.0f) error += 360.0f;
+        return fabs(error);
+    }
+
+    float dx = currentTarget.x - pose.pos.x;
+    float dy = currentTarget.y - pose.pos.y;
+    return std::sqrt(dx * dx + dy * dy);
+}
+
+static void startProgressMonitor(moveingState state, pos_vector_t pose) {
+    monitoredState = state;
+    bestTargetError = targetError(pose, state);
+    lastTargetProgressTime = millis();
 }
 
 void findTarget() {
@@ -116,6 +145,30 @@ void movementTask(float dt) {
         State = DONE;
     }
 
+    if (State == TURNING || State == MOVEING) {
+        if (monitoredState != State) {
+            startProgressMonitor(State, myPOS);
+        } else {
+            float currentError = targetError(myPOS, State);
+            float progressThreshold = (State == TURNING)
+                ? TURN_PROGRESS_THRESHOLD_DEG
+                : MOVE_PROGRESS_THRESHOLD_MM;
+            uint32_t now = millis();
+
+            if (currentError + progressThreshold < bestTargetError) {
+                bestTargetError = currentError;
+                lastTargetProgressTime = now;
+            } else if (now - lastTargetProgressTime >= STALL_TIMEOUT_MS) {
+                resumeState = State;
+                State = RECOVERING;
+                recoveryEndTime = now + FORWARD_RECOVERY_DURATION_MS;
+                setIsTurning(0);
+                movementTimeLimit.end();
+                setDriveSpeed(FORWARD_RECOVERY_SPEED, FORWARD_RECOVERY_SPEED);
+            }
+        }
+    }
+
     switch (State) {
         case IDLE:
             {
@@ -137,6 +190,18 @@ void movementTask(float dt) {
                 State = MOVEING;
                 movementTimeLimit.begin(movementTimerCallback, (int)(TIME_LIMIT));
                 setIsTurning(0);
+            }
+            break;
+        case RECOVERING:
+            if (static_cast<int32_t>(millis() - recoveryEndTime) >= 0) {
+                setDriveSpeed(0, 0);
+                State = resumeState;
+                monitoredState = IDLE;
+                if (State == TURNING) {
+                    setIsTurning(1);
+                } else if (State == MOVEING) {
+                    movementTimeLimit.begin(movementTimerCallback, (int)(TIME_LIMIT));
+                }
             }
             break;
         case MOVEING:
