@@ -90,23 +90,30 @@ static void shakeRobot() {
 // Drop: open -> shake SHAKE_MS -> sit still STILL_MS -> close. True when done.
 //----------------------------------------------------------------------------
 bool gateDrop() {
-    if (dropPhase == 0) {                    // open the gate, start shaking
-        rearServo.setPosition(GATE_OPEN_POS, GATE_SPEED, HerkulexLed::Ignore);
-        openStart = millis();
-        dropPhase = 1;
-        return false;
-    }
+    switch (dropPhase) {
+        case 0:  // open the gate, start the clock
+            rearServo.setPosition(GATE_OPEN_POS, GATE_SPEED, HerkulexLed::Ignore);
+            openStart = millis();
+            dropPhase = 1;
+            return false;
 
-    // phase 1: shake until SHAKE_MS, then close immediately and finish
-    if (millis() - openStart < SHAKE_MS) {
-        shakeRobot();
+        case 1:  // shake for SHAKE_MS, then CLOSE immediately
+        if (millis() - openStart < SHAKE_MS) {
+            shakeRobot();
+        } else {
+            setDriveSpeed(0, 0);                                          // stop shaking
+            rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore);  // close NOW
+            dropPhase = 2;
+        }
         return false;
-    }
 
-    setDriveSpeed(0, 0);                                                     // stop shaking
-    rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore); // close right away
-    dropPhase = 0;
-    return true;                                                            // done
+        case 2:  // gate already shut - just sit still for STILL_MS
+            if (millis() - openStart >= SHAKE_MS + STILL_MS) {
+                dropPhase = 0;
+                return true;                   // drop complete
+            }
+            return false;
+    return false;
 }
 
 //----------------------------------------------------------------------------
@@ -114,29 +121,12 @@ bool gateDrop() {
 // Temporarily run this from tGate_task (with tState_task disabled).
 //----------------------------------------------------------------------------
 void gateDropTest() {
-    static uint8_t  tphase     = 0;     // 0 = running a drop, 1 = pause between
-    static uint32_t pauseStart = 0;
-    static uint32_t lastPrint  = 0;
+    static bool done = false;
+    if (done) return;                          // one cycle only - do nothing after
 
-    if (tphase == 0) {
-        if (gateDrop()) {
-            setDriveSpeed(0, 0);
-            Serial.println("TEST: drop complete (gate closed) - pausing 3 s");
-            pauseStart = millis();
-            tphase = 1;
-        } else if (millis() - lastPrint >= 500) {
-            lastPrint = millis();
-            pos_t p = getMyPOS().pos;
-            Serial.print("TEST: dropping...  pos x=");
-            Serial.print(p.x);
-            Serial.print(" y=");
-            Serial.println(p.y);
-        }
-    } else {
-        if (millis() - pauseStart >= 3000) {
-            Serial.println("TEST: starting next drop cycle");
-            gateStartDrop();
-            tphase = 0;
-        }
+    if (gateDrop()) {
+        setDriveSpeed(0, 0);
+        Serial.println("TEST: drop complete - stopping (one cycle)");
+        done = true;
     }
 }
