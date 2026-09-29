@@ -1,8 +1,4 @@
-#include <Arduino.h>
 #include "smart_servo.h"
-#include "proximity.h"
-#include "colour_sensor.h"
-#include <HerkulexServo.h>
 
 #define SERVO_SECOND 1000000
 #define SERIAL_SERVO Serial2
@@ -40,7 +36,7 @@ volatile bool servoSequenceActive = false;
 uint8_t servoState = 0;
 uint16_t targetPosition;
 
-uint8_t num_weights = 0; //keep track of metal weights onboard
+static uint8_t num_weights = 0; //keep track of metal weights onboard
 
 void initSmartServo()
 {
@@ -81,6 +77,11 @@ void servo_timeout()
 {
     ServoTimeout.end();
     servoTimeout = true;
+}
+
+uint16_t getServoPosition()
+{
+    return servo.getPosition();
 }
 
 // 

@@ -20,7 +20,9 @@
 
 // Task period Definitions
 // ALL OF THESE VALUES WILL NEED TO BE SET TO SOMETHING USEFUL !!!!!!!!!!!!!!!!!!!!
+
 #define TOF_READ_TASK_PERIOD                10
+#define ULTRASOUND_READ_TASK_PERIOD         33
 #define IMU_READ_TASK_PERIOD                50
 
 #define SENSOR_AVERAGE_PERIOD               10
@@ -39,6 +41,7 @@
 // Task execution amount definitions
 // -1 means indefinitely
 #define TOF_READ_TASK_NUM_EXECUTE          -1
+#define ULTRASOUND_READ_NUM_EXECUTE        -1
 #define IMU_READ_TASK_NUM_EXECUTE          -1
 
 #define SENSOR_AVERAGE_NUM_EXECUTE         -1
@@ -73,6 +76,7 @@ SX1509 io; // Create an SX1509 object to be used throughout
 
 // Tasks for reading sensors 
 Task tRead_TOF(TOF_READ_TASK_PERIOD,              TOF_READ_TASK_NUM_EXECUTE,        &TOF_task);
+Task tRead_ultrasound(ULTRASOUND_READ_TASK_PERIOD, ULTRASOUND_READ_NUM_EXECUTE,     &ultrasound_task);
 Task tRead_IMU(IMU_READ_TASK_PERIOD,              IMU_READ_TASK_NUM_EXECUTE,        &IMU_task);
 
 Task tSensor_average(SENSOR_AVERAGE_PERIOD,       SENSOR_AVERAGE_NUM_EXECUTE,       &filterTask);
@@ -105,6 +109,7 @@ void task_init() {
   // Add tasks to the scheduler
   /*Sensors*/
   taskManager.addTask(tRead_TOF);
+  taskManager.addTask(tRead_ultrasound);
   taskManager.addTask(tRead_IMU);
   taskManager.addTask(tRead_colour);
   taskManager.addTask(tRead_proximity);
@@ -121,8 +126,9 @@ void task_init() {
  
 
   //enable the tasks
-  //tRead_TOF.enable();
-  //tRead_IMU.enable();
+  tRead_TOF.enable();
+  tRead_ultrasound.enable();
+  tRead_IMU.enable();
   tRead_colour.enable();
   tRead_proximity.enable();
   tSensor_average.enable();
@@ -145,7 +151,7 @@ void setup() {
 
   // put your setup code here, to run once:
   Serial.begin(BAUD_RATE);
-  Serial1.begin(BAUD_RATE);
+  BLUETOOTH_SERIAL.begin(BAUD_RATE);
 
   io.begin(SX1509_ADDRESS);
 
@@ -157,8 +163,8 @@ void setup() {
   //map_init();
 
   initMotors();
-  sensorInit(&io);
   filteringInit();
+  sensorInit(&io);
 
   initSmartServo();
   initGate();

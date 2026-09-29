@@ -7,11 +7,6 @@
 
 #define MAX_PATH_LEN GRID_HEIGHT * GRID_WIDTH
 
-struct GridPos {
-    int x, y;
-    bool operator==(const GridPos& o) const {return x==o.x && y==o.y;};
-};
-
 struct Node {
     GridPos myCord;
     GridPos parentCord;
