@@ -22,7 +22,8 @@
 #define GATE_CLOSED_POS    0         //raw position with the gate shut (0..1023)
 #define GATE_OPEN_POS      289       //raw position with the gate open
 #define GATE_SPEED         150       //play-time / speed, 0 (fastest)..254 (slowest)
-#define GATE_OPEN_MS       10000UL   //hold the gate open this long (ms)
+#define SHAKE_MS   10000UL           //shake this long (gate open)
+#define STILL_MS   10000UL           //then sit still this long (gate still open), then close
 
 #define SHAKE_SPEED        400       //shake drive speed (-450..450)
 #define SHAKE_STEP_MS      120       //ms per shake move (smaller = sharper)
@@ -110,30 +111,30 @@ bool gateDrop() {
 // TEST: loops a full drop so you can watch shake + gate on the bench.
 // Temporarily point tState_task at this instead of StateMachineTask.
 //----------------------------------------------------------------------------
-void gateDropTest() {
-    static uint8_t  tphase     = 0;     // 0 = running a drop, 1 = pause between
-    static uint32_t pauseStart = 0;
-    static uint32_t lastPrint  = 0;
+bool gateDrop() {
+    switch (dropPhase) {
+        case 0:  // open the gate, start the clock
+            rearServo.setPosition(GATE_OPEN_POS, GATE_SPEED, HerkulexLed::Ignore);
+            openStart = millis();
+            dropPhase = 1;
+            return false;
 
-    if (tphase == 0) {
-        if (gateDrop()) {
-            setDriveSpeed(0, 0);
-            Serial.println("TEST: drop complete (gate closed) - pausing 3 s");
-            pauseStart = millis();
-            tphase = 1;
-        } else if (millis() - lastPrint >= 500) {
-            lastPrint = millis();
-            pos_t p = getMyPOS().pos;
-            Serial.print("TEST: dropping...  pos x=");
-            Serial.print(p.x);
-            Serial.print(" y=");
-            Serial.println(p.y);
-        }
-    } else {
-        if (millis() - pauseStart >= 3000) {
-            Serial.println("TEST: starting next drop cycle");
-            gateStartDrop();
-            tphase = 0;
-        }
+        case 1:  // gate open + shaking for SHAKE_MS
+            if (millis() - openStart < SHAKE_MS) {
+                shakeRobot();
+            } else {
+                setDriveSpeed(0, 0);       // stop shaking -> sit still
+                dropPhase = 2;
+            }
+            return false;
+
+        case 2:  // gate still open, sitting still, until SHAKE_MS + STILL_MS
+            if (millis() - openStart >= SHAKE_MS + STILL_MS) {
+                rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore);
+                dropPhase = 0;
+                return true;               // drop complete
+            }
+            return false;
     }
+    return false;
 }
