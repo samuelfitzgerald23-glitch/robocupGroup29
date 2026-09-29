@@ -226,6 +226,7 @@ void poseTask() {
     updatePose(&robot_displacement);
 
     //find objects with the TOFs
+    if(0)
     for (int i = 0; i < NON_COUPLED_SENSORS; i++) {
         if (millis() < 1000) continue;
 
