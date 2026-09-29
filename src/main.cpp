@@ -39,6 +39,9 @@
 #define SERVO_TASK_PERIOD                    50 
 #define PROXIMITY_TASK_PERIOD                50
 
+#define GATE_TASK_PERIOD                     20     // TEST
+#define GATE_TASK_NUM_EXECUTE               -1      // TEST
+
 // Task execution amount definitions
 // -1 means indefinitely
 #define TOF_READ_TASK_NUM_EXECUTE          -1
@@ -93,7 +96,7 @@ Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,       
 //Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &servo_test);
 
 // TEST: was &StateMachineTask - swap back after testing
-Task tState_task(STATE_TASK_PERIOD, STATE_TASK_NUM_EXECUTE, &gateDropTest);
+Task tGate_task(GATE_TASK_PERIOD, GATE_TASK_NUM_EXECUTE, &gateDropTest);   // TEST
 
 // Tasks to search for bases and unload weights
 
@@ -121,6 +124,7 @@ void task_init() {
   taskManager.addTask(tState_task);
   taskManager.addTask(tSet_motor);
   taskManager.addTask(tSorting_servo);
+  taskManager.addTask(tGate_task);      // TEST
  
 
   //enable the tasks
@@ -129,6 +133,7 @@ void task_init() {
   tRead_colour.enable();
   tRead_proximity.enable();
   tSensor_average.enable();
+  tGate_task.enable();                  // TEST
   //tLocate_task.enable();
   //tState_task.enable();
   tSet_motor.enable();
