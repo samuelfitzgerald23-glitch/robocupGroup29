@@ -6,9 +6,9 @@
 
 #define LARGE_PROX_OUTPUT 20
 
-//metal must be between these values 
-#define METAL_CLEAR_MIN 600
-#define METAL_CLEAR_MAX 1100
+// //metal must be between these values 
+// #define METAL_CLEAR_MIN 600
+// #define METAL_CLEAR_MAX 1100
 
 #define WEIGHT_CONFIRM_DELAY 1000  // 1 second
 
@@ -61,35 +61,27 @@ void proximityTask()
         }
     }
 
-
     // Step 2: Check whether the wait has finished
-    if (waitingForConfirmation) {
+        if (waitingForConfirmation) {
 
-        if (millis() - confirmationStartTime >= WEIGHT_CONFIRM_DELAY) {
+            if (millis() - confirmationStartTime >= WEIGHT_CONFIRM_DELAY) {
 
-            waitingForConfirmation = false;
+                waitingForConfirmation = false;
 
-            // Get the latest filtered colour reading
-            uint16_t clear = get_clear_value();
+                // The proximity output is active-low; require it to remain active after the delay.
+                if (digitalRead(LARGE_PROX_OUTPUT) == LOW) {
 
-            Serial.print("Colour reading after wait: clear = ");
-            Serial.println(clear);
+                    metalWeightDetected = true;
 
-            // Step 3: Confirm whether the weight is metal
-            if (clear >= METAL_CLEAR_MIN &&
-                clear <= METAL_CLEAR_MAX) {
+                    Serial.println("Metal weight detected!");
 
-                metalWeightDetected = true;
+                    sortWantedWeight();
 
-                Serial.println("Metal weight detected!");
-
-                sortWantedWeight();
-
-            } else {
-                Serial.println("False proximity trigger ignored");
+                } else {
+                    Serial.println("False proximity trigger ignored");
+                }
             }
         }
-    }
 }
 
 bool get_metal_weight_detected()

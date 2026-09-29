@@ -1,6 +1,7 @@
 #include "State.h"
 #include "gate.h"
 #include "LED_array.h"
+#include "reactive.h" 
 
 #define RANDOM_SIZE 500
 
@@ -24,6 +25,10 @@ static void state_timeout() {
 }
 
 void StateMachineTask() {
+    #if USE_REACTIVE_CONTROL
+        reactiveTask();
+        return;                 // skip the pathfinding state machine below
+    #endif
     pos_t currentPos = getMyPOS().pos;
     uint32_t now = micros();
     float dt = float(now - lastTime)/MICRO_TO_SEC;
