@@ -51,7 +51,7 @@
 //----------------------------------------------------------------------------
 #define FAR_MM               2000     //value used for "nothing seen" / bad reading
 
-#define CRUISE_SPEED         300      //-450..450
+#define CRUISE_SPEED         430      //-450..450
 #define STEER_DIFF           150      //wheel speed +/- when nudging away from a wall
 #define SPIN_SPEED           280      //in-place spin when blocked
 
@@ -64,23 +64,25 @@
 
 #define WEIGHT_DROP_MM       200      //low TOF this much shorter than top TOF = weight
 #define WEIGHT_MAX_RANGE_MM  700      //ignore "weights" further than this
-#define WEIGHT_CONFIRM_MS    60       //must be seen this long
-#define WEIGHT_TURN_LEFT_DEG   30.0f  //LEFT diff TOF sees weight  -> turn this far ANTICLOCKWISE
-#define WEIGHT_TURN_RIGHT_DEG  30.0f  //RIGHT diff TOF sees weight -> turn this far CLOCKWISE
+#define WEIGHT_US_MIN_MM     300      //ultrasound must be > this (not a wall)
+#define WEIGHT_TOP_TOF_MIN_MM 500     //top TOF must be > this (weight is low)
+#define WEIGHT_CONFIRM_MS    30       //must be seen this long (reduced for faster response)
+#define WEIGHT_TURN_LEFT_DEG   45.0f  //LEFT diff TOF sees weight  -> turn this far ANTICLOCKWISE
+#define WEIGHT_TURN_RIGHT_DEG  45.0f  //RIGHT diff TOF sees weight -> turn this far CLOCKWISE
 #define WEIGHT_COOLDOWN_MS   2000     //ignore weights after a missed attempt
 #define PICKUP_COOLDOWN_MS   500      //short ignore-weights time after a pickup starts
 #define CHASE_WHILE_SORTING  1        //1 = keep hunting weights while the servo is busy
                                       //0 = don't turn toward new weights until servo is free
                                       //    (still keeps moving / avoiding walls either way)
 
-#define APPROACH_SPEED       250
-#define APPROACH_MS          3000     //max time driving at the weight
+#define APPROACH_SPEED       430
+#define APPROACH_MS          5000     //drive forward for pickup
 #define APPROACH_WALL_MM     120      //abort approach if this close ahead
 
-#define TURN_TOL_DEG         4.0f
-#define TURN_KP              4.0f     //wheel speed per degree of error
-#define TURN_MIN_SPEED       150
-#define TURN_MAX_SPEED       300
+#define TURN_TOL_DEG         12.0f   //increased tolerance to prevent overshoot
+#define TURN_KP              3.0f     //wheel speed per degree of error
+#define TURN_MIN_SPEED       80      //reduced to avoid overshoot at small errors
+#define TURN_MAX_SPEED       280
 #define TURN_TIMEOUT_MS      3000
 
 #define HOME_HEADING_TOL_DEG 15.0f    //drive straight if within this of home bearing
@@ -122,13 +124,23 @@ static void spin(int dir, int speed) {       //dir +1 = left (CCW), -1 = right
 }
 
 //proportional in-place turn to an absolute heading. true when there.
+//improved control to prevent overshoot by using lower speeds at small errors
 static bool turnTo(float targetDeg) {
     float err = wrap180(targetDeg - getMyPOS().theta * RAD_TO_DEG);   //theta is radians
     if (fabsf(err) <= TURN_TOL_DEG) {
         setDriveSpeed(0, 0);
         return true;
     }
-    int s = constrain((int)(TURN_KP * fabsf(err)), TURN_MIN_SPEED, TURN_MAX_SPEED);
+    //reduce speed for fine control: 30+ deg = full speed, 10 deg = min speed, smooth scaling
+    float absErr = fabsf(err);
+    int s;
+    if (absErr > 30.0f) {
+        s = TURN_MAX_SPEED;
+    } else if (absErr > 15.0f) {
+        s = constrain((int)(TURN_MIN_SPEED + (absErr - 15.0f) * 6), TURN_MIN_SPEED, TURN_MAX_SPEED);
+    } else {
+        s = TURN_MIN_SPEED;
+    }
     spin((err > 0 ? 1 : -1) * TURN_TO_SIGN, s);
     return false;
 }
@@ -171,13 +183,20 @@ static bool avoidWalls(int cruise) {
 }
 
 //----------------------------------------------------------------------------
-// Weight detection: low (diff) TOF sees something much closer than the top TOF.
+// Weight detection: low (diff) TOF sees something much closer than the top TOF,
+// AND ultrasounds read far (no wall), AND upper TOF reads far (object at foot level).
 // Returns +1 (weight on left), -1 (weight on right), 0 (none). Debounced.
 //----------------------------------------------------------------------------
-static bool seesWeight(BufID top, BufID low, int& lowDist) {
+static bool seesWeight(BufID top, BufID low, BufID us, int& lowDist) {
     int t = rd(top);
     lowDist = rd(low);
-    return (lowDist < t - WEIGHT_DROP_MM) && (lowDist < WEIGHT_MAX_RANGE_MM);
+    int ultrasound = rd(us);
+    
+    // Weight signature: diff TOF low, top TOF high, ultrasound high (not a wall)
+    return (lowDist < t - WEIGHT_DROP_MM) &&       // significant height difference
+           (lowDist < WEIGHT_MAX_RANGE_MM) &&      // within range
+           (ultrasound >= WEIGHT_US_MIN_MM) &&     // ultrasound says no wall
+           (t >= WEIGHT_TOP_TOF_MIN_MM);           // top TOF sees far (weight is low)
 }
 
 static int checkWeights() {
@@ -185,8 +204,8 @@ static int checkWeights() {
     static int lastSide = 0;
 
     int dL, dR;
-    bool l = seesWeight(W_LEFT_TOF,  W_LEFT_DIFF_TOF,  dL);
-    bool r = seesWeight(W_RIGHT_TOF, W_RIGHT_DIFF_TOF, dR);
+    bool l = seesWeight(W_LEFT_TOF,  W_LEFT_DIFF_TOF,  LEFT_US,  dL);
+    bool r = seesWeight(W_RIGHT_TOF, W_RIGHT_DIFF_TOF, RIGHT_US, dR);
 
     int side = 0;
     if (l && r)      side = (dL <= dR) ? 1 : -1;   //both: take the closer one
@@ -263,15 +282,16 @@ void reactiveTask() {
         break;
 
     case R_APPROACH_WEIGHT:
-        if (isServoSequenceActive()) {                 //picked up: keep moving, don't stop
+        if (isServoSequenceActive()) {                 //picked up: go back to exploring
             weightCooldownUntil = millis() + PICKUP_COOLDOWN_MS;
             enter(R_EXPLORE);
         } else if (elapsed > APPROACH_MS ||
-                   min(rd(LEFT_US), rd(RIGHT_US)) < APPROACH_WALL_MM) {
+            min(rd(LEFT_US), rd(RIGHT_US)) < APPROACH_WALL_MM) {
             setDriveSpeed(0, 0);                       //missed it / wall ahead
             weightCooldownUntil = millis() + WEIGHT_COOLDOWN_MS;
             enter(R_EXPLORE);
         } else {
+            // Just drive straight forward, no heading correction needed
             setDriveSpeed(APPROACH_SPEED, APPROACH_SPEED);
         }
         break;
