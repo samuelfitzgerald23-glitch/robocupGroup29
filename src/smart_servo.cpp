@@ -79,11 +79,6 @@ void servo_timeout()
     servoTimeout = true;
 }
 
-uint16_t getServoPosition()
-{
-    return servo.getPosition();
-}
-
 // 
 void sortingServoTask()
 {

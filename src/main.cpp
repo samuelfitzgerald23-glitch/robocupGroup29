@@ -13,6 +13,7 @@
 #include "map.h"
 #include "State.h"
 #include "gate.h"
+#include "LED_array.h"
 
 //**********************************************************************************
 // Local Definitions
@@ -25,7 +26,7 @@
 #define ULTRASOUND_READ_TASK_PERIOD         33
 #define IMU_READ_TASK_PERIOD                50
 
-#define SENSOR_AVERAGE_PERIOD               10
+#define SENSOR_AVERAGE_PERIOD               100
 #define LOCATION_TASK_PERIOD                10
 
 #define STATE_TASK_PERIOD                   2
@@ -133,8 +134,8 @@ void task_init() {
   tRead_proximity.enable();
   tSensor_average.enable();
 
-  //tLocate_task.enable();
-  //tState_task.enable();
+  tLocate_task.enable();
+  tState_task.enable();
   tSet_motor.enable();
   tSorting_servo.enable();
   
@@ -160,7 +161,9 @@ void setup() {
 
   task_init();
 
-  //map_init();
+  map_init();
+
+  LED_init();
 
   initMotors();
   filteringInit();

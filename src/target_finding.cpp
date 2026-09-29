@@ -10,7 +10,7 @@ static GridPos home = {X_ZERO,Y_ZERO};
 pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
     //find the next target to pathfind toward
 
-    if(getNumWeights() >= MAX_WEIGHTS_ONBOARD) {
+    if(get_num_weights() >= MAX_WEIGHTS_ONBOARD) {
         target_type = BASE_ACTION;
         pos_t homeWorld;
         gridToWorld(home.x, home.y, homeWorld.x, homeWorld.y);

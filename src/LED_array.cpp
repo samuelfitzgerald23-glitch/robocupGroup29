@@ -3,6 +3,7 @@
 CRGB leds[NUM_LEDS];
 
 void LED_init() {
+    Serial.print("LED init");
     FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
     FastLED.setBrightness(130);
 

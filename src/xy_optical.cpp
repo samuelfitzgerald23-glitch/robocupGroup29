@@ -1,5 +1,4 @@
 #include "xy_optical.h"
-#include "LED_array.h"
 
 //if height of sensor is changed this value will need to be re-calibrated manually
 //to calibrate record the number of counts over a known distence (e.g 300mm) and find counts/dist
@@ -11,7 +10,6 @@ Bitcraze_PMW3901 flow(XY_CS);
 
 void init_optical_flow()
 {
-    LED_init();
 
     if (!flow.begin()) {
         Serial.println("Initialization of the flow sensor failed");
