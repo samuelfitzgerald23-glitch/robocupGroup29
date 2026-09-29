@@ -34,7 +34,8 @@ static location_sensor_t filtered_sensors[NON_COUPLED_SENSORS] = {
 //non filtered sensors with offset
 static location_sensor_t opticalFlow_sensor = {NON_FILTERED, {FLOW_THETA_OFFSET, {FLOW_X_OFFSET, FLOW_Y_OFFSET}}, PoseMatrix::buildFrame(&(opticalFlow_sensor.offset))};
 
-//define world origin
+//define world origin {theta {x, y}}, change theta to match the negetive of starting angle of the robot
+//e.g if robot starts turned to right (-90) change theta to 90 to cancel phase shift
 static pos_vector_t worldOrigin = {0.0f, {0.0f, 0.0f}};
 
 static PoseMatrix robot_worldFrame = PoseMatrix::buildFrame(&worldOrigin);

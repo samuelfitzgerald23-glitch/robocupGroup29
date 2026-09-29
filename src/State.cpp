@@ -2,6 +2,8 @@
 #include "gate.h"
 #include "LED_array.h"
 
+#define RANDOM_SIZE 500
+
 IntervalTimer TimeoutCheck;
 
 static uint32_t lastTime = 0;
@@ -66,9 +68,8 @@ void StateMachineTask() {
                 if (pathfindFailures > 5) {
                     pathfindFailures = 0;
                     // force a new goal
-                    goal_pos = {random(-2000, 2000), random(-2000, 2000)};
+                    goal_pos = {random((currentPos.x - RANDOM_SIZE), (currentPos.x + RANDOM_SIZE)), random((currentPos.y - RANDOM_SIZE), (currentPos.y + RANDOM_SIZE))};
                 }
-                CurrentState = FIND_TARGET;
             }
             break;
         }
