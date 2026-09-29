@@ -137,6 +137,37 @@ bool gateDrop() {
     return false;
 }
 
+//TEST: repeatedly runs a full drop (shake + gate open/hold/close) so you can
+//watch it on the bench. Temporarily point tState_task at this instead of
+//StateMachineTask. Prints position so you can see the shake bounds check.
+void gateDropTest() {
+    static uint8_t  tphase     = 0;     // 0 = running a drop, 1 = pause between
+    static uint32_t pauseStart = 0;
+    static uint32_t lastPrint  = 0;
+
+    if (tphase == 0) {
+        if (gateDrop()) {                       // shakes + gate; true once closed
+            setDriveSpeed(0, 0);
+            Serial.println("TEST: drop complete (gate closed) - pausing 3 s");
+            pauseStart = millis();
+            tphase = 1;
+        } else if (millis() - lastPrint >= 500) {
+            lastPrint = millis();
+            pos_t p = getMyPOS().pos;
+            Serial.print("TEST: dropping...  pos x=");
+            Serial.print(p.x);
+            Serial.print(" y=");
+            Serial.println(p.y);
+        }
+    } else {                                    // pause so you can see it reset
+        if (millis() - pauseStart >= 3000) {
+            Serial.println("TEST: starting next drop cycle");
+            gateStartDrop();
+            tphase = 0;
+        }
+    }
+}
+
 // void gateTest() {
 //    servoBus.update();
 //
