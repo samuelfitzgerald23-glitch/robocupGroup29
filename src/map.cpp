@@ -22,8 +22,8 @@ static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 
 //filtered sensors with offsets
 static location_sensor_t filtered_sensors[NON_COUPLED_SENSORS] = {
-    {TOF1, {-5, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF1].offset))},
-    {TOF2, {5, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF2].offset))}
+    {TOF1, {-45, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF1].offset))},
+    {TOF2, {45, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[TOF2].offset))}
 };
 
 //non filtered sensors with offset
