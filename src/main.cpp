@@ -35,6 +35,7 @@
 #define SERVO_TASK_PERIOD                    20 
 #define PROXIMITY_TASK_PERIOD                20
 
+
 // Task execution amount definitions
 // -1 means indefinitely
 #define TOF_READ_TASK_NUM_EXECUTE          -1
@@ -88,6 +89,7 @@ Task tSet_motor(SET_MOTOR_TASK_PERIOD,            SET_MOTOR_TASK_NUM_EXECUTE,   
 Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &sortingServoTask);
 //Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &servo_test);
 
+// TEST: was &StateMachineTask - swap back after testing
 
 // Tasks to search for bases and unload weights
 
@@ -115,6 +117,7 @@ void task_init() {
   taskManager.addTask(tState_task);
   taskManager.addTask(tSet_motor);
   taskManager.addTask(tSorting_servo);
+
  
 
   //enable the tasks
@@ -123,6 +126,7 @@ void task_init() {
   tRead_colour.enable();
   tRead_proximity.enable();
   tSensor_average.enable();
+
   //tLocate_task.enable();
   //tState_task.enable();
   tSet_motor.enable();
