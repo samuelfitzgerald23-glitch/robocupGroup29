@@ -11,13 +11,13 @@
 #include "circBuf.h"
 #include "filtering.h"
 
-#define PLASTIC_WEIGHT_TOL 10000 //if above this, is plastic. 
+#define PLASTIC_WEIGHT_TOL 1200 //if above this, is plastic. 
 
-//tolerances for bludger detection (maximums)
-#define MOBILE_TOL_RED 240
-#define MOBILE_TOL_BLUE 200 
-#define MOBILE_TOL_GREEN 250
-#define MOBILE_TOL_CLEAR 380
+//tolerances for bludger detection (minimums)
+#define MOBILE_TOL_RED 2000
+#define MOBILE_TOL_BLUE 1000 
+#define MOBILE_TOL_GREEN 1900
+#define MOBILE_TOL_CLEAR 5000
 
 //tolerances for snitch detection
 #define GOLD_RED_MIN   150
