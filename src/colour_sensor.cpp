@@ -104,7 +104,7 @@ static void updateColourValue()
 void colourTask() 
 {
   updateColourValue();
-  printColourPlot();
+  //printColourPlot();
   plastic_weight_check();
   
   //don't check for mobile elements until some time passes
@@ -112,10 +112,10 @@ void colourTask()
       !isServoSequenceActive()) {
         
       //do this one if keep snitch, reject bludger  
-      mobile_element_check();
+      //mobile_element_check();
       
       //do this one if want to reject both bludger and snitch
-      //mobile_element_reject_check();
+      mobile_element_reject_check();
 
       //do this if know theres only the snitch in the round - keeps any mobile element inside robot. 
       //mobile_element_keep_check();
@@ -137,6 +137,18 @@ static void runMobileDetection(MobileMode mode)
             mobileElementPresent = false;
             pendingMobileType = NO_MOBILE;
         }
+        return;
+    }
+
+    // A gold snitch is accepted immediately (no confirmation delay).
+    if (mode == CLASSIFY_MOBILE && detected == GOLD_MOBILE) {
+        mobileCheckPending = false;
+        pendingMobileType = NO_MOBILE;
+
+        mobileElementPresent = true;
+        goodMobileElementPresent = true;
+
+        Serial.println("Gold snitch detected; holding in centre");
         return;
     }
 

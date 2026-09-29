@@ -74,9 +74,9 @@ void gateStartDrop() {
 
 //call once when a drop begins, so a previous (possibly timed-out) drop
 //can't leave the sequence half-finished
-void gateStartDrop() {
-    dropPhase = 0;
-}
+// void gateStartDrop() {
+//     dropPhase = 0;
+// }
 
 //----------------------------------------------------------------------------
 // Shake helper - reads its own position, drives its own motors

@@ -7,10 +7,10 @@
 #define LARGE_PROX_OUTPUT 20
 
 //metal must be between these values 
-#define METAL_CLEAR_MIN 650
+#define METAL_CLEAR_MIN 600
 #define METAL_CLEAR_MAX 1100
 
-#define WEIGHT_CONFIRM_DELAY 1000  // 1.5 seconds
+#define WEIGHT_CONFIRM_DELAY 1000  // 1 second
 
 volatile bool largeProxTriggered = false;
 volatile bool metalWeightDetected = false;
