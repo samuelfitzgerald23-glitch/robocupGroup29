@@ -14,12 +14,17 @@
 
 void initSmartServo(void);
 void setServoPosition(uint16_t position);
-uint16_t getServoPosition(uint16_t &position);
-void sortingServoTask();
+uint16_t getServoPosition(void);
+void sortingServoTask(void);
 void startServoSequence(uint16_t position);                   
-void sortWantedWeight();
-void sortUnwantedWeight();
-void servo_test();
+void sortWantedWeight(void);
+void sortUnwantedWeight(void);
+bool resetServoAfterOverload(void);
+void ejectMobileElement(void);
+void servo_test(void);
+bool isServoSequenceActive(void);
+uint8_t get_num_weights(void);
+void reset_num_weights(void);
 
 uint8_t getNumWeights();
 

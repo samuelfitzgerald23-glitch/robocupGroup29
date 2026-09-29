@@ -12,6 +12,7 @@
 #include "filtering.h"
 #include "map.h"
 #include "State.h"
+#include "gate.h"
 
 //**********************************************************************************
 // Local Definitions
@@ -24,7 +25,7 @@
 #define ULTRASOUND_READ_TASK_PERIOD         33
 #define IMU_READ_TASK_PERIOD                50
 
-#define SENSOR_AVERAGE_PERIOD               100
+#define SENSOR_AVERAGE_PERIOD               10
 #define LOCATION_TASK_PERIOD                10
 
 #define STATE_TASK_PERIOD                   2
@@ -32,9 +33,10 @@
 
 #define CHECK_WATCHDOG_TASK_PERIOD          40
 
-#define COLOUR_TASK_PERIOD                  100 //in ms
-#define SERVO_TASK_PERIOD                   10
-#define PROXIMITY_TASK_PERIOD               10
+#define COLOUR_TASK_PERIOD                   100
+#define SERVO_TASK_PERIOD                    20 
+#define PROXIMITY_TASK_PERIOD                20
+
 
 // Task execution amount definitions
 // -1 means indefinitely
@@ -52,7 +54,9 @@
 
 #define COLOUR_TASK_NUM_EXECUTE             -1
 #define SERVO_TASK_NUM_EXECUTE              -1
+
 #define PROXIMITY_TASK_NUM_EXECUTE          -1
+
 
 // Pin deffinitions
 #define IO_POWER  49
@@ -87,6 +91,9 @@ Task tSet_motor(SET_MOTOR_TASK_PERIOD,            SET_MOTOR_TASK_NUM_EXECUTE,   
 
 // Tasks to scan for weights and collection upon detection
 Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &sortingServoTask);
+//Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &servo_test);
+
+// TEST: was &StateMachineTask - swap back after testing
 
 // Tasks to search for bases and unload weights
 
@@ -116,6 +123,8 @@ void task_init() {
   taskManager.addTask(tSet_motor);
   taskManager.addTask(tSorting_servo);
 
+ 
+
   //enable the tasks
   tRead_TOF.enable();
   tRead_ultrasound.enable();
@@ -123,10 +132,12 @@ void task_init() {
   tRead_colour.enable();
   tRead_proximity.enable();
   tSensor_average.enable();
-  tLocate_task.enable();
-  tState_task.enable();
+
+  //tLocate_task.enable();
+  //tState_task.enable();
   tSet_motor.enable();
-  //tSorting_servo.enable();
+  tSorting_servo.enable();
+  
   //tCheck_watchdog.enable();
 
   Serial.println("Tasks have been initialised \n");
@@ -155,7 +166,8 @@ void setup() {
   filteringInit();
   sensorInit(&io);
 
-  //initSmartServo();
+  initSmartServo();
+  initGate();
 }
 
 void loop() {
