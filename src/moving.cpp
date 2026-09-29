@@ -18,7 +18,7 @@ static moveingState State = IDLE;
 
 //static pos_t lastHandledWeight = {0, 0};
 
-static PID_t rotate(25, 1.5, 1, 450, 350, 5);
+static PID_t rotate(5, 0.5, 0, 450, 350, 5);
 static PID_t translate(7, 1, 0, 450, 425, 50);
 
 static pos_t targetlist[MAX_WAYPOINT_COUNT];
@@ -46,8 +46,7 @@ static void setTarget() {
 
 static bool pathSegmentBlocked(pos_t from, pos_t to) {
     int x0, y0, x1, y1;
-    worldToGrid(from.x, from.y, x0, y0);
-    worldToGrid(to.x, to.y, x1, y1);
+    if(!worldToGrid(from.x, from.y, x0, y0) || !worldToGrid(to.x, to.y, x1, y1)) return true;
 
     int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
     int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
@@ -78,15 +77,15 @@ void findTarget() {
 float findAngle(pos_t* myPose) {
     float dx = currentTarget.x - myPose->x;
     float dy = currentTarget.y - myPose->y;
-    return -1*std::atan2(dx, dy) / D_TO_R;
+    return -std::atan2(dx, dy) / D_TO_R;
 }
 
 bool rotatePID(pos_vector_t* myPose, float dt) {
     float error = findAngle(&(myPose->pos)) - (myPose->theta)/D_TO_R;
     //Serial.print("rotation error: ");
 
-    // while (error > 180.0f)  error -= 360.0f;
-    // while (error <= -180.0f) error += 360.0f;
+    while (error > 180.0f)  error -= 360.0f;
+    while (error <= -180.0f) error += 360.0f;
 
     //check if we are done
     if (rotate.tolerance >= fabs(error)) return 1;

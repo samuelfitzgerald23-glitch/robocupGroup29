@@ -1,5 +1,10 @@
 #include "target_finding.h"
 
+#define BOX_X_MIN 12
+#define BOX_Y_MIN 12
+#define BOX_X_MAX (GRID_WIDTH-BOX_X_MIN)
+#define BOX_Y_MAX (GRID_HEIGHT-BOX_Y_MIN)
+
 static GridPos home = {X_ZERO,Y_ZERO};
 
 pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
@@ -17,10 +22,10 @@ pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
     worldToGrid(prev_pos.x, prev_pos.y, prevGrid.x, prevGrid.y);    //previous target on grid
 
     //define section of map the robot looks for targets in
-    int x_min = ((robotGrid.x - TARGET_GRID_SIZE) <= 0) ? 0 : (robotGrid.x - TARGET_GRID_SIZE);
-    int x_max = ((robotGrid.x + TARGET_GRID_SIZE) >= GRID_WIDTH) ? GRID_WIDTH : (robotGrid.x + TARGET_GRID_SIZE);
-    int y_min = ((robotGrid.y - TARGET_GRID_SIZE) <= 0) ? 0 : (robotGrid.y - TARGET_GRID_SIZE);
-    int y_max = ((robotGrid.y + TARGET_GRID_SIZE) >= GRID_HEIGHT) ? GRID_HEIGHT : (robotGrid.y + TARGET_GRID_SIZE);
+    int x_min = ((robotGrid.x - TARGET_GRID_SIZE) <= BOX_X_MIN) ? BOX_X_MIN : (robotGrid.x - TARGET_GRID_SIZE);
+    int x_max = ((robotGrid.x + TARGET_GRID_SIZE) >= BOX_X_MAX) ? BOX_X_MAX : (robotGrid.x + TARGET_GRID_SIZE);
+    int y_min = ((robotGrid.y - TARGET_GRID_SIZE) <= BOX_Y_MIN) ? BOX_Y_MIN : (robotGrid.y - TARGET_GRID_SIZE);
+    int y_max = ((robotGrid.y + TARGET_GRID_SIZE) >= BOX_Y_MAX) ? BOX_Y_MAX : (robotGrid.y + TARGET_GRID_SIZE);
 
     float cost = 1e9f;
 
@@ -65,16 +70,3 @@ pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
 
     return targetWorld;
 }
-
-/*
-pros vs cons of doing a convolution on target map:
-
-pros:
-allows for frontier edge detection
-gets a smoother transition between cells
-due to smoothing cells around weights have higher prioritys, and cells around walls have lower priority
-
-cons:
-possibly take a while
-hard to implament
-*/

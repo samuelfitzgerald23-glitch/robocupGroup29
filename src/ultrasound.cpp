@@ -3,6 +3,8 @@
 volatile uint32_t start_left = 0;
 volatile uint32_t start_right = 0;
 
+static int current_sensor = 0;
+
 static size_t ultrasound_sensors[N_ULTRASOUND] = {ULTRASOUND_LEFT_TRIG, ULTRASOUND_RIGHT_TRIG};
 
 static float microsecondsToMillimeters(uint32_t microseconds)
@@ -57,7 +59,7 @@ static void ultrasound_start(uint8_t Trigger)
 }
 
 void ultrasound_task() {
-  for (int i = 0; i < N_ULTRASOUND; i++) {
-    ultrasound_start(ultrasound_sensors[i]);
-  }
+  if (current_sensor >= 2) current_sensor = 0;
+  ultrasound_start(ultrasound_sensors[current_sensor]);
+  current_sensor++;
 }

@@ -22,7 +22,7 @@
 #define HZ_TO_MS(hz) (1000 / (hz))
 
 #define TOF_READ_TASK_PERIOD                HZ_TO_MS(100)
-#define ULTRASOUND_READ_TASK_PERIOD         HZ_TO_MS(100)
+#define ULTRASOUND_READ_TASK_PERIOD         HZ_TO_MS(30)
 #define IMU_READ_TASK_PERIOD                HZ_TO_MS(100)
 
 #define SENSOR_AVERAGE_PERIOD               HZ_TO_MS(1000)

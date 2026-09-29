@@ -2,8 +2,8 @@
 #include <Arduino.h>
 
 //tof fov in deg
-#define TOF_FOV (27/2)      //half cone angle (deg)
-#define ULTRASOUND_FOV 15
+#define TOF_FOV (27.0f/2)      //half cone angle (deg)
+#define ULTRASOUND_FOV 15.0f
 
 #define N_RAYS 5
 
@@ -55,8 +55,8 @@ static void logPose(float theta, float x, float y) {
 
 bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y) {
     //converts world coords to map indeces, then returns true is point is on the map
-    int gx = (int)roundf(world_x / CELL_SIZE) + X_ZERO;
-    int gy = (int)roundf(world_y / CELL_SIZE) + Y_ZERO;
+    int gx = (int)floorf(world_x / CELL_SIZE) + X_ZERO;
+    int gy = (int)floorf(world_y / CELL_SIZE) + Y_ZERO;
 
     bool inBounds = (gx >= 0 && gx < GRID_WIDTH && gy >= 0 && gy < GRID_HEIGHT);
 
@@ -68,8 +68,8 @@ bool worldToGrid(float world_x, float world_y, int& grid_x, int& grid_y) {
 
 void gridToWorld(int gx, int gy, float& world_x, float& world_y) {
     // inverse of worldToGrid
-    world_x = (gx - X_ZERO) * CELL_SIZE;
-    world_y = (gy - Y_ZERO) * CELL_SIZE;
+    world_x = (gx - X_ZERO + 0.5f) * CELL_SIZE;
+    world_y = (gy - Y_ZERO + 0.5f) * CELL_SIZE;
 }
 
 void writeToMap(float world_x, float world_y, int8_t value) {
@@ -121,7 +121,7 @@ void updatePose(pos_vector_t* Pose) {
     int gx, gy;
     worldToGrid(robot_worldFrame.x(), robot_worldFrame.y(), gx, gy);
     mapData[gy][gx] = static_cast<int8_t>(MY_POS);
-    logCell(x, y, static_cast<int8_t>(MY_POS));
+    logCell(gx, gy, static_cast<int8_t>(MY_POS));
 }
 
 void projectSensorCone(const location_sensor_t& sensor, float distance, bool isWeight) {
@@ -207,7 +207,7 @@ void map_init() {
 void poseTask() {
     //Serial.println("pose task");
     float heading = getHeading();
-    float differential_heading = prev_heading - heading;
+    float differential_heading = heading - prev_heading;
     prev_heading = heading;
 
     while (differential_heading > 180.0f)  differential_heading -= 360.0f;
@@ -282,7 +282,7 @@ bool isWalkible(int x, int y, int inflation_factor) {
         for (int i = 0; i < 8; i++) {
         int nx = x + n*dx8[i];
         int ny = y + n*dy8[i];
-        if (nx < 0 || nx >= GRID_WIDTH || ny < 0 || ny >= GRID_HEIGHT) continue;  // off-grid neighbor isn't a wall, just skip it
+        if (nx < 0 || nx >= GRID_WIDTH || ny < 0 || ny >= GRID_HEIGHT) return false;
         if ((getMapValue(nx, ny) < CONFIDENCE_THRESHOLD)) return false;
     }
     }

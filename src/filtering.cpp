@@ -15,10 +15,10 @@ void filteringInit(void) {
 
 float signalAverage(circBuf_t *buffer) {
     float sum = 0;
-    for (uint8_t i = 0; i < buffer->size; i++) {
-        sum += readCircBuf(buffer);
+    for (uint16_t i = 0; i < buffer->size; i++) {
+        sum += buffer->data[i];
     }
-    return sum/(buffer->size);
+    return sum / buffer->size;
 }
 
 void filterTask() {

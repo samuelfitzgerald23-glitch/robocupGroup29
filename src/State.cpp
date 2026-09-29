@@ -3,7 +3,7 @@
 
 IntervalTimer TimeoutCheck;
 
-static int lastTime = 0;
+static uint32_t lastTime = 0;
 
 static robotState CurrentState = STARTUP;
 
@@ -21,7 +21,7 @@ static void state_timeout() {
 
 void StateMachineTask() {
     pos_t currentPos = getMyPOS().pos;
-    int now = micros();
+    uint32_t now = micros();
     float dt = float(now - lastTime)/MICRO_TO_SEC;
     lastTime = now;
 
