@@ -21,14 +21,14 @@
 // ALL OF THESE VALUES WILL NEED TO BE SET TO SOMETHING USEFUL !!!!!!!!!!!!!!!!!!!!
 #define HZ_TO_MS(hz) (1000 / (hz))
 
-#define TOF_READ_TASK_PERIOD                HZ_TO_MS(10)
-#define ULTRASOUND_READ_TASK_PERIOD         HZ_TO_MS(10)
-#define IMU_READ_TASK_PERIOD                HZ_TO_MS(50)
+#define TOF_READ_TASK_PERIOD                HZ_TO_MS(100)
+#define ULTRASOUND_READ_TASK_PERIOD         HZ_TO_MS(100)
+#define IMU_READ_TASK_PERIOD                HZ_TO_MS(100)
 
-#define SENSOR_AVERAGE_PERIOD               HZ_TO_MS(100)
-#define LOCATION_TASK_PERIOD                HZ_TO_MS(10)
+#define SENSOR_AVERAGE_PERIOD               HZ_TO_MS(1000)
+#define LOCATION_TASK_PERIOD                HZ_TO_MS(100)
 
-#define STATE_TASK_PERIOD                   HZ_TO_MS(5)
+#define STATE_TASK_PERIOD                   HZ_TO_MS(50)
 #define SET_MOTOR_TASK_PERIOD               HZ_TO_MS(31)
 
 #define CHECK_WATCHDOG_TASK_PERIOD          40

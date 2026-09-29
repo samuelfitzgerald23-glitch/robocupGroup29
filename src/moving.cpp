@@ -16,7 +16,7 @@ IntervalTimer movementTimeLimit;
 
 static moveingState State = IDLE;
 
-static pos_t lastHandledWeight = {0, 0};
+//static pos_t lastHandledWeight = {0, 0};
 
 static PID_t rotate(25, 1.5, 1, 450, 350, 5);
 static PID_t translate(7, 1, 0, 450, 425, 50);
@@ -44,10 +44,22 @@ static void setTarget() {
     currentTarget = targetlist[targetIndex];
 }
 
-static bool pathSegmentBlocked() {
-    int16_t dist1 = getOutput(ULTRASOUND_LEFT);
-    int16_t dist2 = getOutput(ULTRASOUND_RIGHT);
-    if(dist1 <= WALL_LIMIT || dist2 <= WALL_LIMIT) return true;
+static bool pathSegmentBlocked(pos_t from, pos_t to) {
+    int x0, y0, x1, y1;
+    worldToGrid(from.x, from.y, x0, y0);
+    worldToGrid(to.x, to.y, x1, y1);
+
+    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
+    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
+    int error = dx + dy;
+    int x = x0, y = y0;
+
+    while (!(x == x1 && y == y1)) {
+        int e2 = 2 * error;
+        if (e2 >= dy) { error += dy; x += sx; }
+        if (e2 <= dx) { error += dx; y += sy; }
+        if (!isWalkible(x, y, ROBOT_WIDTH)) return true;   // now checks the cell just stepped into, not the starting cell
+    }
     return false;
 }
 
@@ -73,8 +85,8 @@ bool rotatePID(pos_vector_t* myPose, float dt) {
     float error = findAngle(&(myPose->pos)) - (myPose->theta)/D_TO_R;
     //Serial.print("rotation error: ");
 
-    while (error > 180.0f)  error -= 360.0f;
-    while (error <= -180.0f) error += 360.0f;
+    // while (error > 180.0f)  error -= 360.0f;
+    // while (error <= -180.0f) error += 360.0f;
 
     //check if we are done
     if (rotate.tolerance >= fabs(error)) return 1;
@@ -101,11 +113,10 @@ bool translatePID(pos_t* currentXY, float dt) {
 }
 
 void movementTask(float dt) {
-    //if(getRobotState == move) {}
 
     pos_vector_t myPOS = getMyPOS();
 
-    if (pathSegmentBlocked()) {
+    if (pathSegmentBlocked(myPOS.pos, currentTarget)) {
         pathfinished = 1;   // signals State.cpp to go back through PATHFIND
         pathBlocked = 1;
         targetIndex = 0;
@@ -119,19 +130,19 @@ void movementTask(float dt) {
         State = DONE;
     }
 
-    if (getweightSeen()) {
-        pos_t seenWeight = getLastWeightSeen();
-        bool isNewWeight = (seenWeight.x != lastHandledWeight.x) || (seenWeight.y != lastHandledWeight.y);
+    // if (getweightSeen()) {
+    //     pos_t seenWeight = getLastWeightSeen();
+    //     bool isNewWeight = (seenWeight.x != lastHandledWeight.x) || (seenWeight.y != lastHandledWeight.y);
 
-        if (isNewWeight) {
-            movementTimeLimit.end();
-            setDriveSpeed(0, 0);
-            currentTarget = seenWeight;
-            lastHandledWeight = seenWeight;
-            State = IDLE;
-        }
-        setweightSeen(0);
-    }
+    //     if (isNewWeight) {
+    //         movementTimeLimit.end();
+    //         setDriveSpeed(0, 0);
+    //         currentTarget = seenWeight;
+    //         lastHandledWeight = seenWeight;
+    //         State = IDLE;
+    //     }
+    //     setweightSeen(0);
+    // }
 
     switch (State) {
         case IDLE:
@@ -148,10 +159,12 @@ void movementTask(float dt) {
             break;
         }
         case TURNING:
+            setIsTurning(1);
             if (rotatePID(&myPOS, dt)) {
                 setDriveSpeed(0,0);
                 State = MOVEING;
                 movementTimeLimit.begin(movementTimerCallback, (int)(TIME_LIMIT));
+                setIsTurning(0);
             }
             break;
         case MOVEING:
@@ -182,4 +195,10 @@ void setPath(const pos_t* path, int count) {
     pathfinished = 0;
     pathBlocked = 0;
     currentTarget = targetlist[0];
+    for (int i = 0; i < count; i++) {
+        int gx, gy;
+        worldToGrid(targetlist[i].x, targetlist[i].y, gx, gy);
+        BLUETOOTH_SERIAL.print("C, "); BLUETOOTH_SERIAL.print(gx); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(gy);
+        BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(52);
+    }
 }

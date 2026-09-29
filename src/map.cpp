@@ -17,6 +17,8 @@ static const int8_t dy8[8] = {0, 0, 1, -1, 1, -1, 1, -1};
 static bool weightSeen = 0;
 static pos_t lastWeightSeen;
 
+static bool isTurning = 0;
+
 static float prev_heading = 0;
 
 static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
@@ -110,6 +112,7 @@ void updatePose(pos_vector_t* Pose) {
     int x, y;
     worldToGrid(robot_worldFrame.x(), robot_worldFrame.y(), x, y);
     mapData[y][x] = 10;
+    logCell(x, y, 10);
 
     //get new POS
     robot_worldFrame = robot_worldFrame.transformFrame(PoseMatrix::buildFrame(Pose));
@@ -118,6 +121,7 @@ void updatePose(pos_vector_t* Pose) {
     int gx, gy;
     worldToGrid(robot_worldFrame.x(), robot_worldFrame.y(), gx, gy);
     mapData[gy][gx] = static_cast<int8_t>(MY_POS);
+    logCell(x, y, static_cast<int8_t>(MY_POS));
 }
 
 void projectSensorCone(const location_sensor_t& sensor, float distance, bool isWeight) {
@@ -160,6 +164,8 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
 }
 
 pos_t projectOpticalFlow(const location_sensor_t& opticalFlow_sensor, pos_t* sensorVector, float theta) {
+    if (isTurning) return {0, 0};
+
     //project the reading from the optical flow sensor into robot coords
     pos_t robotCoord;
     opticalFlow_sensor.sensor_robotFrame.rotateVector(sensorVector, robotCoord);
@@ -293,4 +299,8 @@ pos_t getLastWeightSeen() {
 
 void setweightSeen(bool a) {
     weightSeen = a;
+}
+
+void setIsTurning(bool a) {
+    isTurning = a;
 }

@@ -8,7 +8,7 @@ static int lastTime = 0;
 static robotState CurrentState = STARTUP;
 
 static goal_t goal_type = NO_ACTION;
-static pos_t goal_pos;
+static pos_t goal_pos = {0, 1000};
 
 static pos_t microSteps[MAX_WAYPOINT_COUNT];
 
@@ -30,9 +30,7 @@ void StateMachineTask() {
     switch (CurrentState) {
         case STARTUP:
             setLEDColor(WRITIBLE_LED, GREEN);
-            setDriveSpeed(250, -250);
-            TimeoutCheck.begin(state_timeout, (int)(1.5*MICRO_TO_SEC));
-            CurrentState = CHECK;
+            CurrentState = PATHFIND;
             break;
         case CHECK:
             //check fornumber of weights and stuff idk

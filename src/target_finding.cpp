@@ -7,7 +7,9 @@ pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
 
     if(getNumWeights() >= MAX_WEIGHTS_ONBOARD) {
         target_type = BASE_ACTION;
-        return {0,0};
+        pos_t homeWorld;
+        gridToWorld(home.x, home.y, homeWorld.x, homeWorld.y);
+        return homeWorld;
     }                                                               //if we have collected all weights the robot should return to base
 
     GridPos robotGrid, prevGrid;

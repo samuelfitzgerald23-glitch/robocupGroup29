@@ -6,7 +6,7 @@
 #include "Arduino.h"
 
 #define KERNEL_SIZE 3
-#define TARGET_GRID_SIZE 10
+#define TARGET_GRID_SIZE 20
 
 #define MAX_WEIGHTS_ONBOARD 3
 

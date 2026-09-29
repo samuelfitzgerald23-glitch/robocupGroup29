@@ -85,4 +85,6 @@ pos_t getLastWeightSeen();
 
 void setweightSeen(bool a);
 
+void setIsTurning(bool a);
+
 #endif //MAP_H
