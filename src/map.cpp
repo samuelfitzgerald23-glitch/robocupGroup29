@@ -282,7 +282,7 @@ bool isWalkible(int x, int y, int inflation_factor) {
         for (int i = 0; i < 8; i++) {
         int nx = x + n*dx8[i];
         int ny = y + n*dy8[i];
-        if (nx < 0 || nx >= GRID_WIDTH || ny < 0 || ny >= GRID_HEIGHT) continue;
+        if (nx < 0 || nx >= GRID_WIDTH || ny < 0 || ny >= GRID_HEIGHT) return false;
         if ((getMapValue(nx, ny) < CONFIDENCE_THRESHOLD)) return false;
     }
     }

@@ -38,11 +38,6 @@ static void movementTimerCallback() {
     movementTimeLimit.end();
 }
 
-static void setTarget() {
-    //set target to next in path
-    currentTarget = targetlist[targetIndex];
-}
-
 static bool pathSegmentBlocked(pos_t from, pos_t to) {
     int x0, y0, x1, y1;
     if(!worldToGrid(from.x, from.y, x0, y0) || !worldToGrid(to.x, to.y, x1, y1)) return true;
@@ -56,7 +51,7 @@ static bool pathSegmentBlocked(pos_t from, pos_t to) {
         int e2 = 2 * error;
         if (e2 >= dy) { error += dy; x += sx; }
         if (e2 <= dx) { error += dx; y += sy; }
-        if (!isWalkible(x, y, ROBOT_WIDTH)) return true;   // now checks the cell just stepped into, not the starting cell
+        if (!isWalkible(x, y, ROBOT_WIDTH-1)) return true;   // now checks the cell just stepped into, not the starting cell
     }
     return false;
 }
@@ -65,7 +60,7 @@ void findTarget() {
     //get the next target
     if((targetIndex < targetCount-1) && !pathfinished) {
         targetIndex++;
-        setTarget();
+        currentTarget = targetlist[targetIndex];
 
     } else {  
         pathfinished = 1;
@@ -112,36 +107,15 @@ bool translatePID(pos_t* currentXY, float dt) {
 
 void movementTask(float dt) {
 
+    BLUETOOTH_SERIAL.print("M, "); BLUETOOTH_SERIAL.println(State);
+
     pos_vector_t myPOS = getMyPOS();
 
-    if (pathSegmentBlocked(myPOS.pos, currentTarget)) {
-        pathfinished = 1;   // signals State.cpp to go back through PATHFIND
-        pathBlocked = 1;
-        targetIndex = 0;
-        setDriveSpeed(0,0);
-        State = IDLE;
-        movementTimeLimit.end();
-        return;
-    }
     if (path_failures >= WAYPOINT_PATIENCE) {
         path_failures = 0;
         State = DONE;
     }
 
-    // if (getweightSeen()) {
-    //     pos_t seenWeight = getLastWeightSeen();
-    //     bool isNewWeight = (seenWeight.x != lastHandledWeight.x) || (seenWeight.y != lastHandledWeight.y);
-
-    //     if (isNewWeight) {
-    //         movementTimeLimit.end();
-    //         setDriveSpeed(0, 0);
-    //         currentTarget = seenWeight;
-    //         lastHandledWeight = seenWeight;
-    //         State = IDLE;
-    //     }
-    //     setweightSeen(0);
-    // }
-    //BLUETOOTH_SERIAL.print("e, ");
     switch (State) {
         case IDLE:
             {
@@ -166,6 +140,12 @@ void movementTask(float dt) {
             }
             break;
         case MOVEING:
+            if (pathSegmentBlocked(myPOS.pos, currentTarget)) {
+                setDriveSpeed(0,0);
+                State = DONE;
+                movementTimeLimit.end();
+                return;
+            }
             if (translatePID(&(myPOS.pos), dt)) {
                 setDriveSpeed(0,0); 
                 State = DONE;

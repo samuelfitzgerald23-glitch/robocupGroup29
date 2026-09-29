@@ -5,11 +5,12 @@
 IntervalTimer TimeoutCheck;
 
 static uint32_t lastTime = 0;
+static int pathfindFailures = 0;
 
 static robotState CurrentState = STARTUP;
 
 static goal_t goal_type = NO_ACTION;
-static pos_t goal_pos = {0, 1000};
+static pos_t goal_pos;
 
 static pos_t microSteps[MAX_WAYPOINT_COUNT];
 
@@ -31,6 +32,7 @@ void StateMachineTask() {
     switch (CurrentState) {
         case STARTUP:
             setLEDColor(WRITIBLE_LED, GREEN);
+            gridToWorld(GRID_WIDTH/2, GRID_HEIGHT/2, goal_pos.x, goal_pos.y);
             CurrentState = PATHFIND;
             break;
         case CHECK:
@@ -59,8 +61,14 @@ void StateMachineTask() {
             if (targetCount > 0) {
                 setPath(&microSteps[0], targetCount);
                 CurrentState = MOVE;
-            } if (targetCount == 0) {
-                CurrentState = CHECK;
+            } else {
+                pathfindFailures++;
+                if (pathfindFailures > 5) {
+                    pathfindFailures = 0;
+                    // force a new goal
+                    goal_pos = {random(-2000, 2000), random(-2000, 2000)};
+                }
+                CurrentState = FIND_TARGET;
             }
             break;
         }

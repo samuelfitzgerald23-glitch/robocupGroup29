@@ -77,10 +77,14 @@ static int findPathAtInflation(Node start, Node goal, int inflation) {
 }
 
 int findPath(Node start, Node goal) {
-    for (int inflation = WALL_CELL_INFLATION; inflation > ROBOT_WIDTH; inflation--) {
+    for (int inflation = WALL_CELL_INFLATION; inflation >= ROBOT_WIDTH; inflation--) {
         int len = findPathAtInflation(start, goal, inflation);
-        if (len) return len;
+        if (len) {
+            BLUETOOTH_SERIAL.print("W, "); BLUETOOTH_SERIAL.println(len);
+            return len;
+        }
     }
+    BLUETOOTH_SERIAL.print("W, "); BLUETOOTH_SERIAL.println("No path");
     return 0;  // no path even with zero inflation - genuinely blocked
 }
 
