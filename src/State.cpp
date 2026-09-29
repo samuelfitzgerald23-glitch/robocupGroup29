@@ -35,6 +35,7 @@ void StateMachineTask() {
         case STARTUP:
             setLEDColor(WRITIBLE_LED, GREEN);
             gridToWorld(GRID_WIDTH/2, GRID_HEIGHT/2, goal_pos.x, goal_pos.y);
+            BLUETOOTH_SERIAL.print("G, "); BLUETOOTH_SERIAL.print(goal_pos.x); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(goal_pos.y);
             CurrentState = PATHFIND;
             break;
         case CHECK:
@@ -43,6 +44,11 @@ void StateMachineTask() {
             break;
         case FIND_TARGET:
             goal_pos = find_target(currentPos, goal_pos, goal_type);
+            if (pathfindFailures > 5) {
+                    pathfindFailures = 0;
+                    // force a new goal
+                    gridToWorld(GRID_WIDTH/2, GRID_HEIGHT/2, goal_pos.x, goal_pos.y);
+                }
             BLUETOOTH_SERIAL.print("G, "); BLUETOOTH_SERIAL.print(goal_pos.x); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(goal_pos.y);
             CurrentState = PATHFIND;
             break;
@@ -65,11 +71,6 @@ void StateMachineTask() {
                 CurrentState = MOVE;
             } else {
                 pathfindFailures++;
-                if (pathfindFailures > 5) {
-                    pathfindFailures = 0;
-                    // force a new goal
-                    goal_pos = {random((currentPos.x - RANDOM_SIZE), (currentPos.x + RANDOM_SIZE)), random((currentPos.y - RANDOM_SIZE), (currentPos.y + RANDOM_SIZE))};
-                }
             }
             break;
         }

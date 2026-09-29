@@ -17,8 +17,8 @@ static moveingState State = IDLE;
 
 //static pos_t lastHandledWeight = {0, 0};
 
-static PID_t rotate(25, 0.5, 0, 450, 350, 5);
-static PID_t translate(7, 1, 0, 450, 425, 50);
+static PID_t rotate(10.5, 0.1, 0.5, 375, 400, 5);
+static PID_t translate(10, 0, 0.5, 0, 425, 50);
 
 static pos_t targetlist[MAX_WAYPOINT_COUNT];
 static int targetCount = 5;

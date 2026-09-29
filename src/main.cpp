@@ -24,10 +24,10 @@
 
 #define TOF_READ_TASK_PERIOD                10
 #define ULTRASOUND_READ_TASK_PERIOD         33
-#define IMU_READ_TASK_PERIOD                50
+#define IMU_READ_TASK_PERIOD                5
 
 #define SENSOR_AVERAGE_PERIOD               100
-#define LOCATION_TASK_PERIOD                10
+#define LOCATION_TASK_PERIOD                5
 
 #define STATE_TASK_PERIOD                   5
 #define SET_MOTOR_TASK_PERIOD               31
