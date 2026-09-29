@@ -26,9 +26,11 @@ void StateMachineTask() {
 
     BLUETOOTH_SERIAL.print("S, "); BLUETOOTH_SERIAL.println(CurrentState);
 
-    if (divertToTarget(goal_pos)) {
+    if (goal_type != WEIGHT_ACTION && divertToWeight(goal_pos)) {
         setDriveSpeed(0,0);
-        CurrentState = FIND_TARGET;
+        goal_type = WEIGHT_ACTION;
+        CurrentState = PATHFIND;
+        BLUETOOTH_SERIAL.print("G, "); BLUETOOTH_SERIAL.print(goal_pos.x); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(goal_pos.y);
     }
 
     switch (CurrentState) {
@@ -43,7 +45,7 @@ void StateMachineTask() {
             break;
         case FIND_TARGET:
             goal_pos = find_target(currentPos, goal_pos, goal_type);
-            BLUETOOTH_SERIAL.print("G, "); BLUETOOTH_SERIAL.print(goal_pos.x); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(goal_pos.y);
+            BLUETOOTH_SERIAL.print("G, "); BLUETOOTH_SERIAL.print(goal_pos.x); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(goal_pos.y);
             CurrentState = PATHFIND;
             break;
         case PATHFIND:  {
@@ -79,8 +81,8 @@ void StateMachineTask() {
             setLEDColor(WRITIBLE_LED, BLUE);
             if(goal_type == WEIGHT_ACTION) {
                 CurrentState = PICKUP_SEQUENCE;
-                //start a ten seccond timer to pick up the weight
-                TimeoutCheck.begin(state_timeout, 10*MICRO_TO_SEC);
+                setDriveSpeed(300,300);
+                TimeoutCheck.begin(state_timeout, 1*MICRO_TO_SEC);
             } else if (goal_type == BASE_ACTION) {
                 CurrentState = DROP_PAYLOAD;
                 //start a timer to drop the weights off

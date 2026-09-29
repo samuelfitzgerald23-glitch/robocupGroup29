@@ -152,6 +152,7 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
 
     if (isWeight) {
         mapData[yw][xw] = static_cast<int8_t>(WEIGHT);
+        logCell(xw, yw, static_cast<int8_t>(WEIGHT));
         weightSeen = 1;
         lastWeightSeen = worldCoord;
     } else {
@@ -223,11 +224,13 @@ void poseTask() {
         if (isTurning || millis() < 1000) continue;
 
         float sensorDist = (float)getOutput(filtered_sensors[i].ID);
+        BLUETOOTH_SERIAL.print("T, "); BLUETOOTH_SERIAL.print(i); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(sensorDist);
 
         //check to see if seen object is a weight
         switch (filtered_sensors[i].ID) {
             case TOF1:  {
                 pos_t out1 = {0 , (float)getOutput(DIFFTOF1)};
+                BLUETOOTH_SERIAL.print("D, "); BLUETOOTH_SERIAL.print(2); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(out1.y);
                 if (out1.y < (sensorDist - WEIGHT_OFFSET)) {
                     //Serial.println("WEIGHT WRITE FIRING");
                     projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out1, 1, 0);
@@ -236,6 +239,7 @@ void poseTask() {
             }
             case TOF2:  {
                 pos_t out2 = {0 , (float)getOutput(DIFFTOF2)};
+                BLUETOOTH_SERIAL.print("D, "); BLUETOOTH_SERIAL.print(3); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(out2.y);
                 if (out2.y < (sensorDist - WEIGHT_OFFSET)) {
                     //Serial.println("WEIGHT WRITE FIRING");
                     projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out2, 1, 0);
@@ -284,7 +288,7 @@ bool isWalkible(int x, int y, int inflation_factor) {
     return true;
 }
 
-bool divertToTarget(pos_t& current) {
+bool divertToWeight(pos_t& current) {
     if (weightSeen) {
         weightSeen = 0;
         current = lastWeightSeen;

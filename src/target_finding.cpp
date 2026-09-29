@@ -20,7 +20,7 @@ pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
     int y_min = ((robotGrid.y - TARGET_GRID_SIZE) <= 0) ? 0 : (robotGrid.y - TARGET_GRID_SIZE);
     int y_max = ((robotGrid.y + TARGET_GRID_SIZE) >= GRID_HEIGHT) ? GRID_HEIGHT : (robotGrid.y + TARGET_GRID_SIZE);
 
-    float cost = 0;
+    float cost = 100;
 
     GridPos current_target = {0, 0};
 
@@ -37,8 +37,8 @@ pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
 
                 return targetWorld;
             }
-            int dx = current.x - robotGrid.x;
-            int dy = current.y - robotGrid.y;
+            int dx = current.x - GRID_WIDTH/2;
+            int dy = current.y - GRID_HEIGHT/2;
             float dist = std::sqrt(dx*dx + dy*dy);
 
             bool isUnexplored = (value == static_cast<int8_t>(UNDEFINED_CELL));
@@ -48,7 +48,7 @@ pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
             //between cells in the same category distance wins
 
             bool better = (isUnexplored && !bestSoFarIsUnexplored) ||
-                        (isUnexplored == bestSoFarIsUnexplored && dist >= cost);
+                        (isUnexplored == bestSoFarIsUnexplored && dist <= cost);
 
             if (better) {
                 current_target = current;

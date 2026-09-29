@@ -5,8 +5,6 @@
 //TOF sensor stuff
 #define VL53L1X_ADDRESS_START 0x30
 
-#define MAX_SIGHT_DIST 1750
-
 
 // The number of sensors in your system.
 const uint8_t sensorCount = 4;

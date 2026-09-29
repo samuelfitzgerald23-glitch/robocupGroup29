@@ -81,6 +81,6 @@ void setTurning(bool turning);
 
 bool isWalkible(int x, int y, int inflation_factor);
 
-bool divertToTarget(pos_t& current);
+bool divertToWeight(pos_t& current);
 
 #endif //MAP_H
