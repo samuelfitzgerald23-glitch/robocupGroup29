@@ -8,9 +8,8 @@ TODO:
 - Tune PID controller
 */
 
-#define TIME_LIMIT 2500000
+#define TIME_LIMIT 3000000
 #define WAYPOINT_PATIENCE 3         //number of times robot can fail to reach a waypoint
-#define WALL_LIMIT 200               //mm close robot can get to a wall
 
 IntervalTimer movementTimeLimit;
 
@@ -18,7 +17,7 @@ static moveingState State = IDLE;
 
 //static pos_t lastHandledWeight = {0, 0};
 
-static PID_t rotate(5, 0.5, 0, 450, 350, 5);
+static PID_t rotate(25, 0.5, 0, 450, 350, 5);
 static PID_t translate(7, 1, 0, 450, 425, 50);
 
 static pos_t targetlist[MAX_WAYPOINT_COUNT];
@@ -82,7 +81,7 @@ float findAngle(pos_t* myPose) {
 
 bool rotatePID(pos_vector_t* myPose, float dt) {
     float error = findAngle(&(myPose->pos)) - (myPose->theta)/D_TO_R;
-    //Serial.print("rotation error: ");
+    BLUETOOTH_SERIAL.println(error);
 
     while (error > 180.0f)  error -= 360.0f;
     while (error <= -180.0f) error += 360.0f;
@@ -100,7 +99,7 @@ bool translatePID(pos_t* currentXY, float dt) {
     float dx = currentTarget.x - currentXY->x;
     float dy = currentTarget.y - currentXY->y;
     float error = std::sqrt(dx*dx + dy*dy);
-    //Serial.print("translation error: ");
+    BLUETOOTH_SERIAL.println(error);
 
     //check if we are done
     if (translate.tolerance >= error) return 1;
@@ -142,7 +141,7 @@ void movementTask(float dt) {
     //     }
     //     setweightSeen(0);
     // }
-
+    BLUETOOTH_SERIAL.print("e, ");
     switch (State) {
         case IDLE:
             {

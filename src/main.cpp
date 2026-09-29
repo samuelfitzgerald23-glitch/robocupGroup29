@@ -19,23 +19,22 @@
 
 // Task period Definitions
 // ALL OF THESE VALUES WILL NEED TO BE SET TO SOMETHING USEFUL !!!!!!!!!!!!!!!!!!!!
-#define HZ_TO_MS(hz) (1000 / (hz))
 
-#define TOF_READ_TASK_PERIOD                HZ_TO_MS(100)
-#define ULTRASOUND_READ_TASK_PERIOD         HZ_TO_MS(30)
-#define IMU_READ_TASK_PERIOD                HZ_TO_MS(100)
+#define TOF_READ_TASK_PERIOD                10
+#define ULTRASOUND_READ_TASK_PERIOD         33
+#define IMU_READ_TASK_PERIOD                50
 
-#define SENSOR_AVERAGE_PERIOD               HZ_TO_MS(1000)
-#define LOCATION_TASK_PERIOD                HZ_TO_MS(100)
+#define SENSOR_AVERAGE_PERIOD               100
+#define LOCATION_TASK_PERIOD                10
 
-#define STATE_TASK_PERIOD                   HZ_TO_MS(50)
-#define SET_MOTOR_TASK_PERIOD               HZ_TO_MS(31)
+#define STATE_TASK_PERIOD                   2
+#define SET_MOTOR_TASK_PERIOD               31
 
 #define CHECK_WATCHDOG_TASK_PERIOD          40
 
-#define COLOUR_TASK_PERIOD                  HZ_TO_MS(10) //in Hz
-#define SERVO_TASK_PERIOD                   HZ_TO_MS(10) 
-#define PROXIMITY_TASK_PERIOD               HZ_TO_MS(10)
+#define COLOUR_TASK_PERIOD                  100 //in ms
+#define SERVO_TASK_PERIOD                   10
+#define PROXIMITY_TASK_PERIOD               10
 
 // Task execution amount definitions
 // -1 means indefinitely

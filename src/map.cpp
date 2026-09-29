@@ -207,7 +207,7 @@ void map_init() {
 void poseTask() {
     //Serial.println("pose task");
     float heading = getHeading();
-    float differential_heading = heading - prev_heading;
+    float differential_heading = prev_heading - heading;
     prev_heading = heading;
 
     while (differential_heading > 180.0f)  differential_heading -= 360.0f;
