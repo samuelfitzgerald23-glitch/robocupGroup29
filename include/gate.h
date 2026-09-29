@@ -16,6 +16,7 @@ bool isAtBase();
 void gateStartDrop();
 bool gateDrop();          // was: void gateTask();
 
+
 //temporary: position tuning helper (see gate.cpp)
 void gateTest();
 
