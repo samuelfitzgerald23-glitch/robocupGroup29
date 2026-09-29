@@ -31,6 +31,9 @@
 #define SHAKE_STEP_MS      120       //ms per shake move (smaller = sharper)
 #define SHAKE_MAX_MM       200.0f    //stop shaking if we drift this far from base
 
+#define BASE_TOLERANCE_MM  100.0f    //how close to (0,0) counts as "at base"
+
+
 //----------------------------------------------------------------------------
 // Servo object + state
 //----------------------------------------------------------------------------
@@ -49,6 +52,23 @@ void initGate() {
     delay(500);
     rearServo.setTorqueOn();
     rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore);
+    dropPhase = 0;
+}
+
+//----------------------------------------------------------------------------
+// True when the robot is parked at the base (world-frame origin) within
+// BASE_TOLERANCE_MM. Used by the state machine to confirm a real arrival
+// before dropping.
+//----------------------------------------------------------------------------
+bool isAtBase() {
+    pos_t p = getMyPOS().pos;
+    return (fabsf(p.x) <= BASE_TOLERANCE_MM) &&
+           (fabsf(p.y) <= BASE_TOLERANCE_MM);
+}
+
+//call once when a drop begins, so a previous (possibly timed-out) drop
+//can't leave the sequence half-finished
+void gateStartDrop() {
     dropPhase = 0;
 }
 
