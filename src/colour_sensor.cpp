@@ -37,6 +37,33 @@ static uint16_t mobileBlue = 0;
 static uint16_t mobileClear = 0;
 
 
+static MobileType pendingMobileType = NO_MOBILE;
+
+static MobileType classifyMobileElement(void)
+{
+    bool gold =
+        mobileRed >= GOLD_RED_MIN &&
+        mobileRed <= GOLD_RED_MAX &&
+        mobileBlue >= GOLD_BLUE_MIN &&
+        mobileBlue <= GOLD_BLUE_MAX &&
+        mobileGreen >= GOLD_GREEN_MIN &&
+        mobileGreen <= GOLD_GREEN_MAX &&
+        mobileClear >= GOLD_CLEAR_MIN &&
+        mobileClear <= GOLD_CLEAR_MAX;
+
+    bool bludger =
+        mobileRed >= BLUDGER_TOL_RED_MIN &&
+        mobileBlue >= BLUDGER_TOL_BLUE_MIN &&
+        mobileGreen >= BLUDGER_TOL_GREEN_MIN &&
+        mobileClear >= BLUDGER_TOL_CLEAR_MIN;
+
+    // Prefer gold if readings fall in both ranges.
+    if (gold) return GOLD_MOBILE;
+    if (bludger) return BLUDGER_MOBILE;
+
+    return NO_MOBILE;
+}
+
 void colour_init() 
 {
   colourStartTime = millis();
@@ -85,184 +112,136 @@ void colourTask()
       !isServoSequenceActive()) {
         
       //do this one if keep snitch, reject bludger  
-      //mobile_element_check();
+      mobile_element_check();
       
       //do this one if want to reject both bludger and snitch
-      mobile_element_reject_check();
+      //mobile_element_reject_check();
 
       //do this if know theres only the snitch in the round - keeps any mobile element inside robot. 
       //mobile_element_keep_check();
   }
 }
 
+static void runMobileDetection(MobileMode mode)
+{
+    MobileType detected = classifyMobileElement();
+
+    // No new detection while a snitch is already held.
+    if (mode == CLASSIFY_MOBILE && goodMobileElementPresent) {
+        return;
+    }
+
+    // Already confirmed: wait until the object leaves before rearming.
+    if (mobileElementPresent) {
+        if (detected == NO_MOBILE) {
+            mobileElementPresent = false;
+            pendingMobileType = NO_MOBILE;
+        }
+        return;
+    }
+
+    // Nothing recognised: cancel any pending confirmation.
+    if (detected == NO_MOBILE) {
+        if (mobileCheckPending) {
+            Serial.println("Mobile confirmation cancelled");
+        }
+
+        mobileCheckPending = false;
+        pendingMobileType = NO_MOBILE;
+        return;
+    }
+
+    // Start or restart confirmation if the detected type changes.
+    if (!mobileCheckPending || detected != pendingMobileType) {
+        mobileCheckPending = true;
+        pendingMobileType = detected;
+        mobileCheckStartTime = millis();
+
+        if (detected == GOLD_MOBILE) {
+            Serial.println("Possible gold snitch; confirming");
+        } else {
+            Serial.println("Possible bludger; confirming");
+        }
+
+        return;
+    }
+
+    // Require the same classification for the full confirmation period.
+    if (millis() - mobileCheckStartTime < MOBILE_CONFIRM_DELAY) {
+        return;
+    }
+
+    mobileCheckPending = false;
+    mobileElementPresent = true;
+
+    bool keepElement =
+        (mode == KEEP_ALL_MOBILE) ||
+        (mode == CLASSIFY_MOBILE && detected == GOLD_MOBILE);
+
+    if (keepElement) {
+        goodMobileElementPresent = true;
+
+        if (detected == GOLD_MOBILE) {
+            Serial.println("Gold snitch confirmed; holding in centre");
+        } else {
+            Serial.println("Mobile element confirmed; holding in centre");
+        }
+    } else {
+        goodMobileElementPresent = false;
+
+        if (detected == BLUDGER_MOBILE) {
+            Serial.println("Bludger confirmed; ejecting");
+        } else {
+            Serial.println("Gold snitch confirmed; ejecting");
+        }
+
+        ejectMobileElement();
+    }
+}
 
 void plastic_weight_check(void)
 {
-  // check if the colour sensor output is within a tolerance & proximity not triggered (not metal)
-  if ((filteredClear >= PLASTIC_WEIGHT_TOL) && !get_metal_weight_detected() && !plasticWeightPresent) {
-      Serial.println("Plastic weight detected!");
-      plasticWeightPresent = true;
-      sortUnwantedWeight();
-  }
+    bool possiblePlastic =
+        (mobileClear >= PLASTIC_WEIGHT_CLEAR_MIN) &&
+        (mobileClear <= PLASTIC_WEIGHT_CLEAR_MAX) &&
+        (mobileRed >= PLASTIC_WEIGHT_RED_MIN) &&
+        (mobileRed <= PLASTIC_WEIGHT_RED_MAX) &&
+        (mobileBlue >= PLASTIC_WEIGHT_BLUE_MIN) &&
+        (mobileBlue <= PLASTIC_WEIGHT_BLUE_MAX) &&
+        (mobileGreen >= PLASTIC_WEIGHT_GREEN_MIN) &&
+        (mobileGreen <= PLASTIC_WEIGHT_GREEN_MAX);
 
-  // Rearm the detector only after the current weight has left the sensor.
-  if (filteredClear < PLASTIC_WEIGHT_TOL) {
-      plasticWeightPresent = false;
-  }
+    // Check if colour matches plastic and proximity has not detected metal
+    if (possiblePlastic &&
+        !get_metal_weight_detected() &&
+        !plasticWeightPresent) {
 
+        Serial.println("Plastic weight detected!");
+        plasticWeightPresent = true;
+        sortUnwantedWeight();
+    }
+
+    // Rearm once the current weight no longer matches plastic
+    if (!possiblePlastic) {
+        plasticWeightPresent = false;
+    }
 }
 
 void mobile_element_check(void)
 {
-    bool possibleMobile =
-        (mobileRed < MOBILE_TOL_RED) &&
-        (mobileBlue < MOBILE_TOL_BLUE) &&
-        (mobileGreen < MOBILE_TOL_GREEN) && 
-        (mobileClear < MOBILE_TOL_CLEAR);
-
-      bool looksGold =
-        (mobileRed >= GOLD_RED_MIN) &&
-        (mobileRed <= GOLD_RED_MAX) &&
-        (mobileBlue >= GOLD_BLUE_MIN) &&
-        (mobileBlue <= GOLD_BLUE_MAX) &&
-        (mobileGreen >= GOLD_GREEN_MIN) &&
-        (mobileGreen <= GOLD_GREEN_MAX);
-
-// Start confirmation when a possible mobile element appears
-    if (possibleMobile && !mobileCheckPending &&
-        !mobileElementPresent) {
-
-        mobileCheckPending = true;
-        mobileCheckStartTime = millis();
-        goldCandidate = looksGold;
-
-        Serial.println("Possible mobile element; confirming");
-    }
-
-    // During confirmation, remember if readings stop matching gold at any point.
-    if (mobileCheckPending) {
-        if (!possibleMobile || !looksGold) {
-            goldCandidate = false;
-        }
-
-        // Wait for the full confirmation period
-        if (millis() - mobileCheckStartTime >=
-            MOBILE_CONFIRM_DELAY) {
-
-            mobileCheckPending = false;
-            mobileElementPresent = true;
-
-            if (possibleMobile && goldCandidate && looksGold) {
-                goodMobileElementPresent = true;
-                Serial.println("Gold mobile element confirmed");
-                // Keep the servo in its centre position - send to home base(so switch to drop_payload state)
-                //setServoPosition(NEUTRAL);
-            } else {
-                goodMobileElementPresent = false;
-                Serial.println("Red/uncertain mobile element; ejecting");
-                ejectMobileElement();
-            }
-        }
-    }
-
-    // Rearm once the object has left the sensor
-    if (!possibleMobile && !mobileCheckPending) {
-        mobileElementPresent = false;
-    }
+    runMobileDetection(CLASSIFY_MOBILE);
 }
 
-
-//only for if reject both bludger AND snitch (colour output not good...)
 void mobile_element_reject_check(void)
 {
-    bool possibleMobile =
-        (mobileRed < MOBILE_TOL_RED) &&
-        (mobileBlue < MOBILE_TOL_BLUE) &&
-        (mobileGreen < MOBILE_TOL_GREEN) && 
-        (mobileClear < MOBILE_TOL_CLEAR);
-
-    // Start confirmation
-    if (possibleMobile && !mobileCheckPending &&
-        !mobileElementPresent) {
-
-        mobileCheckPending = true;
-        mobileCheckStartTime = millis();
-
-        Serial.println("Possible mobile element; confirming");
-    }
-
-    // Confirm after the delay
-    if (mobileCheckPending) {
-
-        // Cancel if the readings no longer indicate an element
-        if (!possibleMobile) {
-            mobileCheckPending = false;
-            Serial.println("Mobile element detection cancelled");
-        }
-
-        else if (millis() - mobileCheckStartTime >=
-                 MOBILE_CONFIRM_DELAY) {
-
-            mobileCheckPending = false;
-            mobileElementPresent = true;
-            goodMobileElementPresent = false;
-
-            Serial.println("Mobile element confirmed; ejecting");
-            ejectMobileElement();
-        }
-    }
-
-    // Rearm after the element leaves
-    if (!possibleMobile && !mobileCheckPending) {
-        mobileElementPresent = false;
-    }
+    runMobileDetection(REJECT_ALL_MOBILE);
 }
 
-//if want to keep any mobile element (if know theres only snitch)
 void mobile_element_keep_check(void)
 {
-    bool possibleMobile =
-        (mobileRed < MOBILE_TOL_RED) &&
-        (mobileBlue < MOBILE_TOL_BLUE) &&
-        (mobileGreen < MOBILE_TOL_GREEN) && 
-        (mobileClear < MOBILE_TOL_CLEAR);
-
-    // Start confirmation when a possible mobile element appears
-    if (possibleMobile && !mobileCheckPending && !mobileElementPresent && !goodMobileElementPresent) {
-        mobileCheckPending = true;
-        mobileCheckStartTime = millis();
-        Serial.println("Possible mobile element; confirming");
-    }
-
-    // Confirm after the delay
-    if (mobileCheckPending) {
-
-        // Cancel if the object leaves
-        if (!possibleMobile) {
-            mobileCheckPending = false;
-            Serial.println("Mobile element detection cancelled");
-        }
-
-        else if (millis() - mobileCheckStartTime >=
-                 MOBILE_CONFIRM_DELAY) {
-
-            mobileCheckPending = false;
-            mobileElementPresent = true;
-            goodMobileElementPresent = true;
-
-            Serial.println("Mobile element detected; holding in centre");
-
-            // Servo should already be at neutral because no servo
-            // sequence is active, so leave it there.
-        }
-    }
-
-    // Rearm once the mobile element leaves
-    if (!possibleMobile && !mobileCheckPending) {
-        mobileElementPresent = false;
-        //goodMobileElementPresent = false;
-    }
+    runMobileDetection(KEEP_ALL_MOBILE);
 }
+
 
 void updateMobileAverage(void)
 {
