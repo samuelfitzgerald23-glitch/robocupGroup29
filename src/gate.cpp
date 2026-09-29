@@ -2,8 +2,9 @@
 //Date: 29/9/2026
 //Description: Rear payload gate control - see gate.h
 //             Herkulex DRS-0101 "rearServo" (ID 2) on the sorting servo's bus.
-//             DROP_PAYLOAD sequence: open gate + shake for SHAKE_MS, then sit
-//             still for STILL_MS (gate stays open), then close. All non-blocking.
+//             DROP_PAYLOAD sequence: open gate + shake for SHAKE_MS, then close
+//             and sit still for STILL_MS. Non-blocking; runs from the state
+//             machine's DROP_PAYLOAD case via gateDrop().
 //             ORDER: call initSmartServo() BEFORE initGate() in setup().
 
 #include <Arduino.h>
@@ -24,7 +25,7 @@
 #define GATE_SPEED         150       //play-time / speed, 0 (fastest)..254 (slowest)
 
 #define SHAKE_MS           10000UL   //shake this long (gate open)
-#define STILL_MS           10000UL   //then sit still this long (gate open), then close
+#define STILL_MS           10000UL   //sit still this long after closing, then finish
 
 #define SHAKE_SPEED        400       //shake drive speed (-450..450)
 #define SHAKE_STEP_MS      120       //ms per shake move (smaller = sharper)
@@ -37,7 +38,7 @@ extern HerkulexServoBus servoBus;                    //defined in smart_servo.cp
 static HerkulexServo    rearServo(servoBus, REARSERVO_ID);
 
 static uint32_t openStart = 0;       //millis() when the gate opened
-static uint8_t  dropPhase = 0;       //0 = open, 1 = open+shaking, 2 = open+still
+static uint8_t  dropPhase = 0;       //0 = open, 1 = open+shaking, 2 = shut+still
 
 //----------------------------------------------------------------------------
 // Setup
@@ -58,7 +59,7 @@ void gateStartDrop() {
 }
 
 //----------------------------------------------------------------------------
-// Shake helper - reads its own position, drives its own motors (no args)
+// Shake helper - reads its own position, drives its own motors
 //----------------------------------------------------------------------------
 static void shakeRobot() {
     pos_t p = getMyPOS().pos;
@@ -87,7 +88,7 @@ static void shakeRobot() {
 }
 
 //----------------------------------------------------------------------------
-// Drop: open -> shake SHAKE_MS -> sit still STILL_MS -> close. True when done.
+// Drop: open -> shake SHAKE_MS -> close -> sit still STILL_MS. True when done.
 //----------------------------------------------------------------------------
 bool gateDrop() {
     switch (dropPhase) {
@@ -97,36 +98,22 @@ bool gateDrop() {
             dropPhase = 1;
             return false;
 
-        case 1:  // shake for SHAKE_MS, then CLOSE immediately
-        if (millis() - openStart < SHAKE_MS) {
-            shakeRobot();
-        } else {
-            setDriveSpeed(0, 0);                                          // stop shaking
-            rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore);  // close NOW
-            dropPhase = 2;
-        }
-        return false;
+        case 1:  // shake for SHAKE_MS, then close immediately
+            if (millis() - openStart < SHAKE_MS) {
+                shakeRobot();
+            } else {
+                setDriveSpeed(0, 0);                                          // stop shaking
+                rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore);  // close now
+                dropPhase = 2;
+            }
+            return false;
 
-        case 2:  // gate already shut - just sit still for STILL_MS
+        case 2:  // gate shut - sit still for STILL_MS, then finish
             if (millis() - openStart >= SHAKE_MS + STILL_MS) {
                 dropPhase = 0;
                 return true;                   // drop complete
             }
             return false;
-    return false;
-}
-
-//----------------------------------------------------------------------------
-// TEST: loops a full drop so you can watch shake + gate on the bench.
-// Temporarily run this from tGate_task (with tState_task disabled).
-//----------------------------------------------------------------------------
-void gateDropTest() {
-    static bool done = false;
-    if (done) return;                          // one cycle only - do nothing after
-
-    if (gateDrop()) {
-        setDriveSpeed(0, 0);
-        Serial.println("TEST: drop complete - stopping (one cycle)");
-        done = true;
     }
+    return false;
 }
