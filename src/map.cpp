@@ -14,7 +14,6 @@
 static const int8_t dx8[8] = {1, -1, 0, 0, 1, 1, -1, -1};
 static const int8_t dy8[8] = {0, 0, 1, -1, 1, -1, 1, -1};
 
-static bool isTurning = 0;
 static bool weightSeen = 0;
 static pos_t lastWeightSeen;
 
@@ -221,16 +220,16 @@ void poseTask() {
 
     //find objects with the TOFs
     for (int i = 0; i < NON_COUPLED_SENSORS; i++) {
-        if (isTurning || millis() < 1000) continue;
+        if (millis() < 1000) continue;
 
         float sensorDist = (float)getOutput(filtered_sensors[i].ID);
-        BLUETOOTH_SERIAL.print("T, "); BLUETOOTH_SERIAL.print(i); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(sensorDist);
+        BLUETOOTH_SERIAL.print("T, "); BLUETOOTH_SERIAL.print(i); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(sensorDist);
 
         //check to see if seen object is a weight
         switch (filtered_sensors[i].ID) {
             case TOF1:  {
                 pos_t out1 = {0 , (float)getOutput(DIFFTOF1)};
-                BLUETOOTH_SERIAL.print("D, "); BLUETOOTH_SERIAL.print(2); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(out1.y);
+                BLUETOOTH_SERIAL.print("D, "); BLUETOOTH_SERIAL.print(2); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(out1.y);
                 if (out1.y < (sensorDist - WEIGHT_OFFSET)) {
                     //Serial.println("WEIGHT WRITE FIRING");
                     projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out1, 1, 0);
@@ -239,7 +238,7 @@ void poseTask() {
             }
             case TOF2:  {
                 pos_t out2 = {0 , (float)getOutput(DIFFTOF2)};
-                BLUETOOTH_SERIAL.print("D, "); BLUETOOTH_SERIAL.print(3); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(out2.y);
+                BLUETOOTH_SERIAL.print("D, "); BLUETOOTH_SERIAL.print(3); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(out2.y);
                 if (out2.y < (sensorDist - WEIGHT_OFFSET)) {
                     //Serial.println("WEIGHT WRITE FIRING");
                     projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out2, 1, 0);
@@ -269,10 +268,6 @@ int8_t getMapValue(int x, int y) {
     return mapData[y][x];
 }
 
-void setTurning(bool turning) {
-    isTurning = turning;
-}
-
 bool isWalkible(int x, int y, int inflation_factor) {
     if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return false;
     if ((getMapValue(x, y) < CONFIDENCE_THRESHOLD)) return false;
@@ -288,11 +283,14 @@ bool isWalkible(int x, int y, int inflation_factor) {
     return true;
 }
 
-bool divertToWeight(pos_t& current) {
-    if (weightSeen) {
-        weightSeen = 0;
-        current = lastWeightSeen;
-        return 1;
-    }
-    return 0;
+bool getweightSeen() {
+    return weightSeen;
+}
+
+pos_t getLastWeightSeen() {
+    return lastWeightSeen;
+}
+
+void setweightSeen(bool a) {
+    weightSeen = a;
 }

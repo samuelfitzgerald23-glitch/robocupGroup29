@@ -1,6 +1,6 @@
 #include "target_finding.h"
 
-static GridPos home = {0,0};
+static GridPos home = {X_ZERO,Y_ZERO};
 
 pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
     //find the next target to pathfind toward
@@ -20,9 +20,9 @@ pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
     int y_min = ((robotGrid.y - TARGET_GRID_SIZE) <= 0) ? 0 : (robotGrid.y - TARGET_GRID_SIZE);
     int y_max = ((robotGrid.y + TARGET_GRID_SIZE) >= GRID_HEIGHT) ? GRID_HEIGHT : (robotGrid.y + TARGET_GRID_SIZE);
 
-    float cost = 100;
+    float cost = 1e9f;
 
-    GridPos current_target = {0, 0};
+    GridPos current_target = robotGrid;
 
     for (int i = x_min; i < x_max; i++) {
         for (int j = y_min; j < y_max; j++) {

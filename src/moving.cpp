@@ -10,10 +10,13 @@ TODO:
 
 #define TIME_LIMIT 2500000
 #define WAYPOINT_PATIENCE 3         //number of times robot can fail to reach a waypoint
+#define WALL_LIMIT 200               //mm close robot can get to a wall
 
 IntervalTimer movementTimeLimit;
 
 static moveingState State = IDLE;
+
+static pos_t lastHandledWeight = {0, 0};
 
 static PID_t rotate(25, 1.5, 1, 450, 350, 5);
 static PID_t translate(7, 1, 0, 450, 425, 50);
@@ -41,22 +44,10 @@ static void setTarget() {
     currentTarget = targetlist[targetIndex];
 }
 
-static bool pathSegmentBlocked(pos_t from, pos_t to) {
-    int x0, y0, x1, y1;
-    worldToGrid(from.x, from.y, x0, y0);
-    worldToGrid(to.x, to.y, x1, y1);
-
-    int dx = abs(x1 - x0), sx = x0 < x1 ? 1 : -1;
-    int dy = -abs(y1 - y0), sy = y0 < y1 ? 1 : -1;
-    int error = dx + dy;
-    int x = x0, y = y0;
-
-    while (!(x == x1 && y == y1)) {
-        int e2 = 2 * error;
-        if (e2 >= dy) { error += dy; x += sx; }
-        if (e2 <= dx) { error += dx; y += sy; }
-        if (!isWalkible(x, y, ROBOT_WIDTH)) return true;   // now checks the cell just stepped into, not the starting cell
-    }
+static bool pathSegmentBlocked() {
+    int16_t dist1 = getOutput(ULTRASOUND_LEFT);
+    int16_t dist2 = getOutput(ULTRASOUND_RIGHT);
+    if(dist1 <= WALL_LIMIT || dist2 <= WALL_LIMIT) return true;
     return false;
 }
 
@@ -114,7 +105,7 @@ void movementTask(float dt) {
 
     pos_vector_t myPOS = getMyPOS();
 
-    if (pathSegmentBlocked(myPOS.pos, currentTarget)) {
+    if (pathSegmentBlocked()) {
         pathfinished = 1;   // signals State.cpp to go back through PATHFIND
         pathBlocked = 1;
         targetIndex = 0;
@@ -126,6 +117,20 @@ void movementTask(float dt) {
     if (path_failures >= WAYPOINT_PATIENCE) {
         path_failures = 0;
         State = DONE;
+    }
+
+    if (getweightSeen()) {
+        pos_t seenWeight = getLastWeightSeen();
+        bool isNewWeight = (seenWeight.x != lastHandledWeight.x) || (seenWeight.y != lastHandledWeight.y);
+
+        if (isNewWeight) {
+            movementTimeLimit.end();
+            setDriveSpeed(0, 0);
+            currentTarget = seenWeight;
+            lastHandledWeight = seenWeight;
+            State = IDLE;
+        }
+        setweightSeen(0);
     }
 
     switch (State) {
@@ -143,10 +148,8 @@ void movementTask(float dt) {
             break;
         }
         case TURNING:
-            setTurning(1);
             if (rotatePID(&myPOS, dt)) {
                 setDriveSpeed(0,0);
-                setTurning(0);
                 State = MOVEING;
                 movementTimeLimit.begin(movementTimerCallback, (int)(TIME_LIMIT));
             }

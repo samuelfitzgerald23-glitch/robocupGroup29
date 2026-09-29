@@ -77,10 +77,12 @@ pos_vector_t getMyPOS();
 
 int8_t getMapValue(int x, int y);
 
-void setTurning(bool turning);
-
 bool isWalkible(int x, int y, int inflation_factor);
 
-bool divertToWeight(pos_t& current);
+bool getweightSeen();
+
+pos_t getLastWeightSeen();
+
+void setweightSeen(bool a);
 
 #endif //MAP_H

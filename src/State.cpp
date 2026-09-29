@@ -14,6 +14,7 @@ static pos_t microSteps[MAX_WAYPOINT_COUNT];
 
 static void state_timeout() {
     //if a timeout occurs switch state to idle to start sequence again
+    setDriveSpeed(0,0);
     TimeoutCheck.end();
     CurrentState = CHECK;
 }
@@ -26,18 +27,12 @@ void StateMachineTask() {
 
     BLUETOOTH_SERIAL.print("S, "); BLUETOOTH_SERIAL.println(CurrentState);
 
-    if (goal_type != WEIGHT_ACTION && divertToWeight(goal_pos)) {
-        setDriveSpeed(0,0);
-        goal_type = WEIGHT_ACTION;
-        CurrentState = PATHFIND;
-        BLUETOOTH_SERIAL.print("G, "); BLUETOOTH_SERIAL.print(goal_pos.x); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(goal_pos.y);
-    }
-
     switch (CurrentState) {
         case STARTUP:
             setLEDColor(WRITIBLE_LED, GREEN);
-            //BLUETOOTH_SERIAL.print("G, "); BLUETOOTH_SERIAL.print(goal_pos.x); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(goal_pos.y);
-            //CurrentState = CHECK;
+            setDriveSpeed(250, -250);
+            TimeoutCheck.begin(state_timeout, (int)(1.5*MICRO_TO_SEC));
+            CurrentState = CHECK;
             break;
         case CHECK:
             //check fornumber of weights and stuff idk
