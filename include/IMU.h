@@ -20,6 +20,9 @@ void IMU_task();
 
 float getHeading();
 
+//true once IMU_task has read at least one heading
+bool IMU_hasData();
+
 float intergrateIMU();
 
 #endif //IMU_H

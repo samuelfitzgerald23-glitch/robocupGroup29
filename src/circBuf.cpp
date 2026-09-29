@@ -11,16 +11,16 @@ bufferInit(x, buffer);
 static circBuf_t buffersArray[BUFFERCOUNT];
 
 void bufArrayInit(void) {
-    bufferInit(BUFSIZE, &buffersArray[TOF1]);
-    bufferInit(BUFSIZE, &buffersArray[TOF2]);
-    bufferInit(BUFSIZE, &buffersArray[DIFFTOF1]);
-    bufferInit(BUFSIZE, &buffersArray[DIFFTOF2]);
+    bufferInit(DIST_BUFSIZE, &buffersArray[TOF1]);
+    bufferInit(DIST_BUFSIZE, &buffersArray[TOF2]);
+    bufferInit(DIST_BUFSIZE, &buffersArray[DIFFTOF1]);
+    bufferInit(DIST_BUFSIZE, &buffersArray[DIFFTOF2]);
     bufferInit(BUFSIZE, &buffersArray[COLOUR_CLEAR]);
     bufferInit(BUFSIZE, &buffersArray[COLOUR_RED]);
     bufferInit(BUFSIZE, &buffersArray[COLOUR_GREEN]);
     bufferInit(BUFSIZE, &buffersArray[COLOUR_BLUE]);
-    bufferInit(BUFSIZE, &buffersArray[ULTRASOUND_LEFT]);
-    bufferInit(BUFSIZE, &buffersArray[ULTRASOUND_RIGHT]);
+    bufferInit(DIST_BUFSIZE, &buffersArray[ULTRASOUND_LEFT]);
+    bufferInit(DIST_BUFSIZE, &buffersArray[ULTRASOUND_RIGHT]);
 }
 
 void bufferInit(uint16_t size, circBuf_t *Buffer) {

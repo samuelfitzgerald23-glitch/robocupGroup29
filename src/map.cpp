@@ -1,5 +1,6 @@
 #include "map.h"
 #include <Arduino.h>
+#include "reactive.h"
 
 //tof fov in deg
 #define TOF_FOV (27.0f/2)      //half cone angle (deg)
@@ -11,8 +12,16 @@
 #define MAX_WEIGHT_DIST (1/2 * MAX_SIGHT_DIST)
 #define WEIGHT_OFFSET 200.0f
 
-static const int8_t dx8[8] = {1, -1, 0, 0, 1, 1, -1, -1};
-static const int8_t dy8[8] = {0, 0, 1, -1, 1, -1, 1, -1};
+//FIX: readings below this are sensor errors (0 from a timeout etc), not obstacles
+#define MIN_VALID_DIST 30
+//FIX: don't map until the filter has run this many times (buffers start full of 0s)
+#define MAP_WARMUP_FILTER_UPDATES 5
+//FIX: periodic telemetry (T, D, P lines) is sent at most this often
+#define TELEMETRY_PERIOD_MS 100
+//FIX: map cells are only logged when their value moves into a new band of this
+//size (or changes category), instead of on every +/-1
+#define LOG_BAND 8
+
 
 static bool weightSeen = 0;
 static pos_t lastWeightSeen;
@@ -20,6 +29,12 @@ static pos_t lastWeightSeen;
 static bool isTurning = 0;
 
 static float prev_heading = 0;
+static bool headingInitialised = false;     //FIX: see poseTask()
+
+static uint32_t lastFilterCount = 0;        //FIX: map each filtered reading once
+static uint32_t lastTelemetry = 0;
+
+static int lastPoseGX = -1, lastPoseGY = -1;
 
 static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 
@@ -27,6 +42,9 @@ static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 static location_sensor_t filtered_sensors[NON_COUPLED_SENSORS] = {
     {TOF1, {-45, {105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[0].offset)), TOF_FOV, TOF_CONFIDENCE},
     {TOF2, {45, {-105, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[1].offset)), TOF_FOV, TOF_CONFIDENCE},
+    //CHECK: +x is the robot's RIGHT (TOF1 at x=+105 is angled -45 deg = right),
+    //so ULTRASOUND_LEFT at x=+65 is on the right. If the LEFT sensor really is on
+    //the left, swap these two x offsets (65 <-> -65).
     {ULTRASOUND_LEFT, {0, {65, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[2].offset)), ULTRASOUND_FOV, ULTRASOUND_CONFIDENCE},
     {ULTRASOUND_RIGHT, {0, {-65, 170}}, PoseMatrix::buildFrame(&(filtered_sensors[3].offset)), ULTRASOUND_FOV, ULTRASOUND_CONFIDENCE},
 };
@@ -45,11 +63,31 @@ static PoseMatrix robot_worldFrame = PoseMatrix::buildFrame(&worldOrigin);
  */
 
 static void logCell(int gx, int gy, int8_t value) {
+#if MAP_LOGGING
+    //FIX: never block. Serial1 (Bluetooth) at 115200 baud only sends ~11 kB/s and
+    //write() blocks when its buffer is full. Logging every touched cell every 5 ms
+    //was ~5-12 kB per poseTask, so each call took 0.5-1 s and starved the state
+    //machine. If there's no room, drop this line (the cell will be re-sent next change).
+    if (BLUETOOTH_SERIAL.availableForWrite() < 20) return;
     BLUETOOTH_SERIAL.print("C, "); BLUETOOTH_SERIAL.print(gx); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.print(gy);
     BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(value);
+#endif
+}
+
+//only log when a cell changes band or category, so the free-space counters
+//climbing 1..49 don't flood the link
+static void logCellIfChanged(int gx, int gy, int8_t oldValue, int8_t newValue) {
+    if (oldValue == newValue) return;
+    bool oldObstacle = oldValue < CONFIDENCE_THRESHOLD;
+    bool newObstacle = newValue < CONFIDENCE_THRESHOLD;
+    if ((oldValue / LOG_BAND) != (newValue / LOG_BAND) || oldObstacle != newObstacle ||
+        oldValue == 0 || newValue == 0) {
+        logCell(gx, gy, newValue);
+    }
 }
 
 static void logPose(float theta, float x, float y) {
+    if (BLUETOOTH_SERIAL.availableForWrite() < 32) return;     //FIX: never block
     BLUETOOTH_SERIAL.print("P, "); BLUETOOTH_SERIAL.print(theta, 4); BLUETOOTH_SERIAL.print(", ");
     BLUETOOTH_SERIAL.print(x, 2); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(y, 2);
 }
@@ -78,8 +116,9 @@ void writeToMap(float world_x, float world_y, int8_t value) {
     int gx, gy;
 
     if (worldToGrid(world_x, world_y, gx, gy) && ((mapData[gy][gx] < static_cast<int8_t>(WEIGHT)) && (mapData[gy][gx] > static_cast<int8_t>(EDGE_CELL)))) {
+        int8_t old = mapData[gy][gx];
         mapData[gy][gx] = constrain(mapData[gy][gx] + value, static_cast<int8_t>(EDGE_CELL)+1, static_cast<int8_t>(WEIGHT)-1);
-        logCell(gx, gy, mapData[gy][gx]);
+        logCellIfChanged(gx, gy, old, mapData[gy][gx]);      //FIX: was logged every time
     }
 }
 
@@ -96,9 +135,11 @@ static void rayTraceFree(int x0, int y0, int x1, int y1) {
         if (x == x1 && y == y1) break;
 
         if (x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT) {
-            if ((mapData[y][x] != static_cast<int8_t>(WEIGHT)) && (mapData[y][x] != static_cast<int8_t>(EDGE_CELL))) {
+            //FIX: also skip MY_POS / PATH cells (>= WEIGHT), and only log on change
+            if ((mapData[y][x] < static_cast<int8_t>(WEIGHT)) && (mapData[y][x] != static_cast<int8_t>(EDGE_CELL))) {
+                int8_t old = mapData[y][x];
                 mapData[y][x] = constrain(mapData[y][x] + 1, static_cast<int8_t>(EDGE_CELL)+1, static_cast<int8_t>(WEIGHT)-1);
-                logCell(x, y, mapData[y][x]);
+                logCellIfChanged(x, y, old, mapData[y][x]);
             }
         }
     }
@@ -109,20 +150,32 @@ static void rayTraceFree(int x0, int y0, int x1, int y1) {
  */
 
 void updatePose(pos_vector_t* Pose) {
-    //overwrite last pos
-    int x, y;
-    worldToGrid(robot_worldFrame.x(), robot_worldFrame.y(), x, y);
-    mapData[y][x] = 10;
-    logCell(x, y, 10);
-
     //get new POS
     robot_worldFrame = robot_worldFrame.transformFrame(PoseMatrix::buildFrame(Pose));
 
-    //write current POS
+    //FIX: rebuild the matrix from (theta, x, y) so 200 Hz float multiplications
+    //can't slowly skew/scale the rotation part
+    pos_vector_t clean = {robot_worldFrame.theta() / D_TO_R, {robot_worldFrame.x(), robot_worldFrame.y()}};
+    robot_worldFrame = PoseMatrix::buildFrame(&clean);
+
+    //FIX: only touch the map when the robot changes cell, never write outside the
+    //map (worldToGrid clamps, which used to overwrite EDGE cells and punch holes in
+    //the boundary), and only restore the old cell if it is still our MY_POS marker
+    //(it used to overwrite whatever was there - obstacles, weights, edges - with 10)
     int gx, gy;
-    worldToGrid(robot_worldFrame.x(), robot_worldFrame.y(), gx, gy);
-    mapData[gy][gx] = static_cast<int8_t>(MY_POS);
-    logCell(gx, gy, static_cast<int8_t>(MY_POS));
+    if (!worldToGrid(robot_worldFrame.x(), robot_worldFrame.y(), gx, gy)) return;
+    if (gx == lastPoseGX && gy == lastPoseGY) return;
+
+    if (lastPoseGX >= 0 && mapData[lastPoseGY][lastPoseGX] == static_cast<int8_t>(MY_POS)) {
+        mapData[lastPoseGY][lastPoseGX] = 10;
+        logCell(lastPoseGX, lastPoseGY, 10);
+    }
+    if (mapData[gy][gx] != static_cast<int8_t>(EDGE_CELL)) {
+        mapData[gy][gx] = static_cast<int8_t>(MY_POS);
+        logCell(gx, gy, static_cast<int8_t>(MY_POS));
+    }
+    lastPoseGX = gx;
+    lastPoseGY = gy;
 }
 
 void projectSensorCone(const location_sensor_t& sensor, float distance, bool isWeight) {
@@ -138,7 +191,14 @@ void projectSensorCone(const location_sensor_t& sensor, float distance, bool isW
             distance * std::cos(angleOffsetRad)
         };
 
-        projectSensorHit(sensor.sensor_robotFrame, &rayVector, isWeight, sensor.confidence);
+        //FIX: the sensor reports the NEAREST thing anywhere in its cone, so every ray
+        //is free up to that distance, but we don't know WHICH ray hit. Marking all 5
+        //endpoints as obstacles put phantom obstacles in free space (worst for the
+        //45 deg TOFs looking at walls obliquely). Only the centre ray marks a hit;
+        //the side rays just clear free space (confidence 0 = no obstacle write).
+        bool centreRay = (i == N_RAYS / 2);
+        projectSensorHit(sensor.sensor_robotFrame, &rayVector, isWeight && centreRay,
+                         centreRay ? sensor.confidence : 0);
     }
 }
 
@@ -150,16 +210,21 @@ void projectSensorHit(const PoseMatrix& sensor_robotFrame, pos_t* sensorVector, 
     sensor_worldFrame.transformCoords(sensorVector, worldCoord);
 
     int xr, yr, xw, yw;
-    worldToGrid(robot_worldFrame.x(), robot_worldFrame.y(), xr, yr);
-    worldToGrid(worldCoord.x, worldCoord.y, xw, yw);
+    //FIX: worldToGrid clamps off-map points onto the edge. Using the clamped cell
+    //traced rays in the wrong direction and could write a WEIGHT over an EDGE cell.
+    //Ignore hits that land off the map.
+    if (!worldToGrid(robot_worldFrame.x(), robot_worldFrame.y(), xr, yr)) return;
+    if (!worldToGrid(worldCoord.x, worldCoord.y, xw, yw)) return;
     rayTraceFree(xr, yr, xw, yw);
 
     if (isWeight) {
-        mapData[yw][xw] = static_cast<int8_t>(WEIGHT);
-        logCell(xw, yw, static_cast<int8_t>(WEIGHT));
-        weightSeen = 1;
-        lastWeightSeen = worldCoord;
-    } else {
+        if (mapData[yw][xw] != static_cast<int8_t>(EDGE_CELL)) {    //FIX: never overwrite the boundary
+            if (mapData[yw][xw] != static_cast<int8_t>(WEIGHT)) logCell(xw, yw, static_cast<int8_t>(WEIGHT));
+            mapData[yw][xw] = static_cast<int8_t>(WEIGHT);
+            weightSeen = 1;
+            lastWeightSeen = worldCoord;
+        }
+    } else if (confidence != 0) {
         writeToMap(worldCoord.x, worldCoord.y, -confidence);
     }
 }
@@ -206,8 +271,19 @@ void map_init() {
 }
 
 void poseTask() {
-    //Serial.println("pose task");
+    //FIX: wait for a real IMU reading before integrating anything
+    if (!IMU_hasData()) return;
+
     float heading = getHeading();
+
+    //FIX: prev_heading started at 0, so the first update rotated the whole world
+    //frame by the IMU's startup heading (e.g. 137 deg) and every goal was off by
+    //that much. Take the first reading as the reference instead.
+    if (!headingInitialised) {
+        prev_heading = heading;
+        headingInitialised = true;
+    }
+
     float differential_heading = prev_heading - heading;
     prev_heading = heading;
 
@@ -225,43 +301,59 @@ void poseTask() {
 
     updatePose(&robot_displacement);
 
-    //find objects with the TOFs
-    if(0)
-    for (int i = 0; i < NON_COUPLED_SENSORS; i++) {
-        if (millis() < 1000) continue;
+    bool telemetry = (millis() - lastTelemetry) >= TELEMETRY_PERIOD_MS;
+    if (telemetry) lastTelemetry = millis();
 
-        float sensorDist = (float)getOutput(filtered_sensors[i].ID);
-        BLUETOOTH_SERIAL.print("T, "); BLUETOOTH_SERIAL.print(i); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(sensorDist);
+    //FIX: only map when the filter has produced NEW readings (every 100 ms).
+    //This task runs every 5 ms, so each reading used to be written ~20 times,
+    //meaning one bad reading was enough to create an obstacle.
+    uint32_t filterCount = getFilterUpdateCount();
+    bool newReadings = (filterCount != lastFilterCount);
+    lastFilterCount = filterCount;
 
-        //check to see if seen object is a weight
-        switch (filtered_sensors[i].ID) {
-            case TOF1:  {
-                pos_t out1 = {0 , (float)getOutput(DIFFTOF1)};
-                BLUETOOTH_SERIAL.print("D, "); BLUETOOTH_SERIAL.print(2); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(out1.y);
-                if (out1.y < (sensorDist - WEIGHT_OFFSET)) {
-                    //Serial.println("WEIGHT WRITE FIRING");
-                    projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out1, 1, 0);
-                }
-                break;
+    //FIX: the old "millis() < 1000" guard never did anything (setup already takes
+    //> 1 s). Wait for the filter buffers to fill with real data instead.
+    bool warmedUp = filterCount >= MAP_WARMUP_FILTER_UPDATES;
+
+    //FIX: don't map while turning - the sensor data lags the heading by ~100 ms,
+    //which smears walls into arcs of phantom obstacles.
+    //FIX: the reactive controller doesn't use the map, so don't spend CPU time
+    //(and Bluetooth bandwidth) building it. Pose tracking above still runs.
+    bool mapping = !USE_REACTIVE_CONTROL;
+
+    if (mapping && newReadings && warmedUp && !isTurning) {
+        for (int i = 0; i < NON_COUPLED_SENSORS; i++) {
+            float sensorDist = (float)getOutput(filtered_sensors[i].ID);
+            if (telemetry && BLUETOOTH_SERIAL.availableForWrite() >= 16) {
+                BLUETOOTH_SERIAL.print("T, "); BLUETOOTH_SERIAL.print(i); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(sensorDist);
             }
-            case TOF2:  {
-                pos_t out2 = {0 , (float)getOutput(DIFFTOF2)};
-                BLUETOOTH_SERIAL.print("D, "); BLUETOOTH_SERIAL.print(3); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(out2.y);
-                if (out2.y < (sensorDist - WEIGHT_OFFSET)) {
-                    //Serial.println("WEIGHT WRITE FIRING");
-                    projectSensorHit(filtered_sensors[i].sensor_robotFrame, &out2, 1, 0);
+
+            //FIX: 0 / tiny readings are errors, not an obstacle touching the sensor
+            if (sensorDist < MIN_VALID_DIST) continue;
+
+            //check to see if seen object is a weight
+            BufID lowerID = NON_FILTERED;
+            if (filtered_sensors[i].ID == TOF1) lowerID = DIFFTOF1;
+            if (filtered_sensors[i].ID == TOF2) lowerID = DIFFTOF2;
+
+            if (lowerID != NON_FILTERED) {
+                pos_t lower = {0, (float)getOutput(lowerID)};
+                if (telemetry && BLUETOOTH_SERIAL.availableForWrite() >= 16) {
+                    BLUETOOTH_SERIAL.print("D, "); BLUETOOTH_SERIAL.print(i + 2); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(lower.y);
                 }
-                break;
+                //FIX: lower sensor must have a valid, in-range reading too
+                if (lower.y >= MIN_VALID_DIST && lower.y <= MAX_SIGHT_DIST &&
+                    lower.y < (sensorDist - WEIGHT_OFFSET)) {
+                    projectSensorHit(filtered_sensors[i].sensor_robotFrame, &lower, 1, 0);
+                }
             }
-            default:
-                break;
+
+            if (sensorDist > MAX_SIGHT_DIST) continue;
+            projectSensorCone(filtered_sensors[i], sensorDist, 0);
         }
-
-        if (sensorDist > MAX_SIGHT_DIST) continue;
-        projectSensorCone(filtered_sensors[i], sensorDist, 0);
     }
 
-    logPose(robot_worldFrame.theta(), robot_worldFrame.x(), robot_worldFrame.y());
+    if (telemetry) logPose(robot_worldFrame.theta(), robot_worldFrame.x(), robot_worldFrame.y());
 }
 
 /*******************************************************************************************************************************************************************************
@@ -280,13 +372,16 @@ bool isWalkible(int x, int y, int inflation_factor) {
     if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return false;
     if ((getMapValue(x, y) < CONFIDENCE_THRESHOLD)) return false;
 
-    for (int n = 1; n <= inflation_factor; n++) {
-        for (int i = 0; i < 8; i++) {
-        int nx = x + n*dx8[i];
-        int ny = y + n*dy8[i];
-        if (nx < 0 || nx >= GRID_WIDTH || ny < 0 || ny >= GRID_HEIGHT) return false;
-        if ((getMapValue(nx, ny) < CONFIDENCE_THRESHOLD)) return false;
-    }
+    //FIX: check the whole square around the cell. The old version only checked
+    //the 8 compass directions (a star), so an obstacle at e.g. (+1,+2) was never
+    //seen, even at inflation 7 - paths clipped obstacles.
+    for (int dy = -inflation_factor; dy <= inflation_factor; dy++) {
+        for (int dx = -inflation_factor; dx <= inflation_factor; dx++) {
+            int nx = x + dx;
+            int ny = y + dy;
+            if (nx < 0 || nx >= GRID_WIDTH || ny < 0 || ny >= GRID_HEIGHT) return false;
+            if ((getMapValue(nx, ny) < CONFIDENCE_THRESHOLD)) return false;
+        }
     }
     return true;
 }

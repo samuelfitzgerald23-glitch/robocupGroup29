@@ -60,27 +60,32 @@ void TOFinit(SX1509* io) {
 
     sensors[i].setROISize(16, 4);  //set region of interest (default is 16x16)
 
+    //FIX: init() sets a 50 ms timing budget, but the period was 35 ms.
+    //The period must be >= the budget, so set a 33 ms budget to match.
+    sensors[i].setMeasurementTimingBudget(33000);
     sensors[i].startContinuous(35);
   }
 }
 
 void TOF_task() {
-  //Serial.println("TOF task");
+  //FIX: non-blocking. The old readRangeContinuousMillimeters() waited for each
+  //sensor's next measurement, stalling the whole scheduler for tens of ms.
+  //Now we only read a sensor when it actually has new data.
   for (uint8_t i = 0; i < sensorCount; i++)
   {
-    TOF_reading[i] = sensors[i].readRangeContinuousMillimeters();
+    if (!sensors[i].dataReady()) continue;
 
-    // Serial.print("Sensor ");
-    // Serial.print(i);
-    // Serial.print(": ");
-    // Serial.print(TOF_reading[i]);
-    // Serial.print(" ");
+    uint16_t range = sensors[i].read(false);
 
-    if (sensors[i].timeoutOccurred()) { 
-      Serial.print(" TIMEOUT"); 
-      Serial.print('\t');
+    //FIX: check the range status. Invalid readings (no target, signal fail,
+    //timeout = 0) used to go straight into the map as an obstacle at 0 mm.
+    VL53L1X::RangeStatus status = sensors[i].ranging_data.range_status;
+    if (status == VL53L1X::RangeValid && range > 0) {
+      TOF_reading[i] = range;
+    } else {
+      TOF_reading[i] = TOF_NO_TARGET;      //treat as "nothing seen"
     }
+
     writeCircBuf(getBuf((BufID)i), TOF_reading[i]);
   }
-  Serial.println();
 }

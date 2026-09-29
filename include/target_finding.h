@@ -18,4 +18,7 @@ enum goal_t {
 
 pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type);
 
+//remember a goal cell that could not be planned to, so it is skipped next time
+void markTargetUnreachable(GridPos p);
+
 #endif //TARGET_FINDING_H

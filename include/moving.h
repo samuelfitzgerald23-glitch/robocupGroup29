@@ -12,6 +12,14 @@ enum moveingState {
     DONE
 };
 
+//FIX: result of one translatePID step
+enum translateResult {
+    DRIVING,
+    ARRIVED,
+    OVERSHOT,       //went past the target - turn back towards it
+    NEED_TURN       //heading drifted too far - stop and turn again
+};
+
 class PID_t {
     private:
         float kp, ki, kd;
@@ -47,7 +55,7 @@ float findAngle(pos_t* myPose);
 
 
 bool rotatePID(pos_vector_t* myPose, float dt);
-bool translatePID(pos_t* currentXY, float dt);
+translateResult translatePID(pos_vector_t* myPose, float dt);
 
 void movementTask(float dt);
 
@@ -56,5 +64,8 @@ bool getPathStatus();
 bool getPathBlockedStatus();
 
 void setPath(const pos_t* path, int count);
+
+//stop the motors and reset the movement state machine
+void stopMovement();
 
 #endif //MOVING_H

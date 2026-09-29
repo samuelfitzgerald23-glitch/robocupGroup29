@@ -12,6 +12,8 @@ static float gyroBias = 0;
 
 static int prevRead = 0;
 
+static volatile bool imuHasData = false;   //FIX: true once a real heading has been read
+
 void calibrate_gyroBias(int num_samples) {
   float sum = 0;
   for (int i = 0; i < num_samples; i++) {
@@ -24,12 +26,17 @@ void calibrate_gyroBias(int num_samples) {
 
 void IMU_init() {
   /* Initialise the sensor */
-  if (!bno.begin())
+  //FIX: IMUPLUS = gyro + accel fusion only. The default (NDOF) also uses the
+  //magnetometer, whose heading jumps near the drive motors / steel in the arena.
+  //IMUPLUS heading is relative (starts ~0), which is what the map wants.
+  if (!bno.begin(OPERATION_MODE_IMUPLUS))
   {
     /* There was a problem detecting the BNO055 ... check your connections */
     Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
     while (1);
   }
+
+  Wire1.setClock(400000);   //FIX: Wire1 was left at 100 kHz (only Wire was set to 400 kHz)
 
   calibrate_gyroBias(10);
 
@@ -101,19 +108,13 @@ void printIMUEvent(sensors_event_t* event) {
 }
 
 void IMU_task() {
-  //Serial.println("IMU task");
-  //could add VECTOR_ACCELEROMETER, VECTOR_MAGNETOMETER,VECTOR_GRAVITY...
-  bool ok = bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
-    if (!ok) {
-        Serial1.println("I, IMU read FAILED");
-    }
-  bno.getEvent(&angVelocityData, Adafruit_BNO055::VECTOR_GYROSCOPE);
-  bno.getEvent(&linearAccelData, Adafruit_BNO055::VECTOR_LINEARACCEL);
-  bno.getEvent(&accelerometerData, Adafruit_BNO055::VECTOR_ACCELEROMETER);
-  bno.getEvent(&gravityData, Adafruit_BNO055::VECTOR_GRAVITY);
-
-  //delay(BNO055_SAMPLERATE_DELAY_MS);
+  //FIX: only read what we use. It used to do 5 I2C reads every 5 ms
+  //(euler, gyro, linear accel, accel, gravity) = most of the CPU time.
+  bno.getEvent(&orientationData, Adafruit_BNO055::VECTOR_EULER);
+  imuHasData = true;
 }
+
+bool IMU_hasData() {return imuHasData;}
 
 float getHeading() {return (float)orientationData.orientation.x;}
 

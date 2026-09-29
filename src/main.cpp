@@ -14,6 +14,7 @@
 #include "State.h"
 #include "gate.h"
 #include "LED_array.h"
+#include "reactive.h"
 
 //**********************************************************************************
 // Local Definitions
@@ -24,9 +25,15 @@
 
 #define TOF_READ_TASK_PERIOD                10
 #define ULTRASOUND_READ_TASK_PERIOD         33
-#define IMU_READ_TASK_PERIOD                5
+#define IMU_READ_TASK_PERIOD                10   //FIX: BNO055 fusion only updates at 100 Hz
 
+#if USE_REACTIVE_CONTROL
+//FIX: the reactive controller reacts directly to the filtered readings, so update
+//them every 20 ms (was 100 ms = up to 100 ms extra lag before seeing a wall)
+#define SENSOR_AVERAGE_PERIOD               20
+#else
 #define SENSOR_AVERAGE_PERIOD               100
+#endif
 #define LOCATION_TASK_PERIOD                5
 
 #define STATE_TASK_PERIOD                   5
@@ -64,6 +71,10 @@
 
 // Serial deffinitions
 #define BAUD_RATE 115200
+
+//FIX: Serial1's default transmit buffer is only 64 bytes, and write() blocks
+//when it is full. Give it room so short bursts of telemetry never stall the loop.
+static uint8_t bluetoothTxBuffer[4096];
 
 const byte SX1509_ADDRESS = 0x3F;
 SX1509 io; // Create an SX1509 object to be used throughout
@@ -153,6 +164,7 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(BAUD_RATE);
   BLUETOOTH_SERIAL.begin(BAUD_RATE);
+  BLUETOOTH_SERIAL.addMemoryForWrite(bluetoothTxBuffer, sizeof(bluetoothTxBuffer));
 
   io.begin(SX1509_ADDRESS);
 

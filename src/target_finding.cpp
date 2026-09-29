@@ -7,6 +7,27 @@
 
 static GridPos home = {X_ZERO,Y_ZERO};
 
+//FIX: goals that failed to plan are remembered (oldest drop off) so the robot
+//doesn't keep choosing the same unreachable "unexplored" cell. Only the single
+//previous goal used to be excluded, so it could ping-pong between two bad ones.
+#define UNREACHABLE_MEMORY 16
+static GridPos unreachable[UNREACHABLE_MEMORY];
+static int unreachableCount = 0;
+static int unreachableNext = 0;
+
+void markTargetUnreachable(GridPos p) {
+    unreachable[unreachableNext] = p;
+    unreachableNext = (unreachableNext + 1) % UNREACHABLE_MEMORY;
+    if (unreachableCount < UNREACHABLE_MEMORY) unreachableCount++;
+}
+
+static bool isUnreachable(GridPos p) {
+    for (int k = 0; k < unreachableCount; k++) {
+        if (unreachable[k] == p) return true;
+    }
+    return false;
+}
+
 pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
     //find the next target to pathfind toward
 
@@ -30,11 +51,13 @@ pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
     float cost = 1e9f;
 
     GridPos current_target = robotGrid;
+    bool foundCandidate = false;    //FIX: see end of function
 
     for (int i = x_min; i < x_max; i++) {
         for (int j = y_min; j < y_max; j++) {
             GridPos current = {i, j};
             if (current == prevGrid || current == robotGrid || current == home) continue;
+            if (isUnreachable(current)) continue;
             if (!isWalkible(i, j, ROBOT_WIDTH)) continue;
             int value = getMapValue(i, j);
             if (value == static_cast<int8_t>(WEIGHT)) {
@@ -49,7 +72,8 @@ pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
             float dist = std::sqrt(dx*dx + dy*dy);
 
             bool isUnexplored = (value == static_cast<int8_t>(UNDEFINED_CELL));
-            bool bestSoFarIsUnexplored = (getMapValue(current_target.x, current_target.y) == static_cast<int8_t>(UNDEFINED_CELL));
+            bool bestSoFarIsUnexplored = foundCandidate &&
+                (getMapValue(current_target.x, current_target.y) == static_cast<int8_t>(UNDEFINED_CELL));
 
             //is current best is not unexplored an unexplored cell will overwrite it
             //between cells in the same category distance wins
@@ -57,13 +81,20 @@ pos_t find_target(pos_t myPos, pos_t prev_pos, goal_t& target_type) {
             bool better = (isUnexplored && !bestSoFarIsUnexplored) ||
                         (isUnexplored == bestSoFarIsUnexplored && dist <= cost);
 
-            if (better) {
+            if (better || !foundCandidate) {
                 current_target = current;
                 cost = dist;
+                foundCandidate = true;
             }
         }
     }
     target_type = NO_ACTION;
+
+    //FIX: if nothing in the box qualified, this used to return the robot's own
+    //cell -> start == goal -> "No path" forever. Head for the map centre instead.
+    if (!foundCandidate) {
+        current_target = {GRID_WIDTH/2, GRID_HEIGHT/2};
+    }
 
     pos_t targetWorld;
     gridToWorld(current_target.x, current_target.y, targetWorld.x, targetWorld.y);

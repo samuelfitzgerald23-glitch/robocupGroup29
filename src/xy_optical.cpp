@@ -4,6 +4,10 @@
 //to calibrate record the number of counts over a known distence (e.g 300mm) and find counts/dist
 
 //at ~12cm off the ground this is 1259 counts / 300 mm
+//CHECK: 1259/300 = 4.20, but the value below is 2.82 (= 846 counts / 300 mm).
+//If 4.20 is right, every distance is over-estimated by ~49% and the robot stops
+//short of every waypoint. Re-measure: push the robot 1000 mm along a tape measure
+//and divide the total counts by 1000.
 #define COUNTS_PER_MM 2.82f
 
 Bitcraze_PMW3901 flow(XY_CS);

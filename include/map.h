@@ -14,6 +14,9 @@
 
 #define BLUETOOTH_SERIAL Serial1
 
+//set to 0 to stop sending map cells over Bluetooth (e.g. for the competition run)
+#define MAP_LOGGING 1
+
 #define MAX_WAYPOINT_COUNT 24
 #define WAYPOINT_SPACING 500.0f
 
@@ -31,8 +34,10 @@
 
 #define CONFIDENCE_THRESHOLD -10
 
-#define TOF_CONFIDENCE 1
-#define ULTRASOUND_CONFIDENCE 2
+//FIX: raised because each reading is now counted once (it used to be counted ~20x).
+//Starting points - tune on the field.
+#define TOF_CONFIDENCE 3
+#define ULTRASOUND_CONFIDENCE 4
 
 enum cell_t {
     EDGE_CELL = -50,

@@ -9,6 +9,9 @@
 
 #define BUFFERCOUNT 10
 #define BUFSIZE 5
+//FIX: distance sensors use a shorter buffer (median of 3) so walls are seen
+//with ~1 sample of lag instead of ~2-3
+#define DIST_BUFSIZE 3
 
 #include <stdint.h>
 

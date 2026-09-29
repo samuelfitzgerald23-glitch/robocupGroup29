@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <cmath>
 
-#define D_TO_R (3.14f/180.0f)
+#define D_TO_R (3.14159265f/180.0f)     //FIX: was 3.14f
 
 //just an x,y pos
 struct pos_t {

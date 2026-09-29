@@ -83,7 +83,14 @@ static void updateColourValue()
 
   tcs.setInterrupt(false);      // turn on 
   
-  tcs.getRawData(&red, &green, &blue, &clear);
+  //FIX: getRawData() does delay(~51 ms) AFTER reading (it waits out the
+  //integration time). That blocked the whole scheduler every 100 ms.
+  //colourTask runs every 100 ms (> 50 ms integration), so the registers already
+  //hold a fresh reading - read them directly with no delay.
+  clear = tcs.read16(TCS34725_CDATAL);
+  red   = tcs.read16(TCS34725_RDATAL);
+  green = tcs.read16(TCS34725_GDATAL);
+  blue  = tcs.read16(TCS34725_BDATAL);
 
   tcs.setInterrupt(true);  // turn off LED
 
