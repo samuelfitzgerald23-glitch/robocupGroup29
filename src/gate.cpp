@@ -1,16 +1,16 @@
 //Author: Ruby (Team 29)
-//Date: 22/9/2026
+//Date: 29/9/2026
 //Description: Rear payload gate control - see gate.h
 //             Herkulex DRS-0101 "rearServo" (ID 2) on the sorting servo's bus.
-//             During DROP_PAYLOAD: shake to dislodge weights + open the gate,
-//             hold GATE_OPEN_MS, then close - all non-blocking.
+//             DROP_PAYLOAD sequence: open gate + shake for SHAKE_MS, then sit
+//             still for STILL_MS (gate stays open), then close. All non-blocking.
 //             ORDER: call initSmartServo() BEFORE initGate() in setup().
 
 #include <Arduino.h>
 #include <HerkulexServo.h>
 
 #include "gate.h"
-#include "map.h"                 //getMyPOS(), pos_vector_t, pos_t
+#include "map.h"                 //getMyPOS(), pos_t
 #include "State.h"               //getRobotState(), DROP_PAYLOAD
 #include "motor.h"               //setDriveSpeed()
 
@@ -22,8 +22,9 @@
 #define GATE_CLOSED_POS    0         //raw position with the gate shut (0..1023)
 #define GATE_OPEN_POS      289       //raw position with the gate open
 #define GATE_SPEED         150       //play-time / speed, 0 (fastest)..254 (slowest)
-#define SHAKE_MS   10000UL           //shake this long (gate open)
-#define STILL_MS   10000UL           //then sit still this long (gate still open), then close
+
+#define SHAKE_MS           10000UL   //shake this long (gate open)
+#define STILL_MS           10000UL   //then sit still this long (gate open), then close
 
 #define SHAKE_SPEED        400       //shake drive speed (-450..450)
 #define SHAKE_STEP_MS      120       //ms per shake move (smaller = sharper)
@@ -36,7 +37,7 @@ extern HerkulexServoBus servoBus;                    //defined in smart_servo.cp
 static HerkulexServo    rearServo(servoBus, REARSERVO_ID);
 
 static uint32_t openStart = 0;       //millis() when the gate opened
-static uint8_t  dropPhase = 0;       //0 = open the gate, 1 = holding open
+static uint8_t  dropPhase = 0;       //0 = open, 1 = open+shaking, 2 = open+still
 
 //----------------------------------------------------------------------------
 // Setup
@@ -61,9 +62,8 @@ void gateStartDrop() {
 //----------------------------------------------------------------------------
 static void shakeRobot() {
     pos_t p = getMyPOS().pos;
-    //bounds check: if we've drifted too far from the base origin, stop
     if (fabsf(p.x) > SHAKE_MAX_MM || fabsf(p.y) > SHAKE_MAX_MM) {
-        setDriveSpeed(0, 0);
+        setDriveSpeed(0, 0);         //drifted off base - stop
         return;
     }
 
@@ -87,29 +87,7 @@ static void shakeRobot() {
 }
 
 //----------------------------------------------------------------------------
-// Drop sequence: shake + open -> hold -> close. Returns true once closed.
-//----------------------------------------------------------------------------
-bool gateDrop() {
-    shakeRobot();                  // shake to dislodge weights (bounded to base)
-
-    if (dropPhase == 0) {
-        rearServo.setPosition(GATE_OPEN_POS, GATE_SPEED, HerkulexLed::Ignore);
-        openStart = millis();
-        dropPhase = 1;
-        return false;
-    }
-    if (millis() - openStart >= GATE_OPEN_MS) {
-        rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore);
-        setDriveSpeed(0, 0);       // stop the shake
-        dropPhase = 0;
-        return true;
-    }
-    return false;
-}
-
-//----------------------------------------------------------------------------
-// TEST: loops a full drop so you can watch shake + gate on the bench.
-// Temporarily point tState_task at this instead of StateMachineTask.
+// Drop: open -> shake SHAKE_MS -> sit still STILL_MS -> close. True when done.
 //----------------------------------------------------------------------------
 bool gateDrop() {
     switch (dropPhase) {
@@ -123,7 +101,7 @@ bool gateDrop() {
             if (millis() - openStart < SHAKE_MS) {
                 shakeRobot();
             } else {
-                setDriveSpeed(0, 0);       // stop shaking -> sit still
+                setDriveSpeed(0, 0);           // stop shaking -> sit still
                 dropPhase = 2;
             }
             return false;
@@ -132,9 +110,41 @@ bool gateDrop() {
             if (millis() - openStart >= SHAKE_MS + STILL_MS) {
                 rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore);
                 dropPhase = 0;
-                return true;               // drop complete
+                return true;                   // drop complete
             }
             return false;
     }
     return false;
+}
+
+//----------------------------------------------------------------------------
+// TEST: loops a full drop so you can watch shake + gate on the bench.
+// Temporarily run this from tGate_task (with tState_task disabled).
+//----------------------------------------------------------------------------
+void gateDropTest() {
+    static uint8_t  tphase     = 0;     // 0 = running a drop, 1 = pause between
+    static uint32_t pauseStart = 0;
+    static uint32_t lastPrint  = 0;
+
+    if (tphase == 0) {
+        if (gateDrop()) {
+            setDriveSpeed(0, 0);
+            Serial.println("TEST: drop complete (gate closed) - pausing 3 s");
+            pauseStart = millis();
+            tphase = 1;
+        } else if (millis() - lastPrint >= 500) {
+            lastPrint = millis();
+            pos_t p = getMyPOS().pos;
+            Serial.print("TEST: dropping...  pos x=");
+            Serial.print(p.x);
+            Serial.print(" y=");
+            Serial.println(p.y);
+        }
+    } else {
+        if (millis() - pauseStart >= 3000) {
+            Serial.println("TEST: starting next drop cycle");
+            gateStartDrop();
+            tphase = 0;
+        }
+    }
 }
