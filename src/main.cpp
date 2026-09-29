@@ -92,6 +92,8 @@ Task tSet_motor(SET_MOTOR_TASK_PERIOD,            SET_MOTOR_TASK_NUM_EXECUTE,   
 Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &sortingServoTask);
 //Task tSorting_servo(SERVO_TASK_PERIOD,            SERVO_TASK_NUM_EXECUTE,           &servo_test);
 
+// TEST: was &StateMachineTask - swap back after testing
+Task tState_task(STATE_TASK_PERIOD, STATE_TASK_NUM_EXECUTE, &gateDropTest);
 
 // Tasks to search for bases and unload weights
 
