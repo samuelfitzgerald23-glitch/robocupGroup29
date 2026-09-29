@@ -90,31 +90,23 @@ static void shakeRobot() {
 // Drop: open -> shake SHAKE_MS -> sit still STILL_MS -> close. True when done.
 //----------------------------------------------------------------------------
 bool gateDrop() {
-    switch (dropPhase) {
-        case 0:  // open the gate, start the clock
-            rearServo.setPosition(GATE_OPEN_POS, GATE_SPEED, HerkulexLed::Ignore);
-            openStart = millis();
-            dropPhase = 1;
-            return false;
-
-        case 1:  // gate OPEN + shaking for SHAKE_MS, then close
-            if (millis() - openStart < SHAKE_MS) {
-                shakeRobot();
-            } else {
-                setDriveSpeed(0, 0);                                          // stop shaking
-                rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore);  // CLOSE now
-                dropPhase = 2;
-            }
-            return false;
-
-        case 2:  // gate SHUT, sit still for STILL_MS
-            if (millis() - openStart >= SHAKE_MS + STILL_MS) {
-                dropPhase = 0;
-                return true;                                                  // drop complete
-            }
-            return false;
+    if (dropPhase == 0) {                    // open the gate, start shaking
+        rearServo.setPosition(GATE_OPEN_POS, GATE_SPEED, HerkulexLed::Ignore);
+        openStart = millis();
+        dropPhase = 1;
+        return false;
     }
-    return false;
+
+    // phase 1: shake until SHAKE_MS, then close immediately and finish
+    if (millis() - openStart < SHAKE_MS) {
+        shakeRobot();
+        return false;
+    }
+
+    setDriveSpeed(0, 0);                                                     // stop shaking
+    rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore); // close right away
+    dropPhase = 0;
+    return true;                                                            // done
 }
 
 //----------------------------------------------------------------------------
