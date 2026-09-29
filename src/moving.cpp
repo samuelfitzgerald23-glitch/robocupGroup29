@@ -9,7 +9,7 @@ TODO:
 */
 
 #define TIME_LIMIT 3000000
-#define WAYPOINT_PATIENCE 3         //number of times robot can fail to reach a waypoint
+#define WAYPOINT_PATIENCE 2         //number of times robot can fail to reach a waypoint
 
 IntervalTimer movementTimeLimit;
 
@@ -17,7 +17,7 @@ static moveingState State = IDLE;
 
 //static pos_t lastHandledWeight = {0, 0};
 
-static PID_t rotate(10.5, 0.1, 0.5, 375, 400, 5);
+static PID_t rotate(10.5, 0.1, 0.0, 375, 400, 5);
 static PID_t translate(10, 0, 0.5, 0, 425, 50);
 
 static pos_t targetlist[MAX_WAYPOINT_COUNT];
@@ -142,7 +142,9 @@ void movementTask(float dt) {
         case MOVEING:
             if (pathSegmentBlocked(myPOS.pos, currentTarget)) {
                 setDriveSpeed(0,0);
-                State = DONE;
+                pathBlocked = 1;
+                pathfinished = 1;
+                State = IDLE;
                 movementTimeLimit.end();
                 return;
             }
@@ -170,6 +172,8 @@ bool getPathBlockedStatus() {
 void setPath(const pos_t* path, int count) {
     targetCount = count;
     std::copy(path, path + count, targetlist);
+    targetIndex = 0;
+    State = IDLE;
     pathfinished = 0;
     pathBlocked = 0;
     currentTarget = targetlist[0];

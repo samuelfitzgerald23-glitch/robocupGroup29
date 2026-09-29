@@ -20,6 +20,7 @@ static pos_t lastWeightSeen;
 static bool isTurning = 0;
 
 static float prev_heading = 0;
+static bool heading_initialized = false;
 
 static int8_t mapData[GRID_HEIGHT][GRID_WIDTH];
 
@@ -208,6 +209,10 @@ void map_init() {
 void poseTask() {
     //Serial.println("pose task");
     float heading = getHeading();
+    if (!heading_initialized) {
+        prev_heading = heading;
+        heading_initialized = true;
+    }
     float differential_heading = prev_heading - heading;
     prev_heading = heading;
 
