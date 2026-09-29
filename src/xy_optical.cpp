@@ -4,7 +4,7 @@
 //to calibrate record the number of counts over a known distence (e.g 300mm) and find counts/dist
 
 //at ~12cm off the ground this is 1259 counts / 300 mm
-#define COUNTS_PER_MM 3.0f
+#define COUNTS_PER_MM 2.82f
 
 Bitcraze_PMW3901 flow(XY_CS);
 

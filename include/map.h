@@ -25,8 +25,8 @@
 
 #define CELL_SIZE 50.0f      //mm per cell
 
-#define X_ZERO (GRID_WIDTH-(2*ROBOT_WIDTH))   //right side
-//#define X_ZERO (2*ROBOT_WIDTH)              //left side
+//#define X_ZERO (GRID_WIDTH-(2*ROBOT_WIDTH))   //right side
+#define X_ZERO (2*ROBOT_WIDTH)              //left side
 #define Y_ZERO (2*ROBOT_WIDTH)
 
 #define CONFIDENCE_THRESHOLD -10
