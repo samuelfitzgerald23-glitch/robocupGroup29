@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-#define BUFFERCOUNT 8
+#define BUFFERCOUNT 10
 #define BUFSIZE 5
 
 #include <stdint.h>
@@ -22,6 +22,8 @@ enum BufID {
     COLOUR_RED,
     COLOUR_BLUE,
     COLOUR_GREEN,
+    ULTRASOUND_LEFT,
+    ULTRASOUND_RIGHT
 };
 
 struct circBuf_t {

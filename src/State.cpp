@@ -4,28 +4,29 @@
 
 IntervalTimer TimeoutCheck;
 
-static int lastTime = 0;
+static uint32_t lastTime = 0;
 
 static robotState CurrentState = STARTUP;
 
-static int8_t goal_type = 0;
-static pos_t goal_pos = {1000,1000};
+static goal_t goal_type = NO_ACTION;
+static pos_t goal_pos = {0, 1000};
 
-static pos_t microSteps[MAX_WAYPOINT_COUNT] = {{0,0},{0,200},{200,200},{200,0},{0,0}};
+static pos_t microSteps[MAX_WAYPOINT_COUNT];
 
 static void state_timeout() {
     //if a timeout occurs switch state to idle to start sequence again
+    setDriveSpeed(0,0);
     TimeoutCheck.end();
     CurrentState = CHECK;
 }
 
 void StateMachineTask() {
     pos_t currentPos = getMyPOS().pos;
-    int now = micros();
+    uint32_t now = micros();
     float dt = float(now - lastTime)/MICRO_TO_SEC;
     lastTime = now;
 
-    Serial1.print("S, "); Serial1.println(CurrentState);
+    BLUETOOTH_SERIAL.print("S, "); BLUETOOTH_SERIAL.println(CurrentState);
 
     switch (CurrentState) {
         case STARTUP:
@@ -37,42 +38,10 @@ void StateMachineTask() {
             CurrentState = FIND_TARGET;
             break;
         case FIND_TARGET:
-            {
-            pos_t prev_target = goal_pos;
-            int cur_gx, cur_gy;
-            worldToGrid(currentPos.x, currentPos.y, cur_gx, cur_gy);
-            bool found = false;
-            float cost = 0;
-
-            for (int y = 0; y < GRID_HEIGHT && !found; y++) {
-                for (int x = 0; x < GRID_WIDTH && !found; x++) {
-                    if (getMapValue(x, y) == static_cast<int8_t>(WEIGHT)) {
-                        gridToWorld(x, y, goal_pos.x, goal_pos.y);
-                        goal_type = static_cast<int8_t>(WEIGHT);
-                        found = true;
-                        break;
-                    }
-                    if (getMapValue(x, y) == static_cast<int8_t>(UNDEFINED_CELL)) {
-                        float dx = x - cur_gx;
-                        float dy = y - cur_gy;
-                        float temp = std::sqrt(dx*dx + dy*dy);
-                        if (temp > cost) {
-                            gridToWorld(x, y, goal_pos.x, goal_pos.y);
-                            goal_type = static_cast<int8_t>(UNDEFINED_CELL);
-                            cost = temp;
-                        }
-                    }
-                }
-            }
-
-            if (goal_pos.x == prev_target.x && goal_pos.y == prev_target.y) {
-                goal_pos = {0,0};
-            }
-
-            Serial1.print("G, "); Serial1.print(goal_pos.x); Serial1.print(", "); Serial1.print(goal_pos.y);
+            goal_pos = find_target(currentPos, goal_pos, goal_type);
+            BLUETOOTH_SERIAL.print("G, "); BLUETOOTH_SERIAL.print(goal_pos.x); BLUETOOTH_SERIAL.print(", "); BLUETOOTH_SERIAL.println(goal_pos.y);
             CurrentState = PATHFIND;
             break;
-        }
         case PATHFIND:  {
             setLEDColor(WRITIBLE_LED, RED);
             int start_x, start_y, goal_x, goal_y;
@@ -104,11 +73,11 @@ void StateMachineTask() {
             break;
         case DETERMINE_ACTION: {
             setLEDColor(WRITIBLE_LED, BLUE);
-            if(goal_type == static_cast<int8_t>(WEIGHT)) {
+            if(goal_type == WEIGHT_ACTION) {
                 CurrentState = PICKUP_SEQUENCE;
-                //start a ten seccond timer to pick up the weight
-                TimeoutCheck.begin(state_timeout, 10*MICRO_TO_SEC);
-            } else if (goal_pos.x == 0 && goal_pos.y == 0) {
+                setDriveSpeed(300,300);
+                TimeoutCheck.begin(state_timeout, 1*MICRO_TO_SEC);
+            } else if (goal_type == BASE_ACTION) {
                 CurrentState = DROP_PAYLOAD;
                 //start a timer to drop the weights off
                 //safety net: bail out if the gate never finishes (jam), LONGER

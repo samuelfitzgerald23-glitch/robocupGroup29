@@ -11,8 +11,7 @@
 #include "colour_sensor.h"
 #include "circBuf.h"
 #include "proximity.h"
-
-void I2C_scan();
+#include "ultrasound.h"
 
 void sensorInit(SX1509* io);
 

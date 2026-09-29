@@ -15,7 +15,7 @@ struct Queue {
     GridPos data[MAX_PATH_LEN];
     int head = 0, tail = 0;
     bool empty() const { return head == tail; }
-    void push(GridPos p) { data[tail++] = p; }
+    void push(GridPos p) { if (tail < MAX_PATH_LEN) data[tail++] = p; }
     GridPos pop() { return data[head++]; }
 };
 
@@ -78,9 +78,8 @@ static int findPathAtInflation(Node start, Node goal, int inflation) {
 
 int findPath(Node start, Node goal) {
     for (int inflation = WALL_CELL_INFLATION; inflation > ROBOT_WIDTH; inflation--) {
-        if (findPathAtInflation(start, goal, inflation)) {
-            return reconsturctPath(start, goal, fullPath);
-        }
+        int len = findPathAtInflation(start, goal, inflation);
+        if (len) return len;
     }
     return 0;  // no path even with zero inflation - genuinely blocked
 }

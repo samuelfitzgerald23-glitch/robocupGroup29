@@ -12,26 +12,14 @@ IO board: 0x30
 TOFs: 
 */
 
-void sensorInit(SX1509* io) {
-
-    //Do I2C scan if cannot find address of I2C device
-    I2C_scan();
-
-    TOFinit(io);
-    IMU_init();
-    init_optical_flow();
-    colour_init();
-    proximity_init();
-}
-
-void I2C_scan() {
+static void I2C_scan(TwoWire buss) {
     //Only scans I2C 0, if want to try other I2C bus replace Wire with Wire1 (I2C 1)...
     //output of address is in 7 bits (typical I2C addressing), Wire wants 8 bits?
     byte error, add;
     Serial.println("Scanning for I2C devices");
     for(add = 1; add < 127; add++) {
-        Wire.beginTransmission(add);
-        error = Wire.endTransmission();
+        buss.beginTransmission(add);
+        error = buss.endTransmission();
 
         if (error == 0) {
             Serial.print("Found at 0x");
@@ -39,4 +27,17 @@ void I2C_scan() {
             Serial.println(add, HEX);
         }
     }
+}
+
+void sensorInit(SX1509* io) {
+
+    //Do I2C scan if cannot find address of I2C device
+    I2C_scan(Wire);
+
+    Ultrasound_init();
+    TOFinit(io);
+    IMU_init();
+    init_optical_flow();
+    colour_init();
+    proximity_init();
 }
