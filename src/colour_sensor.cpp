@@ -18,6 +18,25 @@ static bool goodMobileElementPresent = false;
 static bool goldCandidate = true;
 
 
+//averaging variables to smooth colour output
+static uint16_t mobileRedBuffer[MOBILE_AVG_SIZE] = {0};
+static uint16_t mobileGreenBuffer[MOBILE_AVG_SIZE] = {0};
+static uint16_t mobileBlueBuffer[MOBILE_AVG_SIZE] = {0};
+static uint16_t mobileClearBuffer[MOBILE_AVG_SIZE] = {0};
+
+static uint32_t mobileRedSum = 0;
+static uint32_t mobileGreenSum = 0;
+static uint32_t mobileBlueSum = 0;
+static uint32_t mobileClearSum = 0;
+
+static uint8_t mobileAvgIndex = 0;
+
+static uint16_t mobileRed = 0;
+static uint16_t mobileGreen = 0;
+static uint16_t mobileBlue = 0;
+static uint16_t mobileClear = 0;
+
+
 void colour_init() 
 {
   colourStartTime = millis();
@@ -50,28 +69,30 @@ static void updateColourValue()
   filteredRed = getOutput(COLOUR_RED);
   filteredBlue = getOutput(COLOUR_BLUE);
   filteredGreen = getOutput(COLOUR_GREEN);
+
+  updateMobileAverage();
 }
 
 
 void colourTask() 
 {
-
   updateColourValue();
-  //printColourPlot();
+  printColourPlot();
   plastic_weight_check();
   
   //don't check for mobile elements until some time passes
   if (millis() - colourStartTime >= MOBILE_STARTUP_DELAY &&
       !isServoSequenceActive()) {
-      mobile_element_check();
+        
+      //do this one if keep snitch, reject bludger  
+      //mobile_element_check();
+      
+      //do this one if want to reject both bludger and snitch
+      mobile_element_reject_check();
+
+      //do this if know theres only the snitch in the round - keeps any mobile element inside robot. 
+      //mobile_element_keep_check();
   }
-
-  // Serial.print("Snitch:");
-  // Serial.print(get_snitch_present());
-
-  // Serial.print("bludger:");
-  // Serial.print(get_bludger_present());
-
 }
 
 
@@ -94,18 +115,18 @@ void plastic_weight_check(void)
 void mobile_element_check(void)
 {
     bool possibleMobile =
-        (filteredRed < MOBILE_TOL_RED) &&
-        (filteredBlue < MOBILE_TOL_BLUE) &&
-        (filteredGreen < MOBILE_TOL_GREEN) && 
-        (filteredClear < MOBILE_TOL_CLEAR);
+        (mobileRed < MOBILE_TOL_RED) &&
+        (mobileBlue < MOBILE_TOL_BLUE) &&
+        (mobileGreen < MOBILE_TOL_GREEN) && 
+        (mobileClear < MOBILE_TOL_CLEAR);
 
       bool looksGold =
-        (filteredRed >= GOLD_RED_MIN) &&
-        (filteredRed <= GOLD_RED_MAX) &&
-        (filteredBlue >= GOLD_BLUE_MIN) &&
-        (filteredBlue <= GOLD_BLUE_MAX) &&
-        (filteredGreen >= GOLD_GREEN_MIN) &&
-        (filteredGreen <= GOLD_GREEN_MAX);
+        (mobileRed >= GOLD_RED_MIN) &&
+        (mobileRed <= GOLD_RED_MAX) &&
+        (mobileBlue >= GOLD_BLUE_MIN) &&
+        (mobileBlue <= GOLD_BLUE_MAX) &&
+        (mobileGreen >= GOLD_GREEN_MIN) &&
+        (mobileGreen <= GOLD_GREEN_MAX);
 
 // Start confirmation when a possible mobile element appears
     if (possibleMobile && !mobileCheckPending &&
@@ -134,7 +155,7 @@ void mobile_element_check(void)
             if (possibleMobile && goldCandidate && looksGold) {
                 goodMobileElementPresent = true;
                 Serial.println("Gold mobile element confirmed");
-                // Keep the servo in its centre position
+                // Keep the servo in its centre position - send to home base(so switch to drop_payload state)
                 //setServoPosition(NEUTRAL);
             } else {
                 goodMobileElementPresent = false;
@@ -150,6 +171,159 @@ void mobile_element_check(void)
     }
 }
 
+
+//only for if reject both bludger AND snitch (colour output not good...)
+void mobile_element_reject_check(void)
+{
+    bool possibleMobile =
+        (mobileRed < MOBILE_TOL_RED) &&
+        (mobileBlue < MOBILE_TOL_BLUE) &&
+        (mobileGreen < MOBILE_TOL_GREEN) && 
+        (mobileClear < MOBILE_TOL_CLEAR);
+
+    // Start confirmation
+    if (possibleMobile && !mobileCheckPending &&
+        !mobileElementPresent) {
+
+        mobileCheckPending = true;
+        mobileCheckStartTime = millis();
+
+        Serial.println("Possible mobile element; confirming");
+    }
+
+    // Confirm after the delay
+    if (mobileCheckPending) {
+
+        // Cancel if the readings no longer indicate an element
+        if (!possibleMobile) {
+            mobileCheckPending = false;
+            Serial.println("Mobile element detection cancelled");
+        }
+
+        else if (millis() - mobileCheckStartTime >=
+                 MOBILE_CONFIRM_DELAY) {
+
+            mobileCheckPending = false;
+            mobileElementPresent = true;
+            goodMobileElementPresent = false;
+
+            Serial.println("Mobile element confirmed; ejecting");
+            ejectMobileElement();
+        }
+    }
+
+    // Rearm after the element leaves
+    if (!possibleMobile && !mobileCheckPending) {
+        mobileElementPresent = false;
+    }
+}
+
+//if want to keep any mobile element (if know theres only snitch)
+void mobile_element_keep_check(void)
+{
+    bool possibleMobile =
+        (mobileRed < MOBILE_TOL_RED) &&
+        (mobileBlue < MOBILE_TOL_BLUE) &&
+        (mobileGreen < MOBILE_TOL_GREEN) && 
+        (mobileClear < MOBILE_TOL_CLEAR);
+
+    // Start confirmation when a possible mobile element appears
+    if (possibleMobile && !mobileCheckPending && !mobileElementPresent && !goodMobileElementPresent) {
+        mobileCheckPending = true;
+        mobileCheckStartTime = millis();
+        Serial.println("Possible mobile element; confirming");
+    }
+
+    // Confirm after the delay
+    if (mobileCheckPending) {
+
+        // Cancel if the object leaves
+        if (!possibleMobile) {
+            mobileCheckPending = false;
+            Serial.println("Mobile element detection cancelled");
+        }
+
+        else if (millis() - mobileCheckStartTime >=
+                 MOBILE_CONFIRM_DELAY) {
+
+            mobileCheckPending = false;
+            mobileElementPresent = true;
+            goodMobileElementPresent = true;
+
+            Serial.println("Mobile element detected; holding in centre");
+
+            // Servo should already be at neutral because no servo
+            // sequence is active, so leave it there.
+        }
+    }
+
+    // Rearm once the mobile element leaves
+    if (!possibleMobile && !mobileCheckPending) {
+        mobileElementPresent = false;
+        //goodMobileElementPresent = false;
+    }
+}
+
+void updateMobileAverage(void)
+{
+    // Remove old values from the sums
+    mobileRedSum -= mobileRedBuffer[mobileAvgIndex];
+    mobileGreenSum -= mobileGreenBuffer[mobileAvgIndex];
+    mobileBlueSum -= mobileBlueBuffer[mobileAvgIndex];
+    mobileClearSum -= mobileClearBuffer[mobileAvgIndex];
+
+    // Add new filtered values
+    mobileRedBuffer[mobileAvgIndex] = filteredRed;
+    mobileGreenBuffer[mobileAvgIndex] = filteredGreen;
+    mobileBlueBuffer[mobileAvgIndex] = filteredBlue;
+    mobileClearBuffer[mobileAvgIndex] = filteredClear;
+
+    mobileRedSum += filteredRed;
+    mobileGreenSum += filteredGreen;
+    mobileBlueSum += filteredBlue;
+    mobileClearSum += filteredClear;
+
+    // Move to next buffer position
+    mobileAvgIndex++;
+
+    if (mobileAvgIndex >= MOBILE_AVG_SIZE) {
+        mobileAvgIndex = 0;
+    }
+
+    // Calculate averages
+    mobileRed = mobileRedSum / MOBILE_AVG_SIZE;
+    mobileGreen = mobileGreenSum / MOBILE_AVG_SIZE;
+    mobileBlue = mobileBlueSum / MOBILE_AVG_SIZE;
+    mobileClear = mobileClearSum / MOBILE_AVG_SIZE;
+}
+
+
+
+//for visualizing colour sensor outputs using serial plotter
+void printColourPlot()
+{
+  Serial.print(">red:");
+  Serial.print(mobileRed);
+
+  Serial.print(",green:");
+  Serial.print(mobileGreen);
+
+  Serial.print(",blue:");
+  Serial.print(mobileBlue);
+
+  Serial.print(",clear:");
+  Serial.println(mobileClear);
+
+}
+
+void cancelMobileDetection(void)
+{
+    mobileCheckPending = false;
+    mobileElementPresent = false;
+    goldCandidate = true;
+}
+
+//getter functions
 bool get_bludger_present(void)
 {
     return mobileElementPresent;
@@ -163,28 +337,4 @@ bool get_snitch_present(void)
 uint16_t get_clear_value()
 {
   return filteredClear;
-}
-
-void printColourPlot()
-{
-  Serial.print(">red:");
-  Serial.print(filteredRed);
-
-  Serial.print(",green:");
-  Serial.print(filteredGreen);
-
-  Serial.print(",blue:");
-  Serial.print(filteredBlue);
-
-  Serial.print(",clear:");
-  Serial.println(filteredClear);
-
-
-}
-
-void cancelMobileDetection(void)
-{
-    mobileCheckPending = false;
-    mobileElementPresent = false;
-    goldCandidate = true;
 }

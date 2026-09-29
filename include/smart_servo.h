@@ -19,6 +19,7 @@ void ejectMobileElement(void);
 void servo_test(void);
 bool isServoSequenceActive(void);
 uint8_t get_num_weights(void);
+void reset_num_weights(void);
 
 #endif // SMART_SERVO_H
 

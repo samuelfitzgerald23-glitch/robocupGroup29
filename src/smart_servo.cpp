@@ -69,6 +69,13 @@ uint16_t getServoPosition()
     return servo.getPosition();
 }
 
+uint32_t getServoHoldTime()
+{
+    return (targetPosition == WANTED_WEIGHT)
+        ? METAL_HOLD_TIME
+        : REJECTION_HOLD_TIME;
+}
+
 
 void servo_timeout()
 {
@@ -162,11 +169,11 @@ void sortingServoTask()
                         break;
                     }
 
-                    setServoPosition(WANTED_WEIGHT);
-                    Serial.println("Moving back to wanted position");
+                    setServoPosition(targetPosition);
+                    Serial.println("Moving back to original position");
 
                     servoState = 3;
-                    ServoTimeout.begin(servo_timeout, 3 * SERVO_SECOND);
+                    ServoTimeout.begin(servo_timeout, getServoHoldTime());
                 
 
                     
@@ -174,7 +181,7 @@ void sortingServoTask()
                     Serial.println("Servo failed to return to neutral; check for jam");
 
                     servo.setTorqueOn();
-                    setServoPosition(WANTED_WEIGHT);
+                    setServoPosition(targetPosition);
                     servoSequenceActive = false;
                 }
             }
@@ -291,3 +298,9 @@ uint8_t get_num_weights(void)
 {
     return num_weights;
 }
+
+void reset_num_weights(void)
+{
+    num_weights = 0;
+}
+

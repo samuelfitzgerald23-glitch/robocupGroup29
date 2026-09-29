@@ -22,7 +22,7 @@
 #define TOF_READ_TASK_PERIOD                10
 #define IMU_READ_TASK_PERIOD                50
 
-#define SENSOR_AVERAGE_PERIOD               100
+#define SENSOR_AVERAGE_PERIOD               10
 #define LOCATION_TASK_PERIOD                10
 
 #define STATE_TASK_PERIOD                   2
@@ -30,9 +30,9 @@
 
 #define CHECK_WATCHDOG_TASK_PERIOD          40
 
-#define COLOUR_TASK_PERIOD                   10 //in Hz
-#define SERVO_TASK_PERIOD                    50 
-#define PROXIMITY_TASK_PERIOD                50
+#define COLOUR_TASK_PERIOD                   100
+#define SERVO_TASK_PERIOD                    20 
+#define PROXIMITY_TASK_PERIOD                20
 
 // Task execution amount definitions
 // -1 means indefinitely
