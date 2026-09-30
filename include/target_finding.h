@@ -8,7 +8,7 @@
 #define KERNEL_SIZE 3
 #define TARGET_GRID_SIZE 20
 
-#define MAX_WEIGHTS_ONBOARD 3
+#define MAX_WEIGHTS_ONBOARD 1
 
 enum goal_t {
     NO_ACTION,

@@ -103,5 +103,5 @@ void TOF_task() {
     }
     writeCircBuf(getBuf((BufID)i), TOF_reading[i]);
   }
-  Serial.println();
+  //Serial.println();
 }

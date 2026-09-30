@@ -13,7 +13,7 @@
 #include "smart_servo.h"
 #include "gate.h"
 #include "target_finding.h"      //MAX_WEIGHTS_ONBOARD
-
+#include <math.h>
 //----------------------------------------------------------------------------
 // Sensor mapping for WALL AVOIDANCE - SWAP THESE if avoidance steers the wrong way.
 // Assumed: TOF1 looks 45deg RIGHT, TOF2 looks 45deg LEFT (from map.cpp offsets).
@@ -51,15 +51,15 @@
 //----------------------------------------------------------------------------
 #define FAR_MM               2000     //value used for "nothing seen" / bad reading
 
-#define CRUISE_SPEED         430      //-450..450
+#define CRUISE_SPEED         370      //-450..450
 #define STEER_DIFF           150      //wheel speed +/- when nudging away from a wall
-#define SPIN_SPEED           280      //in-place spin when blocked
+#define SPIN_SPEED           350      //in-place spin when blocked
 
 #define FRONT_STOP_MM        300      //ultrasound: start spinning away
 #define FRONT_CLEAR_MM       450      //ultrasound: stop spinning (hysteresis)
 #define SIDE_WARN_MM         300      //angled TOF: nudge away
 
-#define INITIAL_TURN_DEG     0.0f    //heading to leave the start area on
+#define INITIAL_TURN_DEG     -45.0f    //heading to leave the start area on
 #define STARTUP_WAIT_MS      1500     //let filters fill / pose settle
 
 #define WEIGHT_DROP_MM       200      //low TOF this much shorter than top TOF = weight
@@ -69,24 +69,40 @@
 #define WEIGHT_CONFIRM_MS    30       //must be seen this long (reduced for faster response)
 #define WEIGHT_TURN_LEFT_DEG   45.0f  //LEFT diff TOF sees weight  -> turn this far ANTICLOCKWISE
 #define WEIGHT_TURN_RIGHT_DEG  45.0f  //RIGHT diff TOF sees weight -> turn this far CLOCKWISE
-#define WEIGHT_COOLDOWN_MS   2000     //ignore weights after a missed attempt
+#define WEIGHT_COOLDOWN_MS   500     //ignore weights after a missed attempt
 #define PICKUP_COOLDOWN_MS   500      //short ignore-weights time after a pickup starts
 #define CHASE_WHILE_SORTING  1        //1 = keep hunting weights while the servo is busy
                                       //0 = don't turn toward new weights until servo is free
-                                      //    (still keeps moving / avoiding walls either way)
+                                      //    (still keeps moving / avoiding walls either way
 
-#define APPROACH_SPEED       410
+#define APPROACH_SPEED       360
 #define APPROACH_MS          4000     //drive forward for pickup
 #define APPROACH_WALL_MM     120      //abort approach if this close ahead
 
-#define TURN_TOL_DEG         12.0f   //increased tolerance to prevent overshoot
+#define TURN_TOL_DEG         8.0f     //increased tolerance to prevent overshoot
 #define TURN_KP              3.0f     //wheel speed per degree of error
 #define TURN_MIN_SPEED       120      //reduced to avoid overshoot at small errors
-#define TURN_MAX_SPEED       380
-#define TURN_TIMEOUT_MS      3000
+#define TURN_MAX_SPEED       360
+#define TURN_TIMEOUT_MS      2000
 
-#define HOME_HEADING_TOL_DEG 15.0f    //drive straight if within this of home bearing
+#define HOME_HEADING_TOL_DEG 8.0f    //drive straight if within this of home bearing
 #define HOME_IGNORE_MM       300      //near base: stop avoiding walls so we can dock
+
+
+#define STUCK_TIMEOUT_MS       8000UL
+#define REVERSE_RECOVERY_MS    500UL
+#define STUCK_MOVE_MM          20.0f
+#define STUCK_TURN_DEG         5.0f
+#define RECOVERY_SPEED         250
+
+static uint32_t lastProgressTime = 0;
+static uint32_t recoveryStartTime = 0;
+static float progressX = 0;
+static float progressY = 0;
+static float progressHeading = 0;
+static bool recovering = false;
+static bool progressInitialized = false;
+static bool homeTurnStarted = false;
 
 //----------------------------------------------------------------------------
 enum ReactState {
@@ -119,9 +135,75 @@ static int rd(BufID id) {            //filtered reading, bad/zero -> "far"
     return (v <= 0 || v > FAR_MM) ? FAR_MM : v;
 }
 
-static void spin(int dir, int speed) {       //dir +1 = left (CCW), -1 = right
-    setDriveSpeed(-dir * speed, dir * speed);
+
+static void driveWithRecovery(int left, int right) {
+    uint32_t now = millis();
+    pos_vector_t me = getMyPOS();
+    float heading = me.theta * RAD_TO_DEG;
+
+    // While recovering, override all normal motor commands.
+    if (recovering) {
+        if (now - recoveryStartTime < REVERSE_RECOVERY_MS) {
+            setDriveSpeed(-RECOVERY_SPEED, -RECOVERY_SPEED);
+            return;
+        }
+
+        recovering = false;
+        lastProgressTime = now;
+        progressX = me.pos.x;
+        progressY = me.pos.y;
+        progressHeading = heading;
+    }
+
+    // Intentional stop: don't count it as being stuck.
+    if (left == 0 && right == 0) {
+        lastProgressTime = now;
+        progressX = me.pos.x;
+        progressY = me.pos.y;
+        progressHeading = heading;
+        setDriveSpeed(0, 0);
+        return;
+    }
+
+    if (!progressInitialized) {
+        progressX = me.pos.x;
+        progressY = me.pos.y;
+        progressHeading = heading;
+        lastProgressTime = now;
+        progressInitialized = true;
+    }
+
+    float dx = me.pos.x - progressX;
+    float dy = me.pos.y - progressY;
+    float moved = sqrtf(dx * dx + dy * dy);
+    float turned = fabsf(wrap180(heading - progressHeading));
+
+    // Translation OR rotation counts as progress.
+    if (moved >= STUCK_MOVE_MM || turned >= STUCK_TURN_DEG) {
+        lastProgressTime = now;
+        progressX = me.pos.x;
+        progressY = me.pos.y;
+        progressHeading = heading;
+    }
+
+    // No progress for too long: reverse briefly.
+    if (now - lastProgressTime >= STUCK_TIMEOUT_MS) {
+        recovering = true;
+        recoveryStartTime = now;
+        lastProgressTime = now;
+
+        Serial.println("Stuck: reversing for recovery");
+        setDriveSpeed(-RECOVERY_SPEED, -RECOVERY_SPEED);
+        return;
+    }
+
+    setDriveSpeed(left, right);
 }
+
+static void spin(int dir, int speed) {       //dir +1 = left (CCW), -1 = right
+    driveWithRecovery(-dir * speed, dir * speed);
+}
+
 
 //proportional in-place turn to an absolute heading. true when there.
 //improved control to prevent overshoot by using lower speeds at small errors
@@ -172,11 +254,11 @@ static bool avoidWalls(int cruise) {
     bool leftClose  = (tL < SIDE_WARN_MM);
 
     if (rightClose && !leftClose) {           //wall on right -> steer left
-        setDriveSpeed(cruise - STEER_DIFF, cruise + STEER_DIFF);
+        driveWithRecovery(cruise - STEER_DIFF, cruise + STEER_DIFF);
         return true;
     }
     if (leftClose && !rightClose) {           //wall on left -> steer right
-        setDriveSpeed(cruise + STEER_DIFF, cruise - STEER_DIFF);
+        driveWithRecovery(cruise + STEER_DIFF, cruise - STEER_DIFF);
         return true;
     }
     return false;
@@ -270,7 +352,7 @@ void reactiveTask() {
                 break;
             }
         }
-        if (!avoidWalls(CRUISE_SPEED)) setDriveSpeed(CRUISE_SPEED, CRUISE_SPEED);
+        if (!avoidWalls(CRUISE_SPEED)) driveWithRecovery(CRUISE_SPEED, CRUISE_SPEED);
         break;
     }
 
@@ -292,39 +374,60 @@ void reactiveTask() {
             enter(R_EXPLORE);
         } else {
             // Just drive straight forward, no heading correction needed
-            setDriveSpeed(APPROACH_SPEED, APPROACH_SPEED);
+            driveWithRecovery(APPROACH_SPEED, APPROACH_SPEED);
         }
         break;
 
     case R_GO_HOME: {
-        if (isAtBase()) {
+        int usL = rd(LEFT_US);
+        int usR = rd(RIGHT_US);
+
+        // At base: stop and turn 180 before starting the drop
+        if (usL <= 300 && usR <= 300) {
             setDriveSpeed(0, 0);
-            gateStartDrop();
-            enter(R_DROP);
+
+            if (!homeTurnStarted) {
+                turnTarget = wrap180(th + 180.0f);
+                homeTurnStarted = true;
+            }
+
+            if (turnTo(turnTarget)) {
+                setDriveSpeed(0, 0);
+                homeTurnStarted = false;
+                gateStartDrop();
+                enter(R_DROP);
+            }
             break;
         }
+
+        // If the base turn has started, finish it before navigating again
+        if (homeTurnStarted) {
+            turnTo(turnTarget);
+            break;
+        }
+
+        // Calculate direction toward home (world origin)
         float dx = 0.0f - me.pos.x;
         float dy = 0.0f - me.pos.y;
-        float dist = sqrtf(dx * dx + dy * dy);
 
-        //walls take priority, except right at the base where the walls are close anyway
-        if (dist > HOME_IGNORE_MM && avoidWalls(CRUISE_SPEED)) break;
-
-        float bearing = -atan2f(dx, dy) * RAD_TO_DEG;      //same convention as moving.cpp
+        float bearing = -atan2f(dx, dy) * RAD_TO_DEG;
         float err = wrap180(bearing - th);
 
+        // Turn toward home, then drive straight
         if (fabsf(err) > HOME_HEADING_TOL_DEG) {
-            //bang-bang on heading: spin toward home while well off, drive when lined up
             spin(err > 0 ? 1 : -1, SPIN_SPEED);
         } else {
-            setDriveSpeed(CRUISE_SPEED, CRUISE_SPEED);
+            driveWithRecovery(CRUISE_SPEED, CRUISE_SPEED);
         }
+
         break;
     }
 
     case R_DROP:
+
         if (gateDrop()) {
             reset_num_weights();
+            homeTurnStarted = false;
             turnTarget = START_ON_LEFT ? -INITIAL_TURN_DEG : INITIAL_TURN_DEG;
             enter(R_LEAVE_START);
         } else if (elapsed > 25000UL) {                    //jam safety net

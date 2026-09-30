@@ -17,6 +17,9 @@ static uint32_t mobileCheckStartTime = 0;
 static bool goodMobileElementPresent = false;
 static bool goldCandidate = true;
 
+static bool plasticCheckPending = false;
+static uint32_t plasticCheckStartTime = 0;
+
 
 //averaging variables to smooth colour output
 static uint16_t mobileRedBuffer[MOBILE_AVG_SIZE] = {0};
@@ -115,7 +118,7 @@ void colourTask()
       //mobile_element_check();
       
       //do this one if want to reject both bludger and snitch
-      mobile_element_reject_check();
+      //mobile_element_reject_check();
 
       //do this if know theres only the snitch in the round - keeps any mobile element inside robot. 
       //mobile_element_keep_check();
@@ -223,19 +226,40 @@ void plastic_weight_check(void)
         (mobileGreen >= PLASTIC_WEIGHT_GREEN_MIN) &&
         (mobileGreen <= PLASTIC_WEIGHT_GREEN_MAX);
 
-    // Check if colour matches plastic and proximity has not detected metal
-    if (possiblePlastic &&
-        !get_metal_weight_detected() &&
-        !plasticWeightPresent) {
+    bool metalDetected = get_metal_weight_detected();
 
-        Serial.println("Plastic weight detected!");
-        plasticWeightPresent = true;
-        sortUnwantedWeight();
+    // Metal takes priority: cancel plastic confirmation.
+    if (metalDetected) {
+        plasticCheckPending = false;
+        return;
     }
 
-    // Rearm once the current weight no longer matches plastic
+    // Rearm when the plastic colour is no longer detected.
     if (!possiblePlastic) {
+        plasticCheckPending = false;
         plasticWeightPresent = false;
+        return;
+    }
+
+    // Already confirmed; don't trigger sorting again.
+    if (plasticWeightPresent) {
+        return;
+    }
+
+    // Start confirmation timer.
+    if (!plasticCheckPending) {
+        plasticCheckPending = true;
+        plasticCheckStartTime = millis();
+        return;
+    }
+
+    // Require continuous readings within all tolerances for 2 seconds.
+    if (millis() - plasticCheckStartTime >= PLASTIC_CONFIRM_DELAY) {
+        plasticCheckPending = false;
+        plasticWeightPresent = true;
+
+        Serial.println("Plastic weight confirmed!");
+        sortUnwantedWeight();
     }
 }
 

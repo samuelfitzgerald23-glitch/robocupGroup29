@@ -24,14 +24,14 @@
 #define GATE_OPEN_POS      289       //raw position with the gate open
 #define GATE_SPEED         150       //play-time / speed, 0 (fastest)..254 (slowest)
 
-#define SHAKE_MS           10000UL   //shake this long (gate open)
-#define STILL_MS           10000UL   //sit still this long after closing, then finish
+#define SHAKE_MS           5000UL   //shake this long (gate open)
+#define STILL_MS           2000UL   //sit still this long after closing, then finish
 
 #define SHAKE_SPEED        400       //shake drive speed (-450..450)
 #define SHAKE_STEP_MS      120       //ms per shake move (smaller = sharper)
 #define SHAKE_MAX_MM       200.0f    //stop shaking if we drift this far from base
 
-#define BASE_TOLERANCE_MM  100.0f    //how close to (0,0) counts as "at base"
+#define BASE_TOLERANCE_MM  50.0f    //how close to (0,0) counts as "at base"
 
 
 //----------------------------------------------------------------------------
@@ -129,6 +129,7 @@ bool gateDrop() {
             return false;
 
         case 2:  // gate shut - sit still for STILL_MS, then finish
+            setDriveSpeed(0, 0);
             if (millis() - openStart >= SHAKE_MS + STILL_MS) {
                 dropPhase = 0;
                 return true;                   // drop complete

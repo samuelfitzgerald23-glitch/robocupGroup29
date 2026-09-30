@@ -22,7 +22,7 @@ volatile bool servoTimeout = false;
 
 //to know if at center or not
 #define NEUTRAL_TOLERANCE 20
-#define NEUTRAL_RETRY_LIMIT 3 //number of recovery attempts
+#define NEUTRAL_RETRY_LIMIT 5 //number of recovery attempts
 uint8_t neutralRetries = 0;
 
 //range 0 (fastest) to 254 (slowest)
