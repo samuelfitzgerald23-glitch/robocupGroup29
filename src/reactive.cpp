@@ -55,11 +55,11 @@
 #define STEER_DIFF           150      //wheel speed +/- when nudging away from a wall
 #define SPIN_SPEED           280      //in-place spin when blocked
 
-#define FRONT_STOP_MM        250      //ultrasound: start spinning away
-#define FRONT_CLEAR_MM       400      //ultrasound: stop spinning (hysteresis)
-#define SIDE_WARN_MM         250      //angled TOF: nudge away
+#define FRONT_STOP_MM        300      //ultrasound: start spinning away
+#define FRONT_CLEAR_MM       450      //ultrasound: stop spinning (hysteresis)
+#define SIDE_WARN_MM         300      //angled TOF: nudge away
 
-#define INITIAL_TURN_DEG     45.0f    //heading to leave the start area on
+#define INITIAL_TURN_DEG     0.0f    //heading to leave the start area on
 #define STARTUP_WAIT_MS      1500     //let filters fill / pose settle
 
 #define WEIGHT_DROP_MM       200      //low TOF this much shorter than top TOF = weight
@@ -75,14 +75,14 @@
                                       //0 = don't turn toward new weights until servo is free
                                       //    (still keeps moving / avoiding walls either way)
 
-#define APPROACH_SPEED       430
-#define APPROACH_MS          5000     //drive forward for pickup
+#define APPROACH_SPEED       410
+#define APPROACH_MS          4000     //drive forward for pickup
 #define APPROACH_WALL_MM     120      //abort approach if this close ahead
 
 #define TURN_TOL_DEG         12.0f   //increased tolerance to prevent overshoot
 #define TURN_KP              3.0f     //wheel speed per degree of error
-#define TURN_MIN_SPEED       80      //reduced to avoid overshoot at small errors
-#define TURN_MAX_SPEED       280
+#define TURN_MIN_SPEED       120      //reduced to avoid overshoot at small errors
+#define TURN_MAX_SPEED       380
 #define TURN_TIMEOUT_MS      3000
 
 #define HOME_HEADING_TOL_DEG 15.0f    //drive straight if within this of home bearing
@@ -334,3 +334,4 @@ void reactiveTask() {
         break;
     }
 }
+

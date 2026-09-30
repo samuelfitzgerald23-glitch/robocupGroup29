@@ -64,6 +64,25 @@ void TOFinit(SX1509* io) {
   }
 }
 
+
+bool recoverTOF(uint8_t i) 
+{
+    Serial.print("Recovering TOF ");
+    Serial.println(i);
+    sensors[i].stopContinuous();
+    if (!sensors[i].init()) {
+      Serial.print("TOF recovery failed: ");
+      Serial.println(i);
+      return false;
+    }
+    sensors[i].setROISize(16, 4);
+    sensors[i].startContinuous(35);
+    Serial.print("TOF recovered: ");
+    Serial.println(i);
+    
+    return true;
+}
+
 void TOF_task() {
   //Serial.println("TOF task");
   for (uint8_t i = 0; i < sensorCount; i++)
@@ -76,9 +95,11 @@ void TOF_task() {
     // Serial.print(TOF_reading[i]);
     // Serial.print(" ");
 
-    if (sensors[i].timeoutOccurred()) { 
-      Serial.print(" TIMEOUT"); 
-      Serial.print('\t');
+    if (sensors[i].timeoutOccurred()) {
+    Serial.print("TOF timeout: ");
+    Serial.println(i);
+    recoverTOF(i);
+    continue;
     }
     writeCircBuf(getBuf((BufID)i), TOF_reading[i]);
   }
