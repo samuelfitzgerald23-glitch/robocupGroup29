@@ -32,8 +32,19 @@ static bool mobileSuspected() { return get_mobile_suspected(); }
 #else
 static bool mobileSuspected() { return false; }
 #endif
+
 #include "gate.h"
 #include "target_finding.h"      //MAX_WEIGHTS_ONBOARD
+
+//----------------------------------------------------------------------------
+// When the robot is full:
+//   GO_HOME_ENABLE 1 = drive back to base and drop the weights (original behaviour)
+//   GO_HOME_ENABLE 0 = home finding disabled: just stop moving (fans keep running)
+//----------------------------------------------------------------------------
+#define GO_HOME_ENABLE  0
+
+#undef  MAX_WEIGHTS_ONBOARD
+#define MAX_WEIGHTS_ONBOARD 3     //weights to collect before going home / stopping
 #include <math.h>
 
 //----------------------------------------------------------------------------
@@ -198,7 +209,7 @@ static float homeRefX = 0, homeRefY = 0, homeRefHeading = 0;
 //----------------------------------------------------------------------------
 enum ReactState {
     R_STARTUP, R_LEAVE_START, R_EXPLORE, R_CENTER_WEIGHT,
-    R_APPROACH_WEIGHT, R_PICKUP_SHAKE, R_BACKOFF, R_GO_HOME, R_DROP
+    R_APPROACH_WEIGHT, R_PICKUP_SHAKE, R_BACKOFF, R_GO_HOME, R_DROP, R_FULL
 };
 
 static ReactState state = R_STARTUP;
@@ -517,7 +528,12 @@ void reactiveTask() {
         get_num_weights() >= MAX_WEIGHTS_ONBOARD &&
         millis() >= homeRetryAfter) {
         setDriveSpeed(0, 0);
+#if GO_HOME_ENABLE
         startHome(me);
+#else
+        Serial.println("Full: home finding disabled, stopping");
+        enter(R_FULL);
+#endif
     }
 
 #if PICKUP_SHAKE_ENABLE
@@ -805,6 +821,10 @@ void reactiveTask() {
         }
         break;
     }
+
+    case R_FULL:                                       //got all the weights, home finding disabled: stay still
+        setDriveSpeed(0, 0);
+        break;
 
     case R_DROP:
         Serial.println("in drop off state");

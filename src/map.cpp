@@ -268,6 +268,21 @@ void poseTask() {
  * getters/setters
  */
 
+//zero the pose: robot is at the world origin facing theta = 0, and discard any pending motion
+void resetPose() {
+    //clear the old position marker
+    int x, y;
+    worldToGrid(robot_worldFrame.x(), robot_worldFrame.y(), x, y);
+    mapData[y][x] = 10;
+    logCell(x, y, 10);
+
+    robot_worldFrame = PoseMatrix::buildFrame(&worldOrigin);
+    prev_heading = getHeading();            //next differential heading starts from now
+
+    float dx, dy;
+    read_opticalFlow(dx, dy);               //flush motion counted since the last poseTask
+}
+
 pos_vector_t getMyPOS() {
     return {robot_worldFrame.theta(), {robot_worldFrame.x(), robot_worldFrame.y()}};
 }

@@ -3,7 +3,7 @@
 CRGB leds[NUM_LEDS];
 
 void LED_init() {
-    Serial.print("LED init");
+    Serial.println("LED init");
     FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
     FastLED.setBrightness(130);
 
@@ -18,4 +18,5 @@ void setLEDColor(int index, CRGB color) {
         leds[index] = color;
         FastLED.show();
     }
+    Serial.println("set led colour");
 }

@@ -61,6 +61,13 @@
 
 // Pin deffinitions
 #define IO_POWER  49
+#define START_BUTTON_PIN          22
+#define START_BUTTON_ACTIVE_HIGH  1     // 1 = pin goes HIGH when pressed (idles LOW); 0 = pressed pulls it to GND
+
+void resetPose();                       // map.cpp
+
+static volatile bool startPressed = false;
+static void startButtonISR() { startPressed = true; }
 
 // Serial deffinitions
 #define BAUD_RATE 115200
@@ -171,6 +178,29 @@ void setup() {
 
   initSmartServo();
   initGate();
+
+  // ---- wait for the start button (D23). Sensors keep running, but no movement / fans until pressed ----
+  tState_task.disable();
+  tSet_motor.disable();
+  pinMode(START_BUTTON_PIN, START_BUTTON_ACTIVE_HIGH ? INPUT_PULLDOWN : INPUT_PULLUP);
+  delay(50);                                                 // let the pin settle
+  startPressed = false;
+  attachInterrupt(digitalPinToInterrupt(START_BUTTON_PIN), startButtonISR,
+                  START_BUTTON_ACTIVE_HIGH ? RISING : FALLING);   // latches even a very short press / pulse
+  Serial.println("Waiting for start button on D22...");
+  while (!startPressed) {
+    taskManager.execute();                                   // keep sensors / filters / pose running
+    static uint32_t lastPrint = 0;
+    if (millis() - lastPrint > 500) {                        // debug: D23 level (idle vs pressed)
+      lastPrint = millis();
+      Serial.print("D23 = "); Serial.println(digitalRead(START_BUTTON_PIN));
+    }
+  }
+  detachInterrupt(digitalPinToInterrupt(START_BUTTON_PIN));
+  Serial.println("Start button pressed - go");
+  resetPose();                                               // home base = (0,0), heading 0
+  tState_task.enable();
+  tSet_motor.enable();
 }
 
 void loop() {

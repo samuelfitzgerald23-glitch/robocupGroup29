@@ -3,8 +3,8 @@
 
 #include "FastLED.h"
 
-#define NUM_LEDS 14
-#define DATA_PIN 21
+#define NUM_LEDS 16
+#define DATA_PIN 15
 
 #define WRITIBLE_LED 6
 

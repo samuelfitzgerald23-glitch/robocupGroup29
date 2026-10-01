@@ -13,44 +13,44 @@
 
 
 //colour output tolerances for a plastic weight
-#define PLASTIC_WEIGHT_CLEAR_MIN 400 
-#define PLASTIC_WEIGHT_CLEAR_MAX 750
-#define PLASTIC_WEIGHT_RED_MIN 200
-#define PLASTIC_WEIGHT_RED_MAX 340
-#define PLASTIC_WEIGHT_BLUE_MIN 100
+#define PLASTIC_WEIGHT_CLEAR_MIN 300 
+#define PLASTIC_WEIGHT_CLEAR_MAX 500
+#define PLASTIC_WEIGHT_RED_MIN 180
+#define PLASTIC_WEIGHT_RED_MAX 300
+#define PLASTIC_WEIGHT_BLUE_MIN 70
 #define PLASTIC_WEIGHT_BLUE_MAX 200
 #define PLASTIC_WEIGHT_GREEN_MIN 100
 #define PLASTIC_WEIGHT_GREEN_MAX 250 
 
 //tolerances for bludger detection (minimums)
-#define BLUDGER_TOL_RED_MIN   300
+#define BLUDGER_TOL_RED_MIN   250
 #define BLUDGER_TOL_RED_MAX   1600
-#define BLUDGER_TOL_BLUE_MIN  130
+#define BLUDGER_TOL_BLUE_MIN  100
 #define BLUDGER_TOL_BLUE_MAX  250 
-#define BLUDGER_TOL_GREEN_MIN 180
-#define BLUDGER_TOL_GREEN_MAX 300 
-#define BLUDGER_TOL_CLEAR_MIN 600
+#define BLUDGER_TOL_GREEN_MIN 160
+#define BLUDGER_TOL_GREEN_MAX 280 
+#define BLUDGER_TOL_CLEAR_MIN 400
 #define BLUDGER_TOL_CLEAR_MAX 1600   //(was a 2nd BLUDGER_TOL_GREEN_MAX define - clashed, and is unused)
 
 //tolerances for snitch detection
-#define GOLD_RED_MIN    300
-#define GOLD_RED_MAX    400
-#define GOLD_BLUE_MIN   150
-#define GOLD_BLUE_MAX   500
+#define GOLD_RED_MIN    280
+#define GOLD_RED_MAX    500
+#define GOLD_BLUE_MIN   100
+#define GOLD_BLUE_MAX   400
 #define GOLD_GREEN_MIN  200
 #define GOLD_GREEN_MAX  900
 #define GOLD_CLEAR_MIN  600
 #define GOLD_CLEAR_MAX  2400
 
 #define MOBILE_STARTUP_DELAY 2000
-#define MOBILE_CONFIRM_DELAY 5000 //5s to confirm it is a mobile element (fans are off the whole time)
+#define MOBILE_CONFIRM_DELAY 6000 //6s to confirm it is a mobile element (fans are off the whole time)
 #define MOBILE_DROPOUT_MS    500  //readings may drop out of the mobile range for this long without cancelling the 5s check
 #define MOBILE_SUSPECT_MS    200  //readings must look like a mobile element this long before the robot stops shaking / treats it as one
-#define SNITCH_GREEN_MIN     500  //smoothed green above this at any point in the 5s window = SNITCH, otherwise assume BLUDGER
+#define SNITCH_GREEN_MIN     350  //smoothed green above this at any point in the 5s window = SNITCH, otherwise assume BLUDGER
 
 #define MOBILE_AVG_SIZE 20
 
-#define PLASTIC_CONFIRM_DELAY 2000
+#define PLASTIC_CONFIRM_DELAY 5000
 
 enum MobileType {
     NO_MOBILE,
