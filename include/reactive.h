@@ -10,6 +10,6 @@
 //Which side of the arena the robot starts on (only matters for USE_REACTIVE_CONTROL)
 //1 = starts on the LEFT  -> heads out to the right
 //0 = starts on the RIGHT -> heads out to the left
-#define START_ON_LEFT 1
+#define START_ON_LEFT 0
 
 void reactiveTask();

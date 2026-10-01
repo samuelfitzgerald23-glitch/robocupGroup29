@@ -135,7 +135,7 @@ static void updateColourValue()
 void colourTask() 
 {
   updateColourValue();
-  //printColourPlot();
+  printColourPlot();
   plastic_weight_check();
   
   //don't check for mobile elements until some time passes
