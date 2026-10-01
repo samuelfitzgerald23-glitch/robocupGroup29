@@ -290,6 +290,12 @@ bool isServoSequenceActive(void)
     return servoSequenceActive;
 }
 
+//true only while a METAL (wanted) weight is being sorted - plastic and mobile ejections are not metal
+bool isServoSequenceMetal(void)
+{
+    return servoSequenceActive && (targetPosition == WANTED_WEIGHT);
+}
+
 uint8_t get_num_weights(void)
 {
     return num_weights;
@@ -299,4 +305,3 @@ void reset_num_weights(void)
 {
     num_weights = 0;
 }
-

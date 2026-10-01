@@ -40,7 +40,19 @@ static uint16_t mobileBlue = 0;
 static uint16_t mobileClear = 0;
 
 
-static MobileType pendingMobileType = NO_MOBILE;
+//--- mobile element check: assume BLUDGER (eject) unless green goes high (SNITCH: keep + stay still) ---
+#ifndef MOBILE_DECIDE_MS
+#define MOBILE_DECIDE_MS     5000   //readings must look like a mobile element for this long before deciding
+#endif
+#ifndef MOBILE_DROPOUT_MS
+#define MOBILE_DROPOUT_MS    500    //readings may drop out of range this long without cancelling the check
+#endif
+#ifndef SNITCH_GREEN_MIN
+#define SNITCH_GREEN_MIN     500    //smoothed green above this at any point during the check = SNITCH
+#endif
+
+static bool snitchGreenSeen = false;      //green went above SNITCH_GREEN_MIN during the current check
+static uint32_t mobileLastSeenTime = 0;   //last time the readings looked like a mobile element
 
 static MobileType classifyMobileElement(void)
 {
@@ -65,6 +77,22 @@ static MobileType classifyMobileElement(void)
     if (bludger) return BLUDGER_MOBILE;
 
     return NO_MOBILE;
+}
+
+//plastic weight colour window (same limits as plastic_weight_check)
+static bool inPlasticBox(void)
+{
+    return (mobileClear >= PLASTIC_WEIGHT_CLEAR_MIN) && (mobileClear <= PLASTIC_WEIGHT_CLEAR_MAX) &&
+           (mobileRed   >= PLASTIC_WEIGHT_RED_MIN)   && (mobileRed   <= PLASTIC_WEIGHT_RED_MAX)   &&
+           (mobileBlue  >= PLASTIC_WEIGHT_BLUE_MIN)  && (mobileBlue  <= PLASTIC_WEIGHT_BLUE_MAX)  &&
+           (mobileGreen >= PLASTIC_WEIGHT_GREEN_MIN) && (mobileGreen <= PLASTIC_WEIGHT_GREEN_MAX);
+}
+
+//looks like a mobile element (bludger or snitch) and NOT like a plastic weight.
+//(inside the plastic window it is treated as plastic: that has its own 2s check and ejects as normal)
+static bool looksLikeMobile(void)
+{
+    return !inPlasticBox() && classifyMobileElement() != NO_MOBILE;
 }
 
 void colour_init() 
@@ -115,7 +143,7 @@ void colourTask()
       !isServoSequenceActive()) {
         
       //do this one if keep snitch, reject bludger  
-      //mobile_element_check();
+      mobile_element_check();
       
       //do this one if want to reject both bludger and snitch
       //mobile_element_reject_check();
@@ -127,87 +155,78 @@ void colourTask()
 
 static void runMobileDetection(MobileMode mode)
 {
-    MobileType detected = classifyMobileElement();
+    uint32_t now = millis();
+    bool seen = looksLikeMobile();
 
-    // No new detection while a snitch is already held.
-    if (mode == CLASSIFY_MOBILE && goodMobileElementPresent) {
+    // Already holding a snitch: nothing more to do.
+    if (goodMobileElementPresent) {
         return;
     }
 
     // Already confirmed: wait until the object leaves before rearming.
     if (mobileElementPresent) {
-        if (detected == NO_MOBILE) {
+        if (!seen) {
             mobileElementPresent = false;
-            pendingMobileType = NO_MOBILE;
         }
         return;
     }
 
-    // A gold snitch is accepted immediately (no confirmation delay).
-    if (mode == CLASSIFY_MOBILE && detected == GOLD_MOBILE) {
-        mobileCheckPending = false;
-        pendingMobileType = NO_MOBILE;
-
-        mobileElementPresent = true;
-        goodMobileElementPresent = true;
-
-        Serial.println("Gold snitch detected; holding in centre");
-        return;
-    }
-
-    // Nothing recognised: cancel any pending confirmation.
-    if (detected == NO_MOBILE) {
-        if (mobileCheckPending) {
+    if (!seen) {
+        // Let the readings drop out briefly (shaking / lighting) before giving up on the check.
+        if (mobileCheckPending && now - mobileLastSeenTime > MOBILE_DROPOUT_MS) {
             Serial.println("Mobile confirmation cancelled");
+            mobileCheckPending = false;
+            snitchGreenSeen = false;
         }
-
-        mobileCheckPending = false;
-        pendingMobileType = NO_MOBILE;
         return;
     }
 
-    // Start or restart confirmation if the detected type changes.
-    if (!mobileCheckPending || detected != pendingMobileType) {
+    mobileLastSeenTime = now;
+
+    // Start the check.
+    if (!mobileCheckPending) {
         mobileCheckPending = true;
-        pendingMobileType = detected;
-        mobileCheckStartTime = millis();
-
-        if (detected == GOLD_MOBILE) {
-            Serial.println("Possible gold snitch; confirming");
-        } else {
-            Serial.println("Possible bludger; confirming");
-        }
-
-        return;
+        mobileCheckStartTime = now;
+        snitchGreenSeen = false;
+        Serial.println("Possible mobile element; confirming");
     }
 
-    // Require the same classification for the full confirmation period.
-    if (millis() - mobileCheckStartTime < MOBILE_CONFIRM_DELAY) {
+    // Assume bludger, unless the green ever goes above SNITCH_GREEN_MIN (never happens with the red bludger).
+    if (!snitchGreenSeen && mobileGreen > SNITCH_GREEN_MIN) {
+        snitchGreenSeen = true;
+        Serial.println("Green above snitch threshold during check");
+    }
+
+    // Require the full confirmation period.
+    if (now - mobileCheckStartTime < MOBILE_DECIDE_MS) {
         return;
     }
 
     mobileCheckPending = false;
     mobileElementPresent = true;
 
+    bool isSnitch = snitchGreenSeen;
+    snitchGreenSeen = false;
+
     bool keepElement =
         (mode == KEEP_ALL_MOBILE) ||
-        (mode == CLASSIFY_MOBILE && detected == GOLD_MOBILE);
+        (mode == CLASSIFY_MOBILE && isSnitch);
 
     if (keepElement) {
         goodMobileElementPresent = true;
 
-        if (detected == GOLD_MOBILE) {
-            Serial.println("Gold snitch confirmed; holding in centre");
+        if (isSnitch) {
+            Serial.println("Snitch confirmed; holding in centre, stopping");
         } else {
-            Serial.println("Mobile element confirmed; holding in centre");
+            Serial.println("Mobile element confirmed; holding in centre, stopping");
         }
     } else {
         goodMobileElementPresent = false;
 
-        if (detected == BLUDGER_MOBILE) {
-            Serial.println("Bludger confirmed; ejecting");
+        if (isSnitch) {
+            Serial.println("Snitch confirmed; ejecting");
         } else {
-            Serial.println("Gold snitch confirmed; ejecting");
+            Serial.println("Bludger confirmed; ejecting");
         }
 
         ejectMobileElement();
@@ -335,6 +354,7 @@ void cancelMobileDetection(void)
 {
     mobileCheckPending = false;
     mobileElementPresent = false;
+    snitchGreenSeen = false;
     goldCandidate = true;
 }
 

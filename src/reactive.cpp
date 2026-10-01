@@ -11,9 +11,45 @@
 #include "map.h"
 #include "motor.h"
 #include "smart_servo.h"
+#include "colour_sensor.h"      //get_snitch_present()
+
+//----------------------------------------------------------------------------
+// Optional hooks into other files. Leave at 0 unless you have the matching edit in that file,
+// otherwise the linker fails with "undefined reference".
+//----------------------------------------------------------------------------
+#define USE_MOBILE_SUSPECT  0   //1 = needs get_mobile_suspected() in colour_sensor.cpp/.h: no shake for a possible mobile element
+#define USE_METAL_GETTER    0   //1 = needs isServoSequenceMetal() in smart_servo.cpp: shake continues only for METAL (0 = any sort)
+
+#if USE_METAL_GETTER
+bool isServoSequenceMetal(void);
+static bool servoSortingMetal() { return isServoSequenceMetal(); }
+#else
+static bool servoSortingMetal() { return isServoSequenceActive(); }
+#endif
+
+#if USE_MOBILE_SUSPECT
+static bool mobileSuspected() { return get_mobile_suspected(); }
+#else
+static bool mobileSuspected() { return false; }
+#endif
 #include "gate.h"
 #include "target_finding.h"      //MAX_WEIGHTS_ONBOARD
 #include <math.h>
+
+//----------------------------------------------------------------------------
+// Pose accuracy: while the wheels are spinning in place the robot is not translating, so tell
+// the pose estimator to ignore optical-flow translation (it reads noise / skid when spinning,
+// and this robot spins a lot: avoidance, centring, shaking). Set to 0 to go back to the old behaviour.
+//----------------------------------------------------------------------------
+#define SPIN_IGNORES_FLOW      0
+void setIsTurning(bool a);                  //defined in map.cpp
+static void driveRaw(int l, int r) {
+#if SPIN_IGNORES_FLOW
+    setIsTurning((l < 0 && r > 0) || (l > 0 && r < 0));
+#endif
+    setDriveSpeed(l, r);
+}
+#define setDriveSpeed driveRaw              //every call below goes through driveRaw
 //----------------------------------------------------------------------------
 // Sensor mapping for WALL AVOIDANCE - SWAP THESE if avoidance steers the wrong way.
 // Assumed: TOF1 looks 45deg RIGHT, TOF2 looks 45deg LEFT (from map.cpp offsets).
@@ -96,16 +132,22 @@
 #define RECOVERY_SPEED         250
 
 //--- going home ---
-#define HOME_WALL_MM           300      //both ultrasounds closer than this = walls ahead (base pocket)
+#define HOME_WALL_MM           150      //both ultrasounds closer than this = at the wall, dock (was 300: stopped too far out). Smaller = deeper into the corner
 #define HOME_NEAR_MM           800      //only believe "at base" within this of the origin (pose drifts, so keep generous)
 #define HOME_CREEP_DIST_MM     300      //believed this close to the origin but no walls yet -> stop re-aiming, creep on straight
 #define HOME_CREEP_SPEED       250      //speed while creeping into the corner
-#define HOME_CREEP_TIMEOUT_MS  6000UL   //never found walls: give up creeping and drop where we are
+#define HOME_SLOW_MM           350      //front ultrasound closer than this while creeping -> slow down (readings lag, so don't hit the wall)
+#define HOME_CREEP_SLOW_SPEED  200      //speed for that last bit
+#define HOME_BACKUP_MM         100      //after the 180 turn, reverse this far (optical flow, relative) toward the corner before opening the gate. 0 = off
+#define HOME_BACKUP_SPEED      200
+#define HOME_BACKUP_MS         1500UL   //give up reversing after this long
+#define HOME_CREEP_TIMEOUT_MS  8000UL   //never found walls: give up creeping and drop where we are
 #define HOME_REALIGN_DEG       25.0f    //once lined up with home, only re-aim if heading error exceeds this (stops side-to-side dithering)
 #define HOME_NEAR_PATIENCE_MS  8000UL   //been within HOME_NEAR_MM this long without docking -> assume close enough, do the drop
 #define HOME_DEBUG             1        //1 = print go-home diagnostics ~3x a second
 #define HOME_TURN_TIMEOUT_MS   4000UL   //the 180 turn at the base must finish within this
-#define HOME_STUCK_MS          5000UL   //no movement for this long while going home -> give up and explore
+#define HOME_STUCK_MS          5000UL   //believed AT/NEAR home (within HOME_NEAR_MM) and not moving this long -> give up and explore
+#define HOME_FAR_STUCK_MS      20000UL  //believed far from home and not moving this long -> give up (long, so it really tries to get there)
 #define HOME_STUCK_MOVE_MM     20.0f    //moved at least this far = not stuck
 #define HOME_STUCK_TURN_DEG    5.0f     //turned at least this much = not stuck
 #define HOME_RETRY_DELAY_MS    8000UL   //after giving up, don't try going home again for this long
@@ -139,6 +181,9 @@ static uint32_t homeTurnStart = 0;
 static uint32_t homeRetryAfter = 0;
 static bool     homeAligned = false;       //lined up with home bearing (hysteresis)
 static uint32_t homeNearSince = 0;         //when we first got within HOME_NEAR_MM (0 = not near)
+static bool     homeBacking = false;       //reversing into the corner after the 180 turn
+static uint32_t homeBackStart = 0;
+static float    homeBackX = 0, homeBackY = 0;
 static bool     homeCreeping = false;      //latched once we believe we're at the origin
 static uint32_t homeCreepStart = 0;
 static float homeRefX = 0, homeRefY = 0, homeRefHeading = 0;
@@ -172,6 +217,7 @@ static float wrap180(float a);   // defined below
 //enter go-home with a fresh "have we moved?" reference
 static void startHome(const pos_vector_t& me) {
     homeTurnStarted = false;
+    homeBacking = false;
     homeCreeping = false;
     homeAligned = false;
     homeNearSince = 0;
@@ -446,6 +492,12 @@ static void pickupEnd(const char* why) {
 // Main
 //----------------------------------------------------------------------------
 void reactiveTask() {
+    //snitch confirmed and held: stop moving for good
+    if (get_snitch_present()) {
+        setDriveSpeed(0, 0);
+        return;
+    }
+
     pos_vector_t me = getMyPOS();
     float th = me.theta * RAD_TO_DEG;
     uint32_t elapsed = millis() - stateStart;
@@ -462,8 +514,13 @@ void reactiveTask() {
     {
         bool colourPickup = checkColourPickup();
         if (!isServoSequenceActive()) pickupIgnoreServo = false;
+        //shake only for METAL: a plastic weight / bludger being ejected never starts (or continues) a shake
+        bool servoBusyNonMetal = isServoSequenceActive() && !servoSortingMetal();
+        //and never for a possible mobile element (bludger / snitch): no shake from the start
+        bool shakeTrigger = (colourPickup && !mobileSuspected()) ||
+                            (servoSortingMetal() && !pickupIgnoreServo);
         if ((state == R_EXPLORE || state == R_CENTER_WEIGHT || state == R_APPROACH_WEIGHT) &&
-            (colourPickup || (isServoSequenceActive() && !pickupIgnoreServo))) {
+            !servoBusyNonMetal && shakeTrigger) {
             pickupBegin();
             elapsed = 0;
         }
@@ -536,10 +593,21 @@ void reactiveTask() {
     case R_PICKUP_SHAKE: {
         uint32_t t = millis() - pickupStart;
 
+        //it turned out to look like a mobile element: interrupt the shake (not while a metal sort is running)
+        if (!pickupServoPhase && mobileSuspected()) {
+            pickupEnd("possible mobile element, no shaking");
+            break;
+        }
+
         if (!pickupServoPhase && isServoSequenceActive()) {      //a weight got picked for sorting
+            if (!servoSortingMetal()) {                         //plastic / bludger: confirmed, so stop shaking
+                pickupIgnoreServo = true;
+                pickupEnd("non-metal confirmed, no more shaking");
+                break;
+            }
             pickupServoPhase = true;
             pickupServoStart = millis();
-            Serial.println("Pickup: servo sequence started, shaking until neutral");
+            Serial.println("Pickup: metal sort started, shaking until neutral");
         }
 
         if (pickupServoPhase) {
@@ -569,11 +637,13 @@ void reactiveTask() {
         float mdx = me.pos.x - homeRefX;
         float mdy = me.pos.y - homeRefY;
         float moved = sqrtf(mdx * mdx + mdy * mdy);
+        bool thinksHome = (sqrtf(me.pos.x * me.pos.x + me.pos.y * me.pos.y) < HOME_NEAR_MM);
+        uint32_t stuckLimit = thinksHome ? HOME_STUCK_MS : HOME_FAR_STUCK_MS;
         if (moved >= HOME_STUCK_MOVE_MM) {
             homeLastMoveTime = millis();
             homeRefX = me.pos.x;
             homeRefY = me.pos.y;
-        } else if (millis() - homeLastMoveTime >= HOME_STUCK_MS) {
+        } else if (millis() - homeLastMoveTime >= stuckLimit) {
             Serial.println("Stuck going home: back to explore");
             homeTurnStarted = false;
             homeRetryAfter = millis() + HOME_RETRY_DELAY_MS;   //don't instantly head home again
@@ -582,13 +652,39 @@ void reactiveTask() {
             break;
         }
 
-        // --- 180 turn at the base: must run to completion, then start the drop ---
+#if HOME_BACKUP_MM > 0
+        // --- reversing into the corner after the turn (distance measured relative, so pose drift doesn't matter) ---
+        if (homeBacking) {
+            float bx = me.pos.x - homeBackX;
+            float by = me.pos.y - homeBackY;
+            if (sqrtf(bx * bx + by * by) >= HOME_BACKUP_MM || millis() - homeBackStart > HOME_BACKUP_MS) {
+                setDriveSpeed(0, 0);
+                homeBacking = false;
+                gateStartDrop();
+                enter(R_DROP);
+            } else {
+                setDriveSpeed(-HOME_BACKUP_SPEED, -HOME_BACKUP_SPEED);
+            }
+            break;
+        }
+#endif
+
+        // --- 180 turn at the base: must run to completion, then (reverse into the corner,) start the drop ---
         if (homeTurnStarted) {
             if (turnTo(turnTarget) || millis() - homeTurnStart > HOME_TURN_TIMEOUT_MS) {
                 setDriveSpeed(0, 0);
                 homeTurnStarted = false;
+#if HOME_BACKUP_MM > 0
+                homeBacking = true;
+                homeBackStart = millis();
+                homeBackX = me.pos.x;
+                homeBackY = me.pos.y;
+                homeLastMoveTime = millis();
+                Serial.println("Turned: backing into corner");
+#else
                 gateStartDrop();
                 enter(R_DROP);
+#endif
             }
             break;
         }
@@ -646,7 +742,9 @@ void reactiveTask() {
                 homeCreepStart = millis();
                 Serial.println("Close to origin, no walls: creeping to corner");
             }
-            driveWithRecovery(HOME_CREEP_SPEED, HOME_CREEP_SPEED);
+            int front = min(usL, usR);
+            int cs = (front < HOME_SLOW_MM) ? HOME_CREEP_SLOW_SPEED : HOME_CREEP_SPEED;
+            driveWithRecovery(cs, cs);
             break;
         }
 
