@@ -51,7 +51,7 @@
 //----------------------------------------------------------------------------
 #define FAR_MM               2000     //value used for "nothing seen" / bad reading
 
-#define CRUISE_SPEED         370      //-450..450
+#define CRUISE_SPEED         360      //-450..450
 #define STEER_DIFF           150      //wheel speed +/- when nudging away from a wall
 #define SPIN_SPEED           350      //in-place spin when blocked
 
@@ -75,13 +75,13 @@
                                       //0 = don't turn toward new weights until servo is free
                                       //    (still keeps moving / avoiding walls either way
 
-#define APPROACH_SPEED       360
+#define APPROACH_SPEED       300
 #define APPROACH_MS          4000     //drive forward for pickup
 #define APPROACH_WALL_MM     120      //abort approach if this close ahead
 
 #define TURN_TOL_DEG         8.0f     //increased tolerance to prevent overshoot
 #define TURN_KP              3.0f     //wheel speed per degree of error
-#define TURN_MIN_SPEED       120      //reduced to avoid overshoot at small errors
+#define TURN_MIN_SPEED       230      //reduced to avoid overshoot at small errors
 #define TURN_MAX_SPEED       360
 #define TURN_TIMEOUT_MS      2000
 
@@ -95,6 +95,21 @@
 #define STUCK_TURN_DEG         5.0f
 #define RECOVERY_SPEED         250
 
+//--- going home ---
+#define HOME_WALL_MM           300      //both ultrasounds closer than this = walls ahead (base pocket)
+#define HOME_NEAR_MM           800      //only believe "at base" within this of the origin (pose drifts, so keep generous)
+#define HOME_CREEP_DIST_MM     300      //believed this close to the origin but no walls yet -> stop re-aiming, creep on straight
+#define HOME_CREEP_SPEED       250      //speed while creeping into the corner
+#define HOME_CREEP_TIMEOUT_MS  6000UL   //never found walls: give up creeping and drop where we are
+#define HOME_REALIGN_DEG       25.0f    //once lined up with home, only re-aim if heading error exceeds this (stops side-to-side dithering)
+#define HOME_NEAR_PATIENCE_MS  8000UL   //been within HOME_NEAR_MM this long without docking -> assume close enough, do the drop
+#define HOME_DEBUG             1        //1 = print go-home diagnostics ~3x a second
+#define HOME_TURN_TIMEOUT_MS   4000UL   //the 180 turn at the base must finish within this
+#define HOME_STUCK_MS          5000UL   //no movement for this long while going home -> give up and explore
+#define HOME_STUCK_MOVE_MM     20.0f    //moved at least this far = not stuck
+#define HOME_STUCK_TURN_DEG    5.0f     //turned at least this much = not stuck
+#define HOME_RETRY_DELAY_MS    8000UL   //after giving up, don't try going home again for this long
+
 static uint32_t lastProgressTime = 0;
 static uint32_t recoveryStartTime = 0;
 static float progressX = 0;
@@ -103,6 +118,14 @@ static float progressHeading = 0;
 static bool recovering = false;
 static bool progressInitialized = false;
 static bool homeTurnStarted = false;
+static uint32_t homeLastMoveTime = 0;
+static uint32_t homeTurnStart = 0;
+static uint32_t homeRetryAfter = 0;
+static bool     homeAligned = false;       //lined up with home bearing (hysteresis)
+static uint32_t homeNearSince = 0;         //when we first got within HOME_NEAR_MM (0 = not near)
+static bool     homeCreeping = false;      //latched once we believe we're at the origin
+static uint32_t homeCreepStart = 0;
+static float homeRefX = 0, homeRefY = 0, homeRefHeading = 0;
 
 //----------------------------------------------------------------------------
 enum ReactState {
@@ -119,6 +142,21 @@ static uint32_t   weightCooldownUntil = 0;
 static void enter(ReactState s) {
     state = s;
     stateStart = millis();
+}
+
+static float wrap180(float a);   // defined below
+
+//enter go-home with a fresh "have we moved?" reference
+static void startHome(const pos_vector_t& me) {
+    homeTurnStarted = false;
+    homeCreeping = false;
+    homeAligned = false;
+    homeNearSince = 0;
+    homeLastMoveTime = millis();
+    homeRefX = me.pos.x;
+    homeRefY = me.pos.y;
+    homeRefHeading = me.theta * RAD_TO_DEG;
+    enter(R_GO_HOME);
 }
 
 //----------------------------------------------------------------------------
@@ -312,9 +350,10 @@ void reactiveTask() {
 
     //full? go home (from any driving state)
     if ((state == R_EXPLORE || state == R_LEAVE_START) &&
-        get_num_weights() >= MAX_WEIGHTS_ONBOARD) {
+        get_num_weights() >= MAX_WEIGHTS_ONBOARD &&
+        millis() >= homeRetryAfter) {
         setDriveSpeed(0, 0);
-        enter(R_GO_HOME);
+        startHome(me);
     }
 
     switch (state) {
@@ -336,6 +375,7 @@ void reactiveTask() {
         break;
 
     case R_EXPLORE: {
+        Serial.println("in explore state");
         if (millis() > weightCooldownUntil &&
             (CHASE_WHILE_SORTING || !isServoSequenceActive())) {
             int side = checkWeights();
@@ -364,6 +404,7 @@ void reactiveTask() {
         break;
 
     case R_APPROACH_WEIGHT:
+        Serial.println("in approaching state");
         if (isServoSequenceActive()) {                 //picked up: go back to exploring
             weightCooldownUntil = millis() + PICKUP_COOLDOWN_MS;
             enter(R_EXPLORE);
@@ -379,19 +420,29 @@ void reactiveTask() {
         break;
 
     case R_GO_HOME: {
-        int usL = rd(LEFT_US);
-        int usR = rd(RIGHT_US);
+        Serial.println("in going home state");
 
-        // At base: stop and turn 180 before starting the drop
-        if (usL <= 300 && usR <= 300) {
+        // --- stuck check: no TRANSLATION for HOME_STUCK_MS -> give up, go explore.
+        //     (Spinning on the spot does not count as progress - that is how it dithered forever.) ---
+        float mdx = me.pos.x - homeRefX;
+        float mdy = me.pos.y - homeRefY;
+        float moved = sqrtf(mdx * mdx + mdy * mdy);
+        if (moved >= HOME_STUCK_MOVE_MM) {
+            homeLastMoveTime = millis();
+            homeRefX = me.pos.x;
+            homeRefY = me.pos.y;
+        } else if (millis() - homeLastMoveTime >= HOME_STUCK_MS) {
+            Serial.println("Stuck going home: back to explore");
+            homeTurnStarted = false;
+            homeRetryAfter = millis() + HOME_RETRY_DELAY_MS;   //don't instantly head home again
             setDriveSpeed(0, 0);
+            enter(R_EXPLORE);
+            break;
+        }
 
-            if (!homeTurnStarted) {
-                turnTarget = wrap180(th + 180.0f);
-                homeTurnStarted = true;
-            }
-
-            if (turnTo(turnTarget)) {
+        // --- 180 turn at the base: must run to completion, then start the drop ---
+        if (homeTurnStarted) {
+            if (turnTo(turnTarget) || millis() - homeTurnStart > HOME_TURN_TIMEOUT_MS) {
                 setDriveSpeed(0, 0);
                 homeTurnStarted = false;
                 gateStartDrop();
@@ -400,31 +451,83 @@ void reactiveTask() {
             break;
         }
 
-        // If the base turn has started, finish it before navigating again
-        if (homeTurnStarted) {
-            turnTo(turnTarget);
-            break;
-        }
-
-        // Calculate direction toward home (world origin)
+        int usL = rd(LEFT_US);
+        int usR = rd(RIGHT_US);
         float dx = 0.0f - me.pos.x;
         float dy = 0.0f - me.pos.y;
+        float dist = sqrtf(dx * dx + dy * dy);
 
         float bearing = -atan2f(dx, dy) * RAD_TO_DEG;
         float err = wrap180(bearing - th);
 
-        // Turn toward home, then drive straight
-        if (fabsf(err) > HOME_HEADING_TOL_DEG) {
-            spin(err > 0 ? 1 : -1, SPIN_SPEED);
+        // how long have we been near the base without docking?
+        if (dist < HOME_NEAR_MM) {
+            if (homeNearSince == 0) homeNearSince = millis();
         } else {
-            driveWithRecovery(CRUISE_SPEED, CRUISE_SPEED);
+            homeNearSince = 0;
         }
 
+#if HOME_DEBUG
+        static uint32_t lastDbg = 0;
+        if (millis() - lastDbg > 300) {
+            lastDbg = millis();
+            Serial.print("HOME dist="); Serial.print(dist);
+            Serial.print(" err="); Serial.print(err);
+            Serial.print(" us="); Serial.print(usL); Serial.print("/"); Serial.print(usR);
+            Serial.print(" creep="); Serial.print(homeCreeping);
+            Serial.print(" aligned="); Serial.println(homeAligned);
+        }
+#endif
+
+        // --- docked? Walls close near the origin, or we've been near the base long enough.
+        //     (Position alone is not trusted: optical-flow drift.) ---
+        bool wallsClose    = (usL <= HOME_WALL_MM && usR <= HOME_WALL_MM);
+        bool creepTimedOut = homeCreeping && (millis() - homeCreepStart > HOME_CREEP_TIMEOUT_MS);
+        bool nearTimedOut  = (homeNearSince != 0) && (millis() - homeNearSince > HOME_NEAR_PATIENCE_MS);
+
+        if ((dist < HOME_NEAR_MM && wallsClose) || creepTimedOut || nearTimedOut) {
+            Serial.println("Docked: turning 180 for drop");
+            setDriveSpeed(0, 0);
+            turnTarget = wrap180(th + 180.0f);
+            homeTurnStarted = true;
+            homeTurnStart = millis();
+            homeLastMoveTime = millis();       //the turn itself shouldn't count as stuck
+            break;
+        }
+
+        // --- close to the origin but no walls yet: stop re-aiming (the bearing is noise this close,
+        //     which made it spin side to side) and drive straight until the walls show up.
+        //     Latched so overshooting doesn't turn it around. ---
+        if (homeCreeping || dist < HOME_CREEP_DIST_MM) {
+            if (!homeCreeping) {
+                homeCreeping = true;
+                homeCreepStart = millis();
+                Serial.println("Close to origin, no walls: creeping to corner");
+            }
+            driveWithRecovery(HOME_CREEP_SPEED, HOME_CREEP_SPEED);
+            break;
+        }
+
+        // --- dodge walls on the way home (but not once we're near the base, where walls are expected) ---
+        if (dist > HOME_NEAR_MM && avoidWalls(CRUISE_SPEED)) break;
+
+        // --- navigate: line up with home, then drive. Hysteresis: once lined up, only re-aim
+        //     if the error grows past HOME_REALIGN_DEG; spin speed scales with the error. ---
+        float absErr = fabsf(err);
+        if (homeAligned && absErr > HOME_REALIGN_DEG) homeAligned = false;
+        if (!homeAligned && absErr <= HOME_HEADING_TOL_DEG) homeAligned = true;
+
+        if (homeAligned) {
+            driveWithRecovery(CRUISE_SPEED, CRUISE_SPEED);
+        } else {
+            int sp = constrain((int)(TURN_KP * absErr), TURN_MIN_SPEED, TURN_MAX_SPEED);
+            spin(err > 0 ? 1 : -1, sp);
+        }
         break;
     }
 
     case R_DROP:
-
+        Serial.println("in drop off state");
         if (gateDrop()) {
             reset_num_weights();
             homeTurnStarted = false;
@@ -432,9 +535,9 @@ void reactiveTask() {
             enter(R_LEAVE_START);
         } else if (elapsed > 25000UL) {                    //jam safety net
             setDriveSpeed(0, 0);
+            homeRetryAfter = millis() + HOME_RETRY_DELAY_MS;
             enter(R_EXPLORE);
         }
         break;
     }
 }
-

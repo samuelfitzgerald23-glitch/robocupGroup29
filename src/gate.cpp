@@ -6,6 +6,14 @@
 //             and sit still for STILL_MS. Non-blocking; runs from the state
 //             machine's DROP_PAYLOAD case via gateDrop().
 //             ORDER: call initSmartServo() BEFORE initGate() in setup().
+//
+//Changes (reactive docking):
+//  - shake limit is measured from where the drop STARTED, not from the origin
+//    (the pose estimate drifts, so "distance from origin" stopped the shake)
+//  - the close command is re-sent every GATE_RESEND_MS during the still phase,
+//    after clearing any servo overload fault, so one lost packet can't leave
+//    the gate open
+//  - STILL_MS lengthened so the gate has time to finish closing
 
 #include <Arduino.h>
 #include <HerkulexServo.h>
@@ -23,15 +31,16 @@
 #define GATE_CLOSED_POS    0         //raw position with the gate shut (0..1023)
 #define GATE_OPEN_POS      289       //raw position with the gate open
 #define GATE_SPEED         150       //play-time / speed, 0 (fastest)..254 (slowest)
+#define GATE_RESEND_MS     250       //re-send the close command this often while shut-and-still
 
-#define SHAKE_MS           5000UL   //shake this long (gate open)
-#define STILL_MS           2000UL   //sit still this long after closing, then finish
+#define SHAKE_MS           5000UL    //shake this long (gate open)
+#define STILL_MS           3000UL    //sit still this long after closing (gate travel takes ~1.7 s)
 
-#define SHAKE_SPEED        400       //shake drive speed (-450..450)
+#define SHAKE_SPEED        400       //shake drive speed (motor.cpp clamps to +/-350)
 #define SHAKE_STEP_MS      120       //ms per shake move (smaller = sharper)
-#define SHAKE_MAX_MM       200.0f    //stop shaking if we drift this far from base
+#define SHAKE_MAX_MM       200.0f    //stop shaking if we drift this far from where the drop STARTED
 
-#define BASE_TOLERANCE_MM  50.0f    //how close to (0,0) counts as "at base"
+#define BASE_TOLERANCE_MM  50.0f     //how close to (0,0) counts as "at base"
 
 
 //----------------------------------------------------------------------------
@@ -42,6 +51,8 @@ static HerkulexServo    rearServo(servoBus, REARSERVO_ID);
 
 static uint32_t openStart = 0;       //millis() when the gate opened
 static uint8_t  dropPhase = 0;       //0 = open, 1 = open+shaking, 2 = shut+still
+static float    dropX = 0, dropY = 0;   //where the robot was when the drop began
+static uint32_t lastCloseCmd = 0;
 
 //----------------------------------------------------------------------------
 // Setup
@@ -72,19 +83,30 @@ void gateStartDrop() {
     dropPhase = 0;
 }
 
-//call once when a drop begins, so a previous (possibly timed-out) drop
-//can't leave the sequence half-finished
-// void gateStartDrop() {
-//     dropPhase = 0;
-// }
+//----------------------------------------------------------------------------
+// Clear a servo overload fault (e.g. from pushing against weights) and make
+// sure torque is on, so the next command is actually obeyed
+//----------------------------------------------------------------------------
+static void recoverRearServo() {
+    HerkulexStatusError error;
+    HerkulexStatusDetail detail;
+
+    rearServo.getStatus(error, detail);
+    if ((uint8_t)error & 0x10) {                         //overload
+        Serial.println("Gate servo overload - clearing");
+        rearServo.writeRam(HerkulexRamRegister::StatusError, 0x00);
+    }
+    rearServo.setTorqueOn();
+}
 
 //----------------------------------------------------------------------------
-// Shake helper - reads its own position, drives its own motors
+// Shake helper - drives its own motors. Limit is measured from where the
+// drop started, so pose drift relative to the origin doesn't matter.
 //----------------------------------------------------------------------------
 static void shakeRobot() {
     pos_t p = getMyPOS().pos;
-    if (fabsf(p.x) > SHAKE_MAX_MM || fabsf(p.y) > SHAKE_MAX_MM) {
-        setDriveSpeed(0, 0);         //drifted off base - stop
+    if (fabsf(p.x - dropX) > SHAKE_MAX_MM || fabsf(p.y - dropY) > SHAKE_MAX_MM) {
+        setDriveSpeed(0, 0);         //drifted away from where we started - stop
         return;
     }
 
@@ -112,25 +134,40 @@ static void shakeRobot() {
 //----------------------------------------------------------------------------
 bool gateDrop() {
     switch (dropPhase) {
-        case 0:  // open the gate, start the clock
+        case 0: {  // open the gate, remember where we are, start the clock
+            pos_t p = getMyPOS().pos;
+            dropX = p.x;
+            dropY = p.y;
             rearServo.setPosition(GATE_OPEN_POS, GATE_SPEED, HerkulexLed::Ignore);
             openStart = millis();
             dropPhase = 1;
             return false;
+        }
 
         case 1:  // shake for SHAKE_MS, then close immediately
             if (millis() - openStart < SHAKE_MS) {
                 shakeRobot();
             } else {
                 setDriveSpeed(0, 0);                                          // stop shaking
+                recoverRearServo();
                 rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore);  // close now
+                lastCloseCmd = millis();
                 dropPhase = 2;
             }
             return false;
 
-        case 2:  // gate shut - sit still for STILL_MS, then finish
+        case 2:  // gate shut - keep telling it to stay shut, sit still for STILL_MS, then finish
             setDriveSpeed(0, 0);
+
+            if (millis() - lastCloseCmd >= GATE_RESEND_MS) {
+                lastCloseCmd = millis();
+                recoverRearServo();
+                rearServo.setPosition(GATE_CLOSED_POS, GATE_SPEED, HerkulexLed::Ignore);
+            }
+
             if (millis() - openStart >= SHAKE_MS + STILL_MS) {
+                Serial.print("Gate finished, position = ");
+                Serial.println(rearServo.getPosition());    //should be close to GATE_CLOSED_POS
                 dropPhase = 0;
                 return true;                   // drop complete
             }
