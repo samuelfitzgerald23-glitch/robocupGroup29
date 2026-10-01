@@ -112,7 +112,7 @@ static void driveRaw(int l, int r) {
                                       //    (still keeps moving / avoiding walls either way
 
 #define APPROACH_SPEED       300
-#define APPROACH_MS          4000     //drive forward for pickup
+#define APPROACH_MS          6000     //drive forward for pickup
 #define APPROACH_WALL_MM     120      //abort approach if this close ahead
 
 #define TURN_TOL_DEG         8.0f     //increased tolerance to prevent overshoot
@@ -151,6 +151,13 @@ static void driveRaw(int l, int r) {
 #define HOME_STUCK_MOVE_MM     20.0f    //moved at least this far = not stuck
 #define HOME_STUCK_TURN_DEG    5.0f     //turned at least this much = not stuck
 #define HOME_RETRY_DELAY_MS    8000UL   //after giving up, don't try going home again for this long
+
+//--- failed approach: drove at a weight but nothing got picked up (no shake / sort started) ---
+#define BACKOFF_ENABLE         1        //0 = old behaviour (just go back to explore)
+#define BACKOFF_REVERSE_MS     1000UL   //reverse this long
+#define BACKOFF_SPEED          250
+#define BACKOFF_TURN_DEG       90.0f    //then turn this far, toward whichever side has more room
+#define BACKOFF_COOLDOWN_MS    2500UL   //then ignore weights this long so it doesn't turn straight back onto the one it pushed
 
 //--- pickup shake (colour sensor sees something in the chamber -> shake side to side until sorted) ---
 #define PICKUP_SHAKE_ENABLE    1        //0 = disable the whole feature
@@ -191,7 +198,7 @@ static float homeRefX = 0, homeRefY = 0, homeRefHeading = 0;
 //----------------------------------------------------------------------------
 enum ReactState {
     R_STARTUP, R_LEAVE_START, R_EXPLORE, R_CENTER_WEIGHT,
-    R_APPROACH_WEIGHT, R_PICKUP_SHAKE, R_GO_HOME, R_DROP
+    R_APPROACH_WEIGHT, R_PICKUP_SHAKE, R_BACKOFF, R_GO_HOME, R_DROP
 };
 
 static ReactState state = R_STARTUP;
@@ -206,6 +213,9 @@ static bool     pickupServoPhase = false;   //false = waiting for servo to start
 static bool     pickupIgnoreServo = false;  //set if the servo never finished, until it goes idle
 static uint32_t shakeLastStep = 0;
 static int      shakeDir = 1;
+
+static bool     backoffTurning = false;     //R_BACKOFF: false = reversing, true = turning
+static uint32_t backoffTurnStart = 0;
 
 static void enter(ReactState s) {
     state = s;
@@ -519,7 +529,7 @@ void reactiveTask() {
         //and never for a possible mobile element (bludger / snitch): no shake from the start
         bool shakeTrigger = (colourPickup && !mobileSuspected()) ||
                             (servoSortingMetal() && !pickupIgnoreServo);
-        if ((state == R_EXPLORE || state == R_CENTER_WEIGHT || state == R_APPROACH_WEIGHT) &&
+        if ((state == R_EXPLORE || state == R_CENTER_WEIGHT || state == R_APPROACH_WEIGHT || state == R_BACKOFF) &&
             !servoBusyNonMetal && shakeTrigger) {
             pickupBegin();
             elapsed = 0;
@@ -582,11 +592,41 @@ void reactiveTask() {
         } else if (elapsed > APPROACH_MS ||
             min(rd(LEFT_US), rd(RIGHT_US)) < APPROACH_WALL_MM) {
             setDriveSpeed(0, 0);                       //missed it / wall ahead
+#if BACKOFF_ENABLE
+            //nothing was picked up (no colour change -> no shake / sort): don't sit pushing the weight
+            Serial.println("Approach: nothing picked up, reversing then turning away");
+            backoffTurning = false;
+            enter(R_BACKOFF);
+#else
             weightCooldownUntil = millis() + WEIGHT_COOLDOWN_MS;
             enter(R_EXPLORE);
+#endif
         } else {
             // Just drive straight forward, no heading correction needed
             driveWithRecovery(APPROACH_SPEED, APPROACH_SPEED);
+        }
+        break;
+
+    case R_BACKOFF:
+        Serial.println("in backoff state");
+        if (!backoffTurning) {
+            if (elapsed < BACKOFF_REVERSE_MS) {
+                setDriveSpeed(-BACKOFF_SPEED, -BACKOFF_SPEED);          //reverse, straight back
+            } else {
+                int usL = rd(LEFT_US), usR = rd(RIGHT_US);
+                int tL  = rd(LEFT_TOF), tR  = rd(RIGHT_TOF);
+                float turn = ((usL + tL) > (usR + tR)) ? BACKOFF_TURN_DEG : -BACKOFF_TURN_DEG;   //+ = left; pick the roomier side
+                turnTarget = wrap180(th + turn);
+                backoffTurning = true;
+                backoffTurnStart = millis();
+                setDriveSpeed(0, 0);
+            }
+        } else if (turnTo(turnTarget) || millis() - backoffTurnStart > TURN_TIMEOUT_MS) {
+            setDriveSpeed(0, 0);
+            progressInitialized = false;                                //stuck detector restarts fresh
+            lastProgressTime = millis();
+            weightCooldownUntil = millis() + BACKOFF_COOLDOWN_MS;
+            enter(R_EXPLORE);                                           //explore keeps avoidWalls(), so it keeps turning off walls
         }
         break;
 
