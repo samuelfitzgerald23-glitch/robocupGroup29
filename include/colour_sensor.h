@@ -23,13 +23,13 @@
 #define PLASTIC_WEIGHT_GREEN_MAX 200 
 
 //tolerances for bludger detection (minimums)
-#define BLUDGER_TOL_RED_MIN   400
+#define BLUDGER_TOL_RED_MIN   350
 #define BLUDGER_TOL_RED_MAX   1600
-#define BLUDGER_TOL_BLUE_MIN  120
+#define BLUDGER_TOL_BLUE_MIN  110
 #define BLUDGER_TOL_BLUE_MAX  250 
-#define BLUDGER_TOL_GREEN_MIN 160
+#define BLUDGER_TOL_GREEN_MIN 140
 #define BLUDGER_TOL_GREEN_MAX 280 
-#define BLUDGER_TOL_CLEAR_MIN 600
+#define BLUDGER_TOL_CLEAR_MIN 500
 #define BLUDGER_TOL_CLEAR_MAX 1600   //(was a 2nd BLUDGER_TOL_GREEN_MAX define - clashed, and is unused)
 
 //tolerances for snitch detection
@@ -37,7 +37,7 @@
 #define GOLD_RED_MAX    500
 #define GOLD_BLUE_MIN   100
 #define GOLD_BLUE_MAX   400
-#define GOLD_GREEN_MIN  200
+#define GOLD_GREEN_MIN  160
 #define GOLD_GREEN_MAX  900
 #define GOLD_CLEAR_MIN  600
 #define GOLD_CLEAR_MAX  2400
