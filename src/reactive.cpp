@@ -106,7 +106,7 @@ static void driveRaw(int l, int r) {
 #define FRONT_CLEAR_MM       450      //ultrasound: stop spinning (hysteresis)
 #define SIDE_WARN_MM         300      //angled TOF: nudge away
 
-#define INITIAL_TURN_DEG     -45.0f    //heading to leave the start area on
+#define INITIAL_TURN_DEG     45.0f    //heading to leave the start area on
 #define STARTUP_WAIT_MS      1500     //let filters fill / pose settle
 
 #define WEIGHT_DROP_MM       200      //low TOF this much shorter than top TOF = weight
@@ -136,7 +136,7 @@ static void driveRaw(int l, int r) {
 #define HOME_IGNORE_MM       300      //near base: stop avoiding walls so we can dock
 
 
-#define STUCK_TIMEOUT_MS       8000UL
+#define STUCK_TIMEOUT_MS       5000UL
 #define REVERSE_RECOVERY_MS    500UL
 #define STUCK_MOVE_MM          20.0f
 #define STUCK_TURN_DEG         5.0f
