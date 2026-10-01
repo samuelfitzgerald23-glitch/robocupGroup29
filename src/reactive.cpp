@@ -51,7 +51,7 @@
 //----------------------------------------------------------------------------
 #define FAR_MM               2000     //value used for "nothing seen" / bad reading
 
-#define CRUISE_SPEED         360      //-450..450
+#define CRUISE_SPEED         330      //-450..450
 #define STEER_DIFF           150      //wheel speed +/- when nudging away from a wall
 #define SPIN_SPEED           350      //in-place spin when blocked
 
@@ -110,6 +110,22 @@
 #define HOME_STUCK_TURN_DEG    5.0f     //turned at least this much = not stuck
 #define HOME_RETRY_DELAY_MS    8000UL   //after giving up, don't try going home again for this long
 
+//--- pickup shake (colour sensor sees something in the chamber -> shake side to side until sorted) ---
+#define PICKUP_SHAKE_ENABLE    1        //0 = disable the whole feature
+#define PICKUP_RED_MIN         200      //ALL four must be above their value at the same time = "holding something"
+#define PICKUP_GREEN_MIN       130
+#define PICKUP_BLUE_MIN        120
+#define PICKUP_CLEAR_MIN       400
+#define PICKUP_CONFIRM_MS      300      //colours must stay above for this long to count
+#define PICKUP_REARM_MS        1000     //colours must drop back below for this long before it can trigger again
+#define PICKUP_SHAKE_MS        3000     //length of each shake burst
+#define PICKUP_SETTLE_MS       1200     //still gap between bursts (proximity sensor needs ~1s still to confirm). 0 = shake continuously
+#define PICKUP_TIMEOUT_MS      6000     //no servo sequence by now -> give up, back to explore
+#define PICKUP_SERVO_MAX_MS    60000UL  //failsafe while waiting for the servo to finish (its own 5 retries take ~47s worst case)
+#define PICKUP_SHAKE_SPEED     400      //(motor.cpp clamps to +/-350)
+#define PICKUP_SHAKE_STEP_MS   120      //swap spin direction this often
+#define PICKUP_DEBUG           1        //1 = print colour readings twice a second
+
 static uint32_t lastProgressTime = 0;
 static uint32_t recoveryStartTime = 0;
 static float progressX = 0;
@@ -130,7 +146,7 @@ static float homeRefX = 0, homeRefY = 0, homeRefHeading = 0;
 //----------------------------------------------------------------------------
 enum ReactState {
     R_STARTUP, R_LEAVE_START, R_EXPLORE, R_CENTER_WEIGHT,
-    R_APPROACH_WEIGHT, R_GO_HOME, R_DROP
+    R_APPROACH_WEIGHT, R_PICKUP_SHAKE, R_GO_HOME, R_DROP
 };
 
 static ReactState state = R_STARTUP;
@@ -138,6 +154,13 @@ static uint32_t   stateStart = 0;
 static float      turnTarget = 0;
 static int        weightSide = 0;          //+1 = left, -1 = right
 static uint32_t   weightCooldownUntil = 0;
+
+static uint32_t pickupStart = 0;
+static uint32_t pickupServoStart = 0;
+static bool     pickupServoPhase = false;   //false = waiting for servo to start, true = waiting for it to finish
+static bool     pickupIgnoreServo = false;  //set if the servo never finished, until it goes idle
+static uint32_t shakeLastStep = 0;
+static int      shakeDir = 1;
 
 static void enter(ReactState s) {
     state = s;
@@ -341,6 +364,85 @@ static int checkWeights() {
 }
 
 //----------------------------------------------------------------------------
+// Pickup shake
+//----------------------------------------------------------------------------
+static void shakeReset() {
+    shakeDir = 1;
+    shakeLastStep = 0;
+}
+
+//side to side only (spin left, spin right), no forward motion
+static void shakeSideToSide() {
+    uint32_t now = millis();
+    if (shakeLastStep == 0 || now - shakeLastStep >= PICKUP_SHAKE_STEP_MS) {
+        shakeLastStep = now;
+        shakeDir = -shakeDir;
+    }
+    setDriveSpeed(-shakeDir * PICKUP_SHAKE_SPEED, shakeDir * PICKUP_SHAKE_SPEED);
+}
+
+static bool colourPickupSeen() {
+    return getOutput(COLOUR_RED)   > PICKUP_RED_MIN   &&
+           getOutput(COLOUR_GREEN) > PICKUP_GREEN_MIN &&
+           getOutput(COLOUR_BLUE)  > PICKUP_BLUE_MIN  &&
+           getOutput(COLOUR_CLEAR) > PICKUP_CLEAR_MIN;
+}
+
+//edge triggered: needs to have been below the thresholds for a while (armed), then above for a while
+static bool checkColourPickup() {
+    static bool armed = false;
+    static uint32_t lowSince = 0, highSince = 0;
+    uint32_t now = millis();
+
+#if PICKUP_DEBUG
+    static uint32_t lastDbg = 0;
+    if (now - lastDbg > 500) {
+        lastDbg = now;
+        Serial.print("COLOUR R="); Serial.print(getOutput(COLOUR_RED));
+        Serial.print(" G="); Serial.print(getOutput(COLOUR_GREEN));
+        Serial.print(" B="); Serial.print(getOutput(COLOUR_BLUE));
+        Serial.print(" C="); Serial.print(getOutput(COLOUR_CLEAR));
+        Serial.print(" armed="); Serial.println(armed);
+    }
+#endif
+
+    if (!colourPickupSeen()) {
+        highSince = 0;
+        if (lowSince == 0) lowSince = now;
+        if (now - lowSince >= PICKUP_REARM_MS) armed = true;
+        return false;
+    }
+    lowSince = 0;
+    if (!armed) return false;
+    if (highSince == 0) highSince = now;
+    if (now - highSince >= PICKUP_CONFIRM_MS) {
+        armed = false;
+        highSince = 0;
+        return true;
+    }
+    return false;
+}
+
+static void pickupBegin() {
+    pickupStart = millis();
+    pickupServoPhase = isServoSequenceActive();
+    pickupServoStart = millis();
+    shakeReset();
+    Serial.println(pickupServoPhase ? "Pickup: servo already active, shaking until neutral"
+                                    : "Pickup: colour changed, shaking side to side");
+    enter(R_PICKUP_SHAKE);
+}
+
+static void pickupEnd(const char* why) {
+    Serial.print("Pickup shake done: "); Serial.println(why);
+    setDriveSpeed(0, 0);
+    progressInitialized = false;               //stuck detector restarts fresh
+    lastProgressTime = millis();
+    weightCooldownUntil = millis() + PICKUP_COOLDOWN_MS;
+    enter(R_EXPLORE);
+}
+
+//----------------------------------------------------------------------------
 // Main
 //----------------------------------------------------------------------------
 void reactiveTask() {
@@ -355,6 +457,18 @@ void reactiveTask() {
         setDriveSpeed(0, 0);
         startHome(me);
     }
+
+#if PICKUP_SHAKE_ENABLE
+    {
+        bool colourPickup = checkColourPickup();
+        if (!isServoSequenceActive()) pickupIgnoreServo = false;
+        if ((state == R_EXPLORE || state == R_CENTER_WEIGHT || state == R_APPROACH_WEIGHT) &&
+            (colourPickup || (isServoSequenceActive() && !pickupIgnoreServo))) {
+            pickupBegin();
+            elapsed = 0;
+        }
+    }
+#endif
 
     switch (state) {
 
@@ -418,6 +532,34 @@ void reactiveTask() {
             driveWithRecovery(APPROACH_SPEED, APPROACH_SPEED);
         }
         break;
+
+    case R_PICKUP_SHAKE: {
+        uint32_t t = millis() - pickupStart;
+
+        if (!pickupServoPhase && isServoSequenceActive()) {      //a weight got picked for sorting
+            pickupServoPhase = true;
+            pickupServoStart = millis();
+            Serial.println("Pickup: servo sequence started, shaking until neutral");
+        }
+
+        if (pickupServoPhase) {
+            if (!isServoSequenceActive()) {                      //neutral confirmed OR servo gave up after its retries
+                pickupEnd("servo finished");
+            } else if (millis() - pickupServoStart > PICKUP_SERVO_MAX_MS) {
+                pickupIgnoreServo = true;
+                pickupEnd("servo failsafe timeout");
+            } else {
+                shakeSideToSide();
+            }
+        } else if (t >= PICKUP_TIMEOUT_MS) {
+            pickupEnd("timed out, no servo sequence");
+        } else if (PICKUP_SETTLE_MS <= 0 || (t % (PICKUP_SHAKE_MS + PICKUP_SETTLE_MS)) < PICKUP_SHAKE_MS) {
+            shakeSideToSide();
+        } else {
+            setDriveSpeed(0, 0);
+        }
+        break;
+    }
 
     case R_GO_HOME: {
         Serial.println("in going home state");
